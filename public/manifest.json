@@ -1,21 +1,39 @@
 {
-  "name": "Hishab Khata - Global Smart Finance",
+  "id": "/",
+  "name": "Hishab Khata - Smart Personal Finance",
   "short_name": "HishabKhata",
-  "description": "Global Smart Personal Finance, Multi-Wallet, Budget & Expense Management SaaS",
+  "description": "Smart Personal Finance, Multi-Wallet, Budget, Expense & Savings Tracking Platform.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#F8FAFC",
+  "orientation": "portrait-primary",
+  "background_color": "#042F2E",
   "theme_color": "#0F766E",
+  "categories": ["finance", "productivity", "utilities"],
   "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
     {
       "src": "/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

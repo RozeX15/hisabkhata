@@ -11,7 +11,8 @@ import {
   Moon,
   ShieldAlert,
   Wallet as WalletIcon,
-  Crown
+  Crown,
+  Download
 } from 'lucide-react';
 
 interface TopbarProps {
@@ -23,6 +24,7 @@ interface TopbarProps {
   onOpenAddTransaction: () => void;
   onOpenAiAdvisor: () => void;
   onOpenUpgrade?: () => void;
+  onOpenDownloadApp?: () => void;
   theme?: 'light' | 'dark';
   isDarkMode?: boolean;
   onToggleTheme?: () => void;
@@ -40,6 +42,7 @@ export const Topbar: React.FC<TopbarProps> = ({
   onOpenAddTransaction,
   onOpenAiAdvisor,
   onOpenUpgrade = () => {},
+  onOpenDownloadApp,
   theme,
   isDarkMode,
   onToggleTheme,
@@ -77,6 +80,21 @@ export const Topbar: React.FC<TopbarProps> = ({
 
       {/* Action Controls */}
       <div className="flex items-center gap-2 sm:gap-3">
+        {/* Install / Download App Button */}
+        {onOpenDownloadApp && (
+          <button
+            id="topbar-download-app-btn"
+            type="button"
+            onClick={onOpenDownloadApp}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 transition cursor-pointer"
+            title="Download & Install App"
+          >
+            <Download className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+            <span className="hidden md:inline">Download App</span>
+            <span className="md:hidden">App</span>
+          </button>
+        )}
+
         {/* Plan Pill */}
         {user && (
           <button
@@ -145,11 +163,16 @@ export const Topbar: React.FC<TopbarProps> = ({
           type="button"
           onClick={effectiveToggleDark}
           className="p-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
-          title="Toggle Theme"
+          title={effectiveIsDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
         >
-          {effectiveIsDark ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-slate-600" />}
+          {effectiveIsDark ? (
+            <Sun className="w-5 h-5 text-amber-400" />
+          ) : (
+            <Moon className="w-5 h-5 text-slate-600" />
+          )}
         </button>
       </div>
     </header>
   );
 };
+

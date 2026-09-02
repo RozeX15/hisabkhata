@@ -16,7 +16,8 @@ import {
   CheckCircle2,
   Lock,
   ChevronRight,
-  Star
+  Star,
+  Download
 } from 'lucide-react';
 
 interface LandingPageProps {
@@ -24,6 +25,7 @@ interface LandingPageProps {
   onLogin: () => void;
   onDemoUser: () => void;
   onViewLegal: (type: 'privacy' | 'terms' | 'about') => void;
+  onOpenDownloadApp?: () => void;
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({
@@ -31,6 +33,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   onLogin,
   onDemoUser,
   onViewLegal,
+  onOpenDownloadApp,
 }) => {
   const { t } = useI18n();
 
@@ -52,10 +55,23 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <div className="hidden md:block">
             <LanguageSelector />
           </div>
+
+          {onOpenDownloadApp && (
+            <button
+              id="landing-download-app-btn"
+              type="button"
+              onClick={onOpenDownloadApp}
+              className="px-3.5 py-2 text-xs font-bold text-teal-300 bg-teal-950/60 hover:bg-teal-900/60 border border-teal-800/80 rounded-xl transition flex items-center gap-1.5 cursor-pointer"
+            >
+              <Download className="w-3.5 h-3.5 text-teal-400" />
+              <span className="hidden sm:inline">Download App</span>
+              <span className="sm:hidden">App</span>
+            </button>
+          )}
 
           <button
             type="button"
@@ -115,6 +131,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <span>Sign In to Account</span>
             </button>
           </div>
+
+          {onOpenDownloadApp && (
+            <div className="mt-4">
+              <button
+                id="hero-download-pwa-btn"
+                type="button"
+                onClick={onOpenDownloadApp}
+                className="inline-flex items-center gap-2 text-xs font-bold text-teal-400 hover:text-teal-300 transition cursor-pointer px-3 py-1.5 rounded-full bg-teal-950/40 hover:bg-teal-950/80 border border-teal-800/60"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Download App for Android, iPhone &amp; Desktop (PWA)</span>
+              </button>
+            </div>
+          )}
 
           {/* Social Proof */}
           <div className="mt-12 flex flex-wrap items-center justify-center gap-6 text-xs text-slate-500">

@@ -15,7 +15,8 @@ import {
   ShieldAlert,
   LogOut,
   Zap,
-  ChevronRight
+  ChevronRight,
+  Download
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -24,6 +25,7 @@ interface SidebarProps {
   onNavigate: (view: string) => void;
   unreadNotifsCount?: number;
   onOpenUpgrade: () => void;
+  onOpenDownloadApp?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -32,6 +34,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onNavigate,
   unreadNotifsCount = 0,
   onOpenUpgrade,
+  onOpenDownloadApp,
 }) => {
   const currentView = propActive || propCurrent || 'dashboard';
   const { t } = useI18n();
@@ -108,6 +111,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
           );
         })}
+
+        {/* Install App Quick Action */}
+        {onOpenDownloadApp && (
+          <div className="pt-2">
+            <button
+              id="sidebar-download-app-btn"
+              type="button"
+              onClick={onOpenDownloadApp}
+              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-bold bg-teal-50 hover:bg-teal-100 dark:bg-teal-950/50 dark:hover:bg-teal-900/60 text-teal-800 dark:text-teal-300 border border-teal-200 dark:border-teal-800/80 transition cursor-pointer"
+            >
+              <div className="flex items-center gap-3">
+                <Download className="w-4.5 h-4.5 text-teal-600 dark:text-teal-400" />
+                <span>Download App</span>
+              </div>
+              <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-teal-600 text-white font-bold uppercase">
+                PWA
+              </span>
+            </button>
+          </div>
+        )}
 
         {/* Admin Navigation */}
         {isAdmin && (

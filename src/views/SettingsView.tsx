@@ -16,17 +16,27 @@ import {
   RotateCcw,
   Check,
   AlertTriangle,
-  Loader2
+  Loader2,
+  Download,
+  Smartphone,
+  Laptop,
+  Palette
 } from 'lucide-react';
 
 interface SettingsViewProps {
   onOpenUpgrade: () => void;
   onDataReset: () => Promise<void>;
+  isDarkMode?: boolean;
+  onToggleDarkMode?: () => void;
+  onOpenDownloadApp?: () => void;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
   onOpenUpgrade,
   onDataReset,
+  isDarkMode = false,
+  onToggleDarkMode,
+  onOpenDownloadApp,
 }) => {
   const { t, isRTL } = useI18n();
   const { user, updateUserProfile, refreshUser } = useAuth();
@@ -285,6 +295,102 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Appearance & Dark Mode Settings */}
+      <div className="p-6 rounded-3xl bg-white dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 shadow-xs space-y-4">
+        <div className="flex items-center gap-2">
+          <Palette className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+          <h3 className="font-bold text-slate-900 dark:text-white text-sm">
+            Appearance & Theme Mode
+          </h3>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <button
+            type="button"
+            onClick={() => {
+              if (isDarkMode && onToggleDarkMode) onToggleDarkMode();
+            }}
+            className={`p-4 rounded-2xl border text-left transition cursor-pointer flex items-center justify-between ${
+              !isDarkMode
+                ? 'bg-teal-50/80 border-teal-500 ring-2 ring-teal-500/20 shadow-xs'
+                : 'bg-slate-50 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 hover:bg-slate-100'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center">
+                <Sun className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-xs font-bold text-slate-900 dark:text-white">Light Mode</div>
+                <div className="text-[11px] text-slate-500 dark:text-slate-400">Bright, high-contrast theme</div>
+              </div>
+            </div>
+            {!isDarkMode && <Check className="w-4 h-4 text-teal-600 font-bold" />}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              if (!isDarkMode && onToggleDarkMode) onToggleDarkMode();
+            }}
+            className={`p-4 rounded-2xl border text-left transition cursor-pointer flex items-center justify-between ${
+              isDarkMode
+                ? 'bg-teal-950/40 border-teal-500 ring-2 ring-teal-500/20 shadow-xs'
+                : 'bg-slate-50 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 hover:bg-slate-100'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-indigo-950 text-indigo-400 flex items-center justify-center">
+                <Moon className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-xs font-bold text-slate-900 dark:text-white">Dark Mode</div>
+                <div className="text-[11px] text-slate-500 dark:text-slate-400">Low-light OLED eye comfort</div>
+              </div>
+            </div>
+            {isDarkMode && <Check className="w-4 h-4 text-teal-400 font-bold" />}
+          </button>
+        </div>
+      </div>
+
+      {/* App Download / PWA Installation Card */}
+      {onOpenDownloadApp && (
+        <div className="p-6 rounded-3xl bg-gradient-to-br from-teal-900 via-teal-800 to-slate-900 text-white shadow-xl space-y-4">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center text-teal-300">
+                <Download className="w-6 h-6 animate-pulse" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-400 text-slate-950">
+                    Standalone App
+                  </span>
+                  <span className="text-xs text-teal-200">Mobile & Desktop PWA</span>
+                </div>
+                <h3 className="font-extrabold text-base text-white mt-0.5">
+                  Download Hishab Khata Application
+                </h3>
+              </div>
+            </div>
+
+            <button
+              id="settings-download-app-btn"
+              type="button"
+              onClick={onOpenDownloadApp}
+              className="px-5 py-2.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-amber-400/20 transition cursor-pointer flex items-center gap-2"
+            >
+              <Download className="w-4 h-4" />
+              <span>Download / Install Now</span>
+            </button>
+          </div>
+
+          <p className="text-xs text-teal-100/90 leading-relaxed">
+            Install Hishab Khata directly to your Android, iPhone, or PC/Mac desktop. Enjoy instant offline access, home screen shortcuts, and fast performance without app store installation.
+          </p>
+        </div>
+      )}
 
       {/* Reset / Demo Data Reset */}
       <div className="p-6 rounded-3xl bg-red-50/50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 shadow-xs space-y-3">

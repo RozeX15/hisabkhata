@@ -25,6 +25,7 @@ import { LoanModal, LoanPaymentModal } from './components/LoanModal';
 import { UpgradeModal } from './components/UpgradeModal';
 import { AiAdvisorModal } from './components/AiAdvisorModal';
 import { NotificationDrawer } from './components/NotificationDrawer';
+import { DownloadAppModal } from './components/DownloadAppModal';
 
 // Views
 import { LandingPage } from './views/LandingPage';
@@ -83,13 +84,16 @@ const MainAppContent: React.FC = () => {
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [isNotifDrawerOpen, setIsNotifDrawerOpen] = useState(false);
+  const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
 
   // Sync dark mode class
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
+      document.body.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
+      document.body.classList.remove('dark');
     }
     localStorage.setItem('hishab_dark_mode', String(isDarkMode));
   }, [isDarkMode]);
@@ -164,19 +168,26 @@ const MainAppContent: React.FC = () => {
     }
 
     return (
-      <LandingPage
-        onGetStarted={() => setActiveView('auth')}
-        onLogin={() => setActiveView('auth')}
-        onDemoUser={async () => {
-          await loginDemoUser();
-          setActiveView('dashboard');
-          loadAllData();
-        }}
-        onViewLegal={(type) => {
-          setLegalType(type);
-          setActiveView('legal');
-        }}
-      />
+      <>
+        <LandingPage
+          onGetStarted={() => setActiveView('auth')}
+          onLogin={() => setActiveView('auth')}
+          onDemoUser={async () => {
+            await loginDemoUser();
+            setActiveView('dashboard');
+            loadAllData();
+          }}
+          onViewLegal={(type) => {
+            setLegalType(type);
+            setActiveView('legal');
+          }}
+          onOpenDownloadApp={() => setIsDownloadModalOpen(true)}
+        />
+        <DownloadAppModal
+          isOpen={isDownloadModalOpen}
+          onClose={() => setIsDownloadModalOpen(false)}
+        />
+      </>
     );
   }
 
@@ -291,6 +302,7 @@ const MainAppContent: React.FC = () => {
         activeView={activeView}
         onNavigate={(v) => setActiveView(v)}
         onOpenUpgrade={() => setIsUpgradeModalOpen(true)}
+        onOpenDownloadApp={() => setIsDownloadModalOpen(true)}
       />
 
       {/* Main App Canvas */}
@@ -306,6 +318,7 @@ const MainAppContent: React.FC = () => {
           unreadNotificationsCount={unreadNotifsCount}
           isDarkMode={isDarkMode}
           onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
+          onOpenDownloadApp={() => setIsDownloadModalOpen(true)}
         />
 
         {/* Dynamic View Switcher */}
@@ -428,6 +441,9 @@ const MainAppContent: React.FC = () => {
             <SettingsView
               onOpenUpgrade={() => setIsUpgradeModalOpen(true)}
               onDataReset={handleResetData}
+              isDarkMode={isDarkMode}
+              onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
+              onOpenDownloadApp={() => setIsDownloadModalOpen(true)}
             />
           )}
 
@@ -532,6 +548,11 @@ const MainAppContent: React.FC = () => {
         notifications={notifications}
         onMarkRead={handleMarkNotifRead}
         onMarkAllRead={handleMarkAllNotifsRead}
+      />
+
+      <DownloadAppModal
+        isOpen={isDownloadModalOpen}
+        onClose={() => setIsDownloadModalOpen(false)}
       />
     </div>
   );

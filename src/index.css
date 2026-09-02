@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @layer base {
   :root {
     --font-sans: 'Plus Jakarta Sans', 'Noto Sans Bengali', 'Noto Sans Arabic', 'Noto Sans Devanagari', 'Noto Sans SC', 'Noto Sans JP', 'Noto Sans KR', system-ui, -apple-system, sans-serif;
@@ -13,6 +15,14 @@
   body {
     background-color: #F8FAFC;
     color: #0F172A;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  html.dark body,
+  .dark body,
+  body.dark {
+    background-color: #020617;
+    color: #F8FAFC;
   }
 
   /* RTL Support */
