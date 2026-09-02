@@ -352,6 +352,31 @@ const MainAppContent: React.FC = () => {
     setUnreadNotifsCount(0);
   };
 
+  const handleDeleteNotif = async (id: string) => {
+    try {
+      await api.deleteNotification(id);
+      setNotifications((prev) => {
+        const target = prev.find(n => n.id === id);
+        if (target && !target.isRead) {
+          setUnreadNotifsCount((c) => Math.max(0, c - 1));
+        }
+        return prev.filter((n) => n.id !== id);
+      });
+    } catch (err) {
+      console.error('Failed to delete notification:', err);
+    }
+  };
+
+  const handleClearAllNotifs = async () => {
+    try {
+      await api.clearAllNotifications();
+      setNotifications([]);
+      setUnreadNotifsCount(0);
+    } catch (err) {
+      console.error('Failed to clear notifications:', err);
+    }
+  };
+
   // Reset Demo Data
   const handleResetData = async () => {
     await api.resetDemoData();
@@ -611,6 +636,8 @@ const MainAppContent: React.FC = () => {
         notifications={notifications}
         onMarkRead={handleMarkNotifRead}
         onMarkAllRead={handleMarkAllNotifsRead}
+        onDelete={handleDeleteNotif}
+        onClearAll={handleClearAllNotifs}
       />
 
       <DownloadAppModal

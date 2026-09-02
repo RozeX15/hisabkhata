@@ -163,6 +163,7 @@ export interface AppNotification {
   params?: Record<string, any>;
   isRead: boolean;
   readBy?: string[]; // user IDs who have read this global notification
+  deletedBy?: string[]; // user IDs who have dismissed/deleted this notification
   createdAt: string;
 }
 
@@ -305,4 +306,32 @@ export interface UserPresence {
   browser: string;
   lastAction?: string;
 }
+
+export interface LiveUserActivity {
+  id: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  avatarUrl?: string;
+  action: string;
+  category: 'NAVIGATION' | 'TRANSACTION' | 'WALLET' | 'BUDGET' | 'SAVINGS' | 'LOAN' | 'SUBSCRIPTION' | 'SETTINGS' | 'AUTH';
+  details: string;
+  deviceType?: 'desktop' | 'mobile' | 'tablet';
+  currentView?: string;
+  timestamp: string;
+}
+
+export interface EmailLogEntry {
+  id: string;
+  to: string;
+  from: string;
+  subject: string;
+  type: 'admin_subscription_alert' | 'user_subscription_approved' | 'user_subscription_rejected' | 'security_alert';
+  preview: string;
+  htmlContent?: string;
+  status: 'sent' | 'queued' | 'delivered';
+  metadata?: Record<string, any>;
+  sentAt: string;
+}
+
 

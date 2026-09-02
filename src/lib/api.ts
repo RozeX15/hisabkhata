@@ -13,7 +13,9 @@ import {
   SystemPlanLimits,
   SubscriptionPayment,
   AdminPaymentConfig,
-  UserPresence
+  UserPresence,
+  LiveUserActivity,
+  EmailLogEntry
 } from '../types';
 
 const API_BASE = '/api';
@@ -152,6 +154,8 @@ export const api = {
   pollNotifications: (since?: string) => request<{ notifications: AppNotification[]; unreadCount: number; serverTime: string }>(`/notifications/poll${since ? `?since=${encodeURIComponent(since)}` : ''}`),
   markNotificationRead: (id: string) => request<{ success: boolean }>(`/notifications/${id}/read`, { method: 'PUT' }),
   markAllNotificationsRead: () => request<{ success: boolean }>('/notifications/read-all', { method: 'PUT' }),
+  deleteNotification: (id: string) => request<{ success: boolean }>(`/notifications/${id}`, { method: 'DELETE' }),
+  clearAllNotifications: () => request<{ success: boolean }>('/notifications/clear-all', { method: 'DELETE' }),
 
   // Languages & Translations
   getLanguages: () => request<LanguageInfo[]>('/languages'),
@@ -160,6 +164,8 @@ export const api = {
   sendHeartbeat: (data: { currentView?: string; deviceType?: string; browser?: string; lastAction?: string }) =>
     request<{ success: boolean; serverTime: string }>('/presence/heartbeat', { method: 'POST', body: JSON.stringify(data) }),
   getAdminPresences: () => request<UserPresence[]>('/admin/presences'),
+  getLiveActivities: () => request<LiveUserActivity[]>('/admin/live-activities'),
+  getEmailLogs: () => request<EmailLogEntry[]>('/admin/email-logs'),
 
   // Subscription Payments & Config
   getSubscriptionConfig: () => request<AdminPaymentConfig>('/subscriptions/config'),

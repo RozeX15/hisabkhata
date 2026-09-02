@@ -15,10 +15,17 @@ import {
   AdminLog,
   SubscriptionPayment,
   AdminPaymentConfig,
-  UserPresence
+  UserPresence,
+  LiveUserActivity,
+  EmailLogEntry
 } from '../types';
 import { generateSmartInsights } from '../lib/insights';
 import { GoogleGenAI } from '@google/genai';
+import {
+  sendAdminSubscriptionNotification,
+  sendUserApprovalNotification,
+  sendUserRejectionNotification
+} from './emailService';
 
 const router = Router();
 
@@ -38,6 +45,43 @@ function logAdmin(req: AuthRequest, action: string, targetType: string, targetId
   };
   db.adminLogs.unshift(log);
   saveDb();
+}
+
+// Helper to log real-time user activities for live admin monitoring
+export function logUserActivity(
+  user: { id: string; name: string; email: string; avatarUrl?: string },
+  action: string,
+  category: 'NAVIGATION' | 'TRANSACTION' | 'WALLET' | 'BUDGET' | 'SAVINGS' | 'LOAN' | 'SUBSCRIPTION' | 'SETTINGS' | 'AUTH',
+  details: string,
+  extra?: { currentView?: string; deviceType?: 'desktop' | 'mobile' | 'tablet' }
+) {
+  const db = getDb();
+  if (!db.liveActivities) db.liveActivities = [];
+  const now = new Date().toISOString();
+  const activity: LiveUserActivity = {
+    id: `act-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+    userId: user.id,
+    userName: user.name,
+    userEmail: user.email,
+    avatarUrl: user.avatarUrl,
+    action,
+    category,
+    details,
+    currentView: extra?.currentView || 'dashboard',
+    deviceType: extra?.deviceType || 'desktop',
+    timestamp: now,
+  };
+  db.liveActivities.unshift(activity);
+  if (db.liveActivities.length > 500) {
+    db.liveActivities = db.liveActivities.slice(0, 500);
+  }
+
+  // Update presence radar
+  if (!db.userPresences) db.userPresences = {};
+  if (db.userPresences[user.id]) {
+    db.userPresences[user.id].lastAction = details;
+    db.userPresences[user.id].lastActiveAt = now;
+  }
 }
 
 // -------------------------------------------------------------
@@ -1294,13 +1338,22 @@ Provide an empowering, highly practical, fintech-grade response with bullet poin
 });
 
 // -------------------------------------------------------------
-// 10. NOTIFICATIONS API
+// 10. NOTIFICATIONS API (Strict User Isolation & Read/Delete Handlers)
 // -------------------------------------------------------------
 
 router.get('/notifications', authMiddleware, (req: AuthRequest, res) => {
   const db = getDb();
   const userId = req.user!.id;
-  const notifs = db.notifications.filter(n => n.userId === userId || n.userId === null);
+  
+  // Strictly filter notifications: Only the authenticated user's notifications or active global broadcasts
+  const notifs = db.notifications.filter(n => {
+    const isOwner = n.userId === userId;
+    const isGlobal = n.userId === null;
+    if (!isOwner && !isGlobal) return false;
+    // Exclude if dismissed/deleted by this user
+    if (n.deletedBy && n.deletedBy.includes(userId)) return false;
+    return true;
+  });
   
   const formatted = notifs.map(n => {
     const isGlobal = n.userId === null;
@@ -1320,8 +1373,11 @@ router.get('/notifications/poll', authMiddleware, (req: AuthRequest, res) => {
   const since = req.query.since as string | undefined;
 
   const userNotifs = db.notifications.filter(n => {
-    const matchesUser = n.userId === userId || n.userId === null;
-    if (!matchesUser) return false;
+    const isOwner = n.userId === userId;
+    const isGlobal = n.userId === null;
+    if (!isOwner && !isGlobal) return false;
+    if (n.deletedBy && n.deletedBy.includes(userId)) return false;
+    
     if (since) {
       return new Date(n.createdAt).getTime() > new Date(since).getTime();
     }
@@ -1377,6 +1433,51 @@ router.put('/notifications/read-all', authMiddleware, (req: AuthRequest, res) =>
       n.isRead = true;
     }
   });
+  saveDb();
+  res.json({ success: true });
+});
+
+router.delete('/notifications/:id', authMiddleware, (req: AuthRequest, res) => {
+  const db = getDb();
+  const userId = req.user!.id;
+  const notifIndex = db.notifications.findIndex(n => n.id === req.params.id);
+  
+  if (notifIndex !== -1) {
+    const notif = db.notifications[notifIndex];
+    if (notif.userId === userId) {
+      // User's own notification: remove completely
+      db.notifications.splice(notifIndex, 1);
+    } else if (notif.userId === null) {
+      // Global notification: mark as deleted for this specific user
+      if (!notif.deletedBy) notif.deletedBy = [];
+      if (!notif.deletedBy.includes(userId)) {
+        notif.deletedBy.push(userId);
+      }
+    }
+    saveDb();
+  }
+  res.json({ success: true });
+});
+
+router.delete('/notifications/clear-all', authMiddleware, (req: AuthRequest, res) => {
+  const db = getDb();
+  const userId = req.user!.id;
+  
+  // Remove user-specific notifications and mark global ones as deleted for this user
+  db.notifications = db.notifications.filter(n => {
+    if (n.userId === userId) {
+      return false; // delete
+    }
+    if (n.userId === null) {
+      if (!n.deletedBy) n.deletedBy = [];
+      if (!n.deletedBy.includes(userId)) {
+        n.deletedBy.push(userId);
+      }
+      return true;
+    }
+    return true;
+  });
+
   saveDb();
   res.json({ success: true });
 });
@@ -1513,6 +1614,9 @@ router.post('/presence/heartbeat', authMiddleware, (req: AuthRequest, res) => {
     db.userPresences = {};
   }
 
+  const previous = db.userPresences[user.id];
+  const viewChanged = !previous || previous.currentView !== currentView;
+
   db.userPresences[user.id] = {
     userId: user.id,
     userName: user.name,
@@ -1525,8 +1629,19 @@ router.post('/presence/heartbeat', authMiddleware, (req: AuthRequest, res) => {
     lastActiveAt: now,
     deviceType: deviceType || 'desktop',
     browser: String(browser),
-    lastAction: lastAction ? String(lastAction) : undefined,
+    lastAction: lastAction ? String(lastAction) : `Active in ${currentView}`,
   };
+
+  // If view changed, append to liveActivities feed
+  if (viewChanged) {
+    logUserActivity(
+      user,
+      'NAVIGATE',
+      'NAVIGATION',
+      `Switched view to ${currentView.toUpperCase()}`,
+      { currentView, deviceType }
+    );
+  }
 
   saveDb();
   res.json({ success: true, serverTime: now });
@@ -1654,7 +1769,7 @@ router.post('/subscriptions/submit-payment', authMiddleware, (req: AuthRequest, 
   if (!db.subscriptionPayments) db.subscriptionPayments = [];
   db.subscriptionPayments.unshift(newPayment);
 
-  // Send acknowledgement notification to user
+  // 1. Send in-app confirmation notification to user
   db.notifications.unshift({
     id: `notif-${Date.now()}`,
     userId: user.id,
@@ -1664,6 +1779,47 @@ router.post('/subscriptions/submit-payment', authMiddleware, (req: AuthRequest, 
     isRead: false,
     createdAt: now,
   });
+
+  // 2. Alert all Admins via In-App High Priority Notification
+  const adminUsers = db.users.filter(u => u.role === 'admin');
+  adminUsers.forEach(adm => {
+    db.notifications.unshift({
+      id: `notif-adm-${Date.now()}-${adm.id}`,
+      userId: adm.id,
+      type: 'system',
+      titleKey: '🔔 New PRO Upgrade Payment Submitted',
+      messageKey: `${user.name} (${user.email}) submitted ${newPayment.amount} ${newPayment.currency} via ${newPayment.paymentMethod.toUpperCase()} (TrxID: ${newPayment.transactionId}). Please verify and approve.`,
+      isRead: false,
+      createdAt: now,
+    });
+  });
+
+  // 3. Dispatch Email Alert to Admin(s) and store in emailLogs
+  const adminEmails = adminUsers.map(a => a.email);
+  const emailLogsGenerated = sendAdminSubscriptionNotification(adminEmails, {
+    userName: user.name,
+    userEmail: user.email,
+    plan: 'PRO',
+    billingCycle: newPayment.billingCycle,
+    amount: newPayment.amount,
+    currency: newPayment.currency,
+    paymentMethod: newPayment.paymentMethod,
+    senderNumberOrAccount: newPayment.senderNumberOrAccount,
+    transactionId: newPayment.transactionId,
+    notes: newPayment.notes,
+  });
+
+  if (!db.emailLogs) db.emailLogs = [];
+  db.emailLogs.unshift(...emailLogsGenerated);
+
+  // 4. Log User Live Activity
+  logUserActivity(
+    user,
+    'SUBMIT_SUBSCRIPTION',
+    'SUBSCRIPTION',
+    `Applied for PRO (${newPayment.billingCycle}) via ${newPayment.paymentMethod.toUpperCase()} (${newPayment.amount} ${newPayment.currency}), TrxID: ${newPayment.transactionId}`,
+    { currentView: 'upgrade' }
+  );
 
   saveDb();
   res.status(201).json({ success: true, payment: newPayment });
@@ -1699,7 +1855,7 @@ router.put('/admin/subscription-payments/:id/approve', adminOnly, (req: AuthRequ
     user.plan = 'pro';
     user.updatedAt = now;
 
-    // Send congratulatory notification
+    // Send congratulatory in-app notification to user
     db.notifications.unshift({
       id: `notif-${Date.now()}`,
       userId: user.id,
@@ -1709,6 +1865,26 @@ router.put('/admin/subscription-payments/:id/approve', adminOnly, (req: AuthRequ
       isRead: false,
       createdAt: now,
     });
+
+    // Dispatch Official Approval Receipt Email
+    const approvalEmail = sendUserApprovalNotification(user, {
+      amount: payment.amount,
+      currency: payment.currency,
+      billingCycle: payment.billingCycle,
+      paymentMethod: payment.paymentMethod,
+      transactionId: payment.transactionId,
+    });
+
+    if (!db.emailLogs) db.emailLogs = [];
+    db.emailLogs.unshift(approvalEmail);
+
+    // Log live activity
+    logUserActivity(
+      user,
+      'SUBSCRIPTION_UPGRADED',
+      'SUBSCRIPTION',
+      `PRO Subscription verified & activated by Admin (${payment.amount} ${payment.currency})`
+    );
   }
 
   logAdmin(req, 'APPROVE_SUBSCRIPTION_PAYMENT', 'PAYMENT', payment.id, `Approved PRO payment for ${payment.userEmail} (${payment.amount} ${payment.currency})`);
@@ -1731,7 +1907,9 @@ router.put('/admin/subscription-payments/:id/reject', adminOnly, (req: AuthReque
   payment.reviewedAt = now;
   payment.reviewedBy = req.user!.email;
 
-  // Send rejection notification
+  const targetUser = db.users.find(u => u.id === payment.userId);
+
+  // Send rejection in-app notification
   db.notifications.unshift({
     id: `notif-${Date.now()}`,
     userId: payment.userId,
@@ -1742,9 +1920,32 @@ router.put('/admin/subscription-payments/:id/reject', adminOnly, (req: AuthReque
     createdAt: now,
   });
 
+  if (targetUser) {
+    // Dispatch Rejection Email
+    const rejectionEmail = sendUserRejectionNotification(targetUser, {
+      amount: payment.amount,
+      currency: payment.currency,
+      paymentMethod: payment.paymentMethod,
+      transactionId: payment.transactionId,
+      adminNotes: payment.adminNotes,
+    });
+    if (!db.emailLogs) db.emailLogs = [];
+    db.emailLogs.unshift(rejectionEmail);
+  }
+
   logAdmin(req, 'REJECT_SUBSCRIPTION_PAYMENT', 'PAYMENT', payment.id, `Rejected payment for ${payment.userEmail}: ${payment.adminNotes}`);
   saveDb();
   res.json({ success: true, payment });
+});
+
+router.get('/admin/live-activities', adminOnly, (req: AuthRequest, res) => {
+  const db = getDb();
+  res.json((db.liveActivities || []).slice(0, 100));
+});
+
+router.get('/admin/email-logs', adminOnly, (req: AuthRequest, res) => {
+  const db = getDb();
+  res.json((db.emailLogs || []).slice(0, 100));
 });
 
 // -------------------------------------------------------------

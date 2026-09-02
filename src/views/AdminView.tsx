@@ -7,8 +7,11 @@ import {
   UserPresence,
   SubscriptionPayment,
   AdminPaymentConfig,
-  PaymentMethodType
+  PaymentMethodType,
+  LiveUserActivity,
+  EmailLogEntry
 } from '../types';
+import { BKashIcon, NagadIcon, RocketIcon, BankIconBadge, PaymentMethodBadge } from '../components/PaymentIcons';
 import confetti from 'canvas-confetti';
 import {
   ShieldAlert,
@@ -41,7 +44,13 @@ import {
   Clock,
   Radio,
   UserCheck,
-  UserX
+  UserX,
+  Mail,
+  History,
+  ShieldCheck,
+  FileText,
+  Zap,
+  ListFilter
 } from 'lucide-react';
 
 export const AdminView: React.FC = () => {
@@ -49,12 +58,14 @@ export const AdminView: React.FC = () => {
   const { user } = useAuth();
 
   // Active Main Tab
-  const [activeTab, setActiveTab] = useState<'presence' | 'payments' | 'users' | 'broadcast' | 'config'>('presence');
+  const [activeTab, setActiveTab] = useState<'presence' | 'activities' | 'payments' | 'emailLogs' | 'users' | 'broadcast' | 'config'>('presence');
 
   // Core Data
   const [stats, setStats] = useState<any>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [presences, setPresences] = useState<UserPresence[]>([]);
+  const [liveActivities, setLiveActivities] = useState<LiveUserActivity[]>([]);
+  const [emailLogs, setEmailLogs] = useState<EmailLogEntry[]>([]);
   const [payments, setPayments] = useState<SubscriptionPayment[]>([]);
   const [paymentConfig, setPaymentConfig] = useState<AdminPaymentConfig | null>(null);
   const [loading, setLoading] = useState(true);
@@ -96,12 +107,14 @@ export const AdminView: React.FC = () => {
 
   const fetchAllAdminData = async () => {
     try {
-      const [statsRes, usersRes, presencesRes, paymentsRes, configRes] = await Promise.all([
+      const [statsRes, usersRes, presencesRes, paymentsRes, configRes, activitiesRes, emailsRes] = await Promise.all([
         api.getAdminStats(),
         api.getAdminUsers(),
         api.getAdminPresences(),
         api.getAdminSubscriptionPayments(),
         api.getSubscriptionConfig(),
+        api.getLiveActivities(),
+        api.getEmailLogs(),
       ]);
 
       setStats((statsRes as any).stats || statsRes);
@@ -110,6 +123,8 @@ export const AdminView: React.FC = () => {
       setPayments(paymentsRes || []);
       setPaymentConfig(configRes);
       setConfigForm(configRes || {});
+      setLiveActivities(activitiesRes || []);
+      setEmailLogs(emailsRes || []);
     } catch (err: any) {
       console.error('Failed to load admin suite data', err);
     } finally {
@@ -120,11 +135,13 @@ export const AdminView: React.FC = () => {
 
   useEffect(() => {
     fetchAllAdminData();
-    // Auto refresh presence every 15 seconds
+    // Auto refresh presence & activities every 10 seconds
     const interval = setInterval(() => {
       api.getAdminPresences().then(res => setPresences(res || [])).catch(() => {});
       api.getAdminSubscriptionPayments().then(res => setPayments(res || [])).catch(() => {});
-    }, 15000);
+      api.getLiveActivities().then(res => setLiveActivities(res || [])).catch(() => {});
+      api.getEmailLogs().then(res => setEmailLogs(res || [])).catch(() => {});
+    }, 10000);
     return () => clearInterval(interval);
   }, []);
 
@@ -399,11 +416,25 @@ export const AdminView: React.FC = () => {
               : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
           }`}
         >
-          <Activity className="w-4 h-4" />
-          <span>Live User Telemetry</span>
+          <Radio className="w-4 h-4 text-emerald-400" />
+          <span>Live Radar</span>
           <span className="px-2 py-0.5 rounded-full bg-emerald-400 text-slate-950 text-[10px] font-black">
             {onlineCount}
           </span>
+        </button>
+
+        <button
+          id="admin-tab-activities"
+          type="button"
+          onClick={() => setActiveTab('activities')}
+          className={`px-4 py-2.5 rounded-2xl transition cursor-pointer flex items-center gap-2 shrink-0 ${
+            activeTab === 'activities'
+              ? 'bg-teal-700 text-white shadow-md'
+              : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
+          }`}
+        >
+          <Activity className="w-4 h-4 text-blue-400" />
+          <span>Live User Activity ({liveActivities.length})</span>
         </button>
 
         <button
@@ -416,13 +447,27 @@ export const AdminView: React.FC = () => {
               : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
           }`}
         >
-          <CreditCard className="w-4 h-4" />
-          <span>Subscription Payments</span>
+          <CreditCard className="w-4 h-4 text-pink-400" />
+          <span>Subscription Inflow</span>
           {pendingPaymentsCount > 0 && (
             <span className="px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 text-[10px] font-black animate-pulse">
-              {pendingPaymentsCount} New
+              {pendingPaymentsCount} Pending
             </span>
           )}
+        </button>
+
+        <button
+          id="admin-tab-emaillogs"
+          type="button"
+          onClick={() => setActiveTab('emailLogs')}
+          className={`px-4 py-2.5 rounded-2xl transition cursor-pointer flex items-center gap-2 shrink-0 ${
+            activeTab === 'emailLogs'
+              ? 'bg-teal-700 text-white shadow-md'
+              : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
+          }`}
+        >
+          <Mail className="w-4 h-4 text-purple-400" />
+          <span>Email Logs ({emailLogs.length})</span>
         </button>
 
         <button
@@ -450,7 +495,7 @@ export const AdminView: React.FC = () => {
           }`}
         >
           <Bell className="w-4 h-4" />
-          <span>Global Broadcasts</span>
+          <span>Broadcasts</span>
         </button>
 
         <button
@@ -464,7 +509,7 @@ export const AdminView: React.FC = () => {
           }`}
         >
           <Settings className="w-4 h-4" />
-          <span>Admin Payment Accounts</span>
+          <span>Pricing & Accounts</span>
         </button>
       </div>
 
@@ -589,7 +634,105 @@ export const AdminView: React.FC = () => {
       )}
 
       {/* ------------------------------------------------------------- */}
-      {/* TAB 2: SUBSCRIPTION PAYMENTS VERIFICATION */}
+      {/* TAB 2: LIVE USER ACTIVITIES LOG */}
+      {/* ------------------------------------------------------------- */}
+      {activeTab === 'activities' && (
+        <div className="space-y-4">
+          <div className="p-5 rounded-3xl bg-white dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h3 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                <Activity className="w-5 h-5 text-blue-500 animate-pulse" />
+                <span>Live User Activity Radar & Stream</span>
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Real-time audit log of all actions across the platform (wallet creation, ledger entries, logins, subscription requests, updates).
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="px-3 py-1 bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 rounded-full text-xs font-black">
+                {liveActivities.length} Events Tracked
+              </span>
+            </div>
+          </div>
+
+          {liveActivities.length === 0 ? (
+            <div className="py-16 text-center rounded-3xl bg-white dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 p-6">
+              <Activity className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+              <p className="text-sm font-bold text-slate-800 dark:text-white">No Live Activity Events Yet</p>
+              <p className="text-xs text-slate-400 mt-0.5">Activity events will stream in automatically as users navigate and interact.</p>
+            </div>
+          ) : (
+            <div className="bg-white dark:bg-slate-800/90 rounded-3xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs sm:text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-100 dark:border-slate-700/80 bg-slate-50/70 dark:bg-slate-900/50 text-slate-400 font-bold uppercase text-[10px] tracking-wider">
+                      <th className="py-3 px-4">Time</th>
+                      <th className="py-3 px-4">User</th>
+                      <th className="py-3 px-4">Action</th>
+                      <th className="py-3 px-4">Activity Description</th>
+                      <th className="py-3 px-4">Device / IP</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
+                    {liveActivities.map((act) => {
+                      const isAuth = act.category === 'AUTH';
+                      const isSub = act.category === 'SUBSCRIPTION';
+                      const isTx = act.category === 'TRANSACTION' || act.category === 'WALLET';
+                      const isNav = act.category === 'NAVIGATION';
+                      
+                      return (
+                        <tr key={act.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-700/40 transition">
+                          <td className="py-3 px-4 text-[11px] font-mono text-slate-400 whitespace-nowrap">
+                            {new Date(act.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="font-bold text-slate-900 dark:text-white text-xs">{act.userName}</div>
+                            <div className="text-[11px] text-slate-400 truncate max-w-[160px]">{act.userEmail}</div>
+                          </td>
+                          <td className="py-3 px-4 whitespace-nowrap">
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wide ${
+                                isAuth
+                                  ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300'
+                                  : isSub
+                                  ? 'bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300'
+                                  : isTx
+                                  ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
+                                  : isNav
+                                  ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
+                                  : 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300'
+                              }`}
+                            >
+                              {act.action}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <p className="text-xs text-slate-800 dark:text-slate-200 font-medium">
+                              {act.details}
+                            </p>
+                            {act.currentView && (
+                              <p className="text-[10px] text-teal-600 dark:text-teal-400 font-medium mt-0.5">
+                                View: {act.currentView}
+                              </p>
+                            )}
+                          </td>
+                          <td className="py-3 px-4 text-[11px] text-slate-400 whitespace-nowrap capitalize">
+                            {act.deviceType || 'Desktop'}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ------------------------------------------------------------- */}
+      {/* TAB 3: SUBSCRIPTION PAYMENTS VERIFICATION */}
       {/* ------------------------------------------------------------- */}
       {activeTab === 'payments' && (
         <div className="space-y-4">
@@ -600,7 +743,7 @@ export const AdminView: React.FC = () => {
                 <span>Subscription Payment Inflow & Verification</span>
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Verify bKash, Nagad, Rocket & Bank transfers submitted by users. Approving elevates user to PRO instantly.
+                Verify bKash, Nagad, Rocket & Bank transfers submitted by users. Approving elevates user to PRO instantly and dispatches a verified email notification.
               </p>
             </div>
 
@@ -656,20 +799,8 @@ export const AdminView: React.FC = () => {
                   className="p-5 rounded-3xl bg-white dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4"
                 >
                   <div className="space-y-2 flex-1">
-                    <div className="flex items-center gap-2.5">
-                      <span
-                        className={`px-2.5 py-1 rounded-xl text-xs font-black uppercase tracking-wider text-white ${
-                          p.paymentMethod === 'bkash'
-                            ? 'bg-pink-600'
-                            : p.paymentMethod === 'nagad'
-                            ? 'bg-orange-600'
-                            : p.paymentMethod === 'rocket'
-                            ? 'bg-purple-600'
-                            : 'bg-teal-700'
-                        }`}
-                      >
-                        {p.paymentMethod}
-                      </span>
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                      <PaymentMethodBadge method={p.paymentMethod} />
                       <span className="text-base font-black text-slate-900 dark:text-white">
                         {p.amount} {p.currency}
                       </span>
@@ -677,7 +808,7 @@ export const AdminView: React.FC = () => {
                         ({p.billingCycle} plan)
                       </span>
                       <span
-                        className={`ml-auto md:ml-2 px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                        className={`ml-auto md:ml-2 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
                           p.status === 'approved'
                             ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
                             : p.status === 'rejected'
@@ -758,6 +889,82 @@ export const AdminView: React.FC = () => {
                       </button>
                     </div>
                   )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ------------------------------------------------------------- */}
+      {/* TAB 4: EMAIL NOTIFICATION AUDIT LOGS */}
+      {/* ------------------------------------------------------------- */}
+      {activeTab === 'emailLogs' && (
+        <div className="space-y-4">
+          <div className="p-5 rounded-3xl bg-white dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h3 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                <Mail className="w-5 h-5 text-purple-500" />
+                <span>Transactional Email Dispatch & Audit Trail</span>
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Every subscription application and admin approval/rejection triggers a verified transactional email record.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="px-3 py-1 bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 rounded-full text-xs font-black">
+                {emailLogs.length} Dispatches Recorded
+              </span>
+            </div>
+          </div>
+
+          {emailLogs.length === 0 ? (
+            <div className="py-16 text-center rounded-3xl bg-white dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 p-6">
+              <Mail className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+              <p className="text-sm font-bold text-slate-800 dark:text-white">No Email Dispatches Yet</p>
+              <p className="text-xs text-slate-400 mt-0.5">When users submit subscription payments or admins approve/reject them, logs will appear here.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {emailLogs.map((log) => (
+                <div
+                  key={log.id}
+                  className="p-5 rounded-3xl bg-white dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 shadow-xs space-y-3"
+                >
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2.5 py-1 rounded-xl bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 text-xs font-black uppercase">
+                        {log.type.replace(/_/g, ' ')}
+                      </span>
+                      <h4 className="font-extrabold text-sm text-slate-900 dark:text-white">
+                        {log.subject}
+                      </h4>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold uppercase text-[10px]">
+                        {log.status}
+                      </span>
+                      <span className="text-slate-400 font-mono text-[11px]">
+                        {new Date(log.sentAt).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs bg-slate-50 dark:bg-slate-900/60 p-3.5 rounded-2xl border border-slate-100 dark:border-slate-700/60">
+                    <div>
+                      <span className="text-slate-400 font-medium text-[11px]">Recipient:</span>
+                      <p className="font-bold text-slate-800 dark:text-slate-200 font-mono">{log.to}</p>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 font-medium text-[11px]">Sender:</span>
+                      <p className="font-semibold text-teal-700 dark:text-teal-300 font-mono">{log.from}</p>
+                    </div>
+                  </div>
+
+                  {/* Email Body / Preview */}
+                  <div className="p-3.5 rounded-2xl bg-slate-900 text-slate-100 font-mono text-xs overflow-x-auto whitespace-pre-wrap border border-slate-800">
+                    {log.preview || log.htmlContent || 'Email content transmitted successfully.'}
+                  </div>
                 </div>
               ))}
             </div>

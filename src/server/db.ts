@@ -17,7 +17,9 @@ import {
   SystemPlanLimits,
   SubscriptionPayment,
   AdminPaymentConfig,
-  UserPresence
+  UserPresence,
+  LiveUserActivity,
+  EmailLogEntry
 } from '../types';
 import { defaultLanguages, baseTranslations } from '../lib/translations';
 
@@ -40,6 +42,8 @@ export interface DatabaseSchema {
   subscriptionPayments: SubscriptionPayment[];
   adminPaymentConfig: AdminPaymentConfig;
   userPresences: Record<string, UserPresence>;
+  liveActivities: LiveUserActivity[];
+  emailLogs: EmailLogEntry[];
 }
 
 const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), 'data');
@@ -275,6 +279,21 @@ function getSeedData(): DatabaseSchema {
 
   const subscriptionPayments: SubscriptionPayment[] = [];
   const userPresences: Record<string, UserPresence> = {};
+  const liveActivities: LiveUserActivity[] = [
+    {
+      id: 'act-001',
+      userId: demoUserId,
+      userName: 'User Account',
+      userEmail: 'user@hishabkhata.com',
+      action: 'SYSTEM_JOIN',
+      category: 'AUTH',
+      details: 'Logged into Hishab Khata Financial Dashboard',
+      deviceType: 'desktop',
+      currentView: 'dashboard',
+      timestamp: nowIso,
+    }
+  ];
+  const emailLogs: EmailLogEntry[] = [];
 
   return {
     users,
@@ -295,6 +314,8 @@ function getSeedData(): DatabaseSchema {
     subscriptionPayments,
     adminPaymentConfig,
     userPresences,
+    liveActivities,
+    emailLogs,
   };
 }
 
@@ -334,6 +355,8 @@ export function getDb(): DatabaseSchema {
         };
       }
       if (!inMemoryDb!.userPresences) inMemoryDb!.userPresences = {};
+      if (!inMemoryDb!.liveActivities) inMemoryDb!.liveActivities = [];
+      if (!inMemoryDb!.emailLogs) inMemoryDb!.emailLogs = [];
       return inMemoryDb!;
     } catch (err) {
       console.error('Error reading database file, reseeding:', err);

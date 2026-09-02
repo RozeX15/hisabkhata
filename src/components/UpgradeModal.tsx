@@ -3,6 +3,7 @@ import { useI18n } from '../lib/i18n';
 import { useAuth } from '../lib/auth';
 import { api } from '../lib/api';
 import { AdminPaymentConfig, SubscriptionPayment, PaymentMethodType } from '../types';
+import { BKashIcon, NagadIcon, RocketIcon, BankIconBadge } from './PaymentIcons';
 import confetti from 'canvas-confetti';
 import {
   X,
@@ -425,68 +426,68 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
                   <button
                     type="button"
                     onClick={() => setPaymentMethod('bkash')}
-                    className={`p-3 rounded-2xl border text-center transition cursor-pointer flex flex-col items-center gap-1.5 ${
+                    className={`p-3 rounded-2xl border text-center transition cursor-pointer flex flex-col items-center gap-2 ${
                       paymentMethod === 'bkash'
-                        ? 'border-pink-500 bg-pink-50 dark:bg-pink-950/40 text-pink-700 dark:text-pink-300 ring-2 ring-pink-400'
-                        : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-300'
+                        ? 'border-pink-500 bg-pink-50 dark:bg-pink-950/50 text-pink-900 dark:text-pink-200 ring-2 ring-pink-500 shadow-sm'
+                        : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
                     }`}
                   >
-                    <div className="w-8 h-8 rounded-xl bg-pink-600 text-white flex items-center justify-center font-black text-xs shadow-xs">
-                      bK
+                    <BKashIcon size={36} className="shadow-xs rounded-xl" />
+                    <div className="leading-tight">
+                      <span className="text-xs font-black block">bKash</span>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">{config?.bkashType === 'merchant' ? 'Merchant Pay' : 'Personal Send'}</span>
                     </div>
-                    <span className="text-xs font-extrabold">bKash</span>
-                    <span className="text-[10px] opacity-75">{config?.bkashType === 'merchant' ? 'Payment' : 'Send Money'}</span>
                   </button>
 
                   {/* Nagad */}
                   <button
                     type="button"
                     onClick={() => setPaymentMethod('nagad')}
-                    className={`p-3 rounded-2xl border text-center transition cursor-pointer flex flex-col items-center gap-1.5 ${
+                    className={`p-3 rounded-2xl border text-center transition cursor-pointer flex flex-col items-center gap-2 ${
                       paymentMethod === 'nagad'
-                        ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/40 text-orange-700 dark:text-orange-300 ring-2 ring-orange-400'
-                        : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-300'
+                        ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/50 text-orange-900 dark:text-orange-200 ring-2 ring-orange-500 shadow-sm'
+                        : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
                     }`}
                   >
-                    <div className="w-8 h-8 rounded-xl bg-orange-600 text-white flex items-center justify-center font-black text-xs shadow-xs">
-                      নগদ
+                    <NagadIcon size={36} className="shadow-xs rounded-xl" />
+                    <div className="leading-tight">
+                      <span className="text-xs font-black block">Nagad</span>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">{config?.nagadType === 'merchant' ? 'Merchant Pay' : 'Personal Send'}</span>
                     </div>
-                    <span className="text-xs font-extrabold">Nagad</span>
-                    <span className="text-[10px] opacity-75">{config?.nagadType === 'merchant' ? 'Payment' : 'Send Money'}</span>
                   </button>
 
                   {/* Rocket */}
                   <button
                     type="button"
                     onClick={() => setPaymentMethod('rocket')}
-                    className={`p-3 rounded-2xl border text-center transition cursor-pointer flex flex-col items-center gap-1.5 ${
+                    className={`p-3 rounded-2xl border text-center transition cursor-pointer flex flex-col items-center gap-2 ${
                       paymentMethod === 'rocket'
-                        ? 'border-purple-500 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 ring-2 ring-purple-400'
-                        : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-300'
+                        ? 'border-purple-500 bg-purple-50 dark:bg-purple-950/50 text-purple-900 dark:text-purple-200 ring-2 ring-purple-500 shadow-sm'
+                        : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
                     }`}
                   >
-                    <div className="w-8 h-8 rounded-xl bg-purple-700 text-white flex items-center justify-center font-black text-xs shadow-xs">
-                      🚀
+                    <RocketIcon size={36} className="shadow-xs rounded-xl" />
+                    <div className="leading-tight">
+                      <span className="text-xs font-black block">Rocket</span>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">DBBL Rocket</span>
                     </div>
-                    <span className="text-xs font-extrabold">Rocket</span>
-                    <span className="text-[10px] opacity-75">DBBL Rocket</span>
                   </button>
 
                   {/* Bank Transfer */}
                   <button
                     type="button"
                     onClick={() => setPaymentMethod('bank_transfer')}
-                    className={`p-3 rounded-2xl border text-center transition cursor-pointer flex flex-col items-center gap-1.5 ${
+                    className={`p-3 rounded-2xl border text-center transition cursor-pointer flex flex-col items-center gap-2 ${
                       paymentMethod === 'bank_transfer'
-                        ? 'border-teal-500 bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 ring-2 ring-teal-400'
-                        : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-300'
+                        ? 'border-teal-500 bg-teal-50 dark:bg-teal-950/50 text-teal-900 dark:text-teal-200 ring-2 ring-teal-500 shadow-sm'
+                        : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
                     }`}
                   >
-                    <div className="w-8 h-8 rounded-xl bg-teal-700 text-white flex items-center justify-center font-black text-xs shadow-xs">
-                      <Building2 className="w-4 h-4" />
+                    <BankIconBadge size={36} className="shadow-xs rounded-xl" />
+                    <div className="leading-tight">
+                      <span className="text-xs font-black block">Bank Transfer</span>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">IBBL / NPSB</span>
                     </div>
-                    <span className="text-xs font-extrabold">Bank Transfer</span>
-                    <span className="text-[10px] opacity-75">IBBL / NPSB</span>
                   </button>
                 </div>
               </div>
