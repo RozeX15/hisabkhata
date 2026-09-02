@@ -31,6 +31,7 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
   const token = getAuthToken();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
     ...(options.headers as Record<string, string> || {}),
   };
 
@@ -38,23 +39,49 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_BASE}${endpoint}`, {
-    ...options,
-    headers,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE}${endpoint}`, {
+      ...options,
+      headers,
+    });
+  } catch (networkError: any) {
+    throw new Error('Unable to connect to the server. Please check your network connection.');
+  }
 
   if (!response.ok) {
-    let errorMsg = 'An unexpected error occurred';
+    let errorMsg = '';
     try {
       const data = await response.json();
-      errorMsg = data.error || errorMsg;
+      errorMsg = data.error || data.message || '';
     } catch {
-      /* fallback */
+      // Non-JSON response
     }
+
+    if (!errorMsg) {
+      if (response.status === 401) {
+        errorMsg = 'Invalid email or password. Please verify and try again.';
+      } else if (response.status === 400) {
+        errorMsg = 'Invalid request. Please check all provided input fields.';
+      } else if (response.status === 403) {
+        errorMsg = 'Access forbidden or account deactivated.';
+      } else if (response.status === 404) {
+        errorMsg = 'Requested resource was not found.';
+      } else if (response.status >= 500) {
+        errorMsg = 'Server error occurred. Please try again shortly.';
+      } else {
+        errorMsg = `Request failed with status ${response.status}`;
+      }
+    }
+
     throw new Error(errorMsg);
   }
 
-  return response.json() as Promise<T>;
+  try {
+    return (await response.json()) as T;
+  } catch (err) {
+    throw new Error('Invalid response format from server.');
+  }
 }
 
 export const api = {

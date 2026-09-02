@@ -36,14 +36,19 @@ export interface DatabaseSchema {
   systemLimits: SystemPlanLimits;
 }
 
-const DATA_DIR = path.join(process.cwd(), 'data');
+const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), 'data');
 const DB_FILE = path.join(DATA_DIR, 'hishab_khata.json');
 
 let inMemoryDb: DatabaseSchema | null = null;
 
 function ensureDataDir() {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
+  try {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+  } catch (err) {
+    // In read-only or serverless environments (e.g. Netlify/Lambda), fallback gracefully
+    console.warn('Could not create data directory, running with memory store:', err);
   }
 }
 
@@ -83,18 +88,21 @@ function getSeedData(): DatabaseSchema {
   };
 
   const demoUserId = 'user-demo-001';
+  const demoUserId2 = 'user-demo-002';
   const demoAdminId = 'admin-demo-001';
+  const demoAdminId2 = 'admin-demo-002';
 
   const defaultPasswordHash = bcrypt.hashSync('password123', 10);
+  const demoPasswordHash = bcrypt.hashSync('demo123', 10);
   const adminPasswordHash = bcrypt.hashSync('admin123', 10);
 
   const users: User[] = [
     {
       id: demoUserId,
-      name: 'Rahim Chowdhury',
+      name: 'User Account',
       email: 'user@hishabkhata.com',
       role: 'user',
-      preferredLanguage: 'bn',
+      preferredLanguage: 'en',
       preferredCurrency: 'BDT',
       plan: 'pro',
       status: 'active',
@@ -104,7 +112,35 @@ function getSeedData(): DatabaseSchema {
       updatedAt: nowIso,
     },
     {
+      id: demoUserId2,
+      name: 'Demo Account',
+      email: 'demo@hishabkhata.io',
+      role: 'user',
+      preferredLanguage: 'bn',
+      preferredCurrency: 'BDT',
+      plan: 'pro',
+      status: 'active',
+      emailVerified: true,
+      avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    },
+    {
       id: demoAdminId,
+      name: 'System SuperAdmin',
+      email: 'admin@hishabkhata.io',
+      role: 'admin',
+      preferredLanguage: 'en',
+      preferredCurrency: 'USD',
+      plan: 'pro',
+      status: 'active',
+      emailVerified: true,
+      avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    },
+    {
+      id: demoAdminId2,
       name: 'Sultan Admin',
       email: 'admin@hishabkhata.com',
       role: 'admin',
@@ -121,7 +157,9 @@ function getSeedData(): DatabaseSchema {
 
   const passwordHashes: Record<string, string> = {
     [demoUserId]: defaultPasswordHash,
+    [demoUserId2]: demoPasswordHash,
     [demoAdminId]: adminPasswordHash,
+    [demoAdminId2]: adminPasswordHash,
   };
 
   const wallets: Wallet[] = [
