@@ -23,6 +23,7 @@ import {
 interface LandingPageProps {
   onGetStarted: () => void;
   onLogin: () => void;
+  onGoogleSignIn?: () => void;
   onDemoUser: () => void;
   onViewLegal: (type: 'privacy' | 'terms' | 'about') => void;
   onOpenDownloadApp?: () => void;
@@ -31,6 +32,7 @@ interface LandingPageProps {
 export const LandingPage: React.FC<LandingPageProps> = ({
   onGetStarted,
   onLogin,
+  onGoogleSignIn,
   onDemoUser,
   onViewLegal,
   onOpenDownloadApp,
@@ -110,14 +112,31 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             Hishab Khata empowers professionals, founders, and families worldwide to track multi-account cashflows, enforce budgets, eliminate debts, and receive real-time Gemini AI financial intelligence.
           </p>
 
-          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 max-w-md mx-auto">
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 max-w-xl mx-auto">
+            {onGoogleSignIn && (
+              <button
+                id="hero-google-btn"
+                type="button"
+                onClick={onGoogleSignIn}
+                className="w-full sm:w-auto px-6 py-3.5 bg-white hover:bg-slate-100 text-slate-800 font-black text-sm rounded-2xl shadow-xl transition flex items-center justify-center gap-2.5 cursor-pointer border border-slate-200"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
+                  <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.34 24 12 24z"/>
+                  <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
+                  <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+                </svg>
+                <span>Continue with Google</span>
+              </button>
+            )}
+
             <button
               id="hero-get-started-btn"
               type="button"
               onClick={onGetStarted}
               className="w-full sm:w-auto px-8 py-3.5 bg-teal-600 hover:bg-teal-500 text-white font-black text-sm rounded-2xl shadow-xl shadow-teal-900/40 transition flex items-center justify-center gap-2 cursor-pointer"
             >
-              <span>Launch Free Workspace</span>
+              <span>Get Started Free</span>
               <ArrowRight className="w-4 h-4" />
             </button>
 
@@ -128,7 +147,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               className="w-full sm:w-auto px-6 py-3.5 bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-200 font-extrabold text-sm rounded-2xl transition flex items-center justify-center gap-2 cursor-pointer"
             >
               <Lock className="w-4 h-4 text-teal-400" />
-              <span>Sign In to Account</span>
+              <span>Sign In</span>
             </button>
           </div>
 

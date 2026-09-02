@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '../types';
 import { api, setAuthToken, getAuthToken } from './api';
+import { signInWithGoogle, firebaseSignOut, auth } from './firebase';
 
 interface AuthContextType {
   user: User | null;
@@ -10,6 +11,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isAdmin: boolean;
   login: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
   register: (nameOrData: any, email?: string, password?: string) => Promise<void>;
   updateUserProfile: (data: any) => Promise<void>;
   logout: () => void;
@@ -71,6 +73,37 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const loginWithGoogle = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const fbResult = await signInWithGoogle();
+      const fbUser = fbResult.user;
+      if (!fbUser.email) {
+        throw new Error('No email found with this Google account.');
+      }
+      const res = await api.loginWithGoogle({
+        email: fbUser.email,
+        name: fbUser.displayName || undefined,
+        avatarUrl: fbUser.photoURL || undefined,
+        firebaseUid: fbUser.uid,
+        idToken: fbResult.idToken,
+      });
+      setAuthToken(res.token);
+      setTokenState(res.token);
+      setUser(res.user);
+    } catch (err: any) {
+      if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
+        setError(null);
+      } else {
+        setError(err.message || 'Google Sign-In failed');
+      }
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const register = async (nameOrData: any, email?: string, password?: string) => {
     setLoading(true);
     setError(null);
@@ -99,6 +132,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const logout = () => {
+    try {
+      firebaseSignOut(auth).catch(() => {});
+    } catch {}
     setAuthToken(null);
     setTokenState(null);
     setUser(null);
@@ -121,6 +157,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       isAuthenticated: !!user,
       isAdmin: user?.role === 'admin',
       login,
+      loginWithGoogle,
       register,
       updateUserProfile,
       logout,

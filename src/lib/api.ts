@@ -88,6 +88,8 @@ export const api = {
   // Auth
   register: (data: any) => request<{ user: User; token: string }>('/auth/register', { method: 'POST', body: JSON.stringify(data) }),
   login: (data: any) => request<{ user: User; token: string }>('/auth/login', { method: 'POST', body: JSON.stringify(data) }),
+  loginWithGoogle: (data: { email: string; name?: string; avatarUrl?: string; firebaseUid?: string; idToken?: string }) =>
+    request<{ user: User; token: string }>('/auth/firebase-google', { method: 'POST', body: JSON.stringify(data) }),
   getMe: () => request<{ user: User }>('/auth/me'),
   updateProfile: (data: any) => request<{ user: User }>('/auth/profile', { method: 'PUT', body: JSON.stringify(data) }),
   changePassword: (dataOrOld: any, newPass?: string) => {
@@ -144,6 +146,7 @@ export const api = {
 
   // Notifications
   getNotifications: () => request<AppNotification[]>('/notifications'),
+  pollNotifications: (since?: string) => request<{ notifications: AppNotification[]; unreadCount: number; serverTime: string }>(`/notifications/poll${since ? `?since=${encodeURIComponent(since)}` : ''}`),
   markNotificationRead: (id: string) => request<{ success: boolean }>(`/notifications/${id}/read`, { method: 'PUT' }),
   markAllNotificationsRead: () => request<{ success: boolean }>('/notifications/read-all', { method: 'PUT' }),
 

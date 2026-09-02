@@ -158,6 +158,101 @@ router.post('/auth/login', (req, res) => {
   res.json({ user, token });
 });
 
+router.post('/auth/firebase-google', (req, res) => {
+  const { email, name, avatarUrl, firebaseUid, preferredLanguage = 'en', preferredCurrency = 'BDT' } = req.body;
+
+  if (!email) {
+    res.status(400).json({ error: 'Google account email is required' });
+    return;
+  }
+
+  const cleanEmail = String(email).trim().toLowerCase();
+  const db = getDb();
+  let user = db.users.find(u => u.email.trim().toLowerCase() === cleanEmail);
+  const now = new Date().toISOString();
+
+  if (user) {
+    if (user.status === 'deactivated') {
+      res.status(403).json({ error: 'Account has been deactivated. Please contact administrator.' });
+      return;
+    }
+    // Update user avatar and firebaseUid if needed
+    if (avatarUrl && !user.avatarUrl) {
+      user.avatarUrl = avatarUrl;
+    }
+    if (firebaseUid) {
+      user.firebaseUid = firebaseUid;
+    }
+    user.updatedAt = now;
+  } else {
+    // Register new user via Google
+    const userId = `usr-g-${Date.now()}`;
+    const displayName = (name && String(name).trim()) || cleanEmail.split('@')[0] || 'Google User';
+
+    user = {
+      id: userId,
+      name: displayName,
+      email: cleanEmail,
+      role: 'user',
+      preferredLanguage,
+      preferredCurrency,
+      plan: 'free',
+      status: 'active',
+      emailVerified: true,
+      avatarUrl: avatarUrl || undefined,
+      firebaseUid: firebaseUid || undefined,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    db.users.push(user);
+
+    // Create starter wallets for new Google user
+    const defaultCashWallet: Wallet = {
+      id: `w-cash-${Date.now()}`,
+      userId,
+      name: 'Cash Wallet',
+      type: 'cash',
+      balance: 0,
+      currency: preferredCurrency,
+      color: '#10B981',
+      isDefault: true,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    const defaultBankWallet: Wallet = {
+      id: `w-bank-${Date.now()}`,
+      userId,
+      name: 'Main Bank Account',
+      type: 'bank',
+      balance: 0,
+      currency: preferredCurrency,
+      color: '#0F766E',
+      isDefault: false,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    db.wallets.push(defaultCashWallet, defaultBankWallet);
+
+    // Welcome notification
+    db.notifications.push({
+      id: `notif-${Date.now()}`,
+      userId,
+      type: 'system',
+      titleKey: 'Welcome to Hishab Khata!',
+      messageKey: 'Signed in with Google. Your smart multi-wallet financial ledger is active.',
+      isRead: false,
+      createdAt: now,
+    });
+  }
+
+  saveDb();
+  const token = generateToken(user);
+  res.json({ user, token });
+});
+
 router.get('/auth/me', authMiddleware, (req: AuthRequest, res) => {
   res.json({ user: req.user });
 });
@@ -1163,15 +1258,66 @@ Provide an empowering, highly practical, fintech-grade response with bullet poin
 
 router.get('/notifications', authMiddleware, (req: AuthRequest, res) => {
   const db = getDb();
-  const notifs = db.notifications.filter(n => n.userId === req.user!.id || n.userId === null);
-  res.json(notifs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+  const userId = req.user!.id;
+  const notifs = db.notifications.filter(n => n.userId === userId || n.userId === null);
+  
+  const formatted = notifs.map(n => {
+    const isGlobal = n.userId === null;
+    const isRead = isGlobal ? Boolean(n.readBy && n.readBy.includes(userId)) : Boolean(n.isRead);
+    return {
+      ...n,
+      isRead,
+    };
+  });
+
+  res.json(formatted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+});
+
+router.get('/notifications/poll', authMiddleware, (req: AuthRequest, res) => {
+  const db = getDb();
+  const userId = req.user!.id;
+  const since = req.query.since as string | undefined;
+
+  const userNotifs = db.notifications.filter(n => {
+    const matchesUser = n.userId === userId || n.userId === null;
+    if (!matchesUser) return false;
+    if (since) {
+      return new Date(n.createdAt).getTime() > new Date(since).getTime();
+    }
+    return true;
+  });
+
+  const formatted = userNotifs.map(n => {
+    const isGlobal = n.userId === null;
+    const isRead = isGlobal ? Boolean(n.readBy && n.readBy.includes(userId)) : Boolean(n.isRead);
+    return {
+      ...n,
+      isRead,
+    };
+  });
+
+  const unreadCount = formatted.filter(n => !n.isRead).length;
+
+  res.json({
+    notifications: formatted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
+    unreadCount,
+    serverTime: new Date().toISOString(),
+  });
 });
 
 router.put('/notifications/:id/read', authMiddleware, (req: AuthRequest, res) => {
   const db = getDb();
+  const userId = req.user!.id;
   const notif = db.notifications.find(n => n.id === req.params.id);
   if (notif) {
-    notif.isRead = true;
+    if (notif.userId === null) {
+      if (!notif.readBy) notif.readBy = [];
+      if (!notif.readBy.includes(userId)) {
+        notif.readBy.push(userId);
+      }
+    } else if (notif.userId === userId) {
+      notif.isRead = true;
+    }
     saveDb();
   }
   res.json({ success: true });
@@ -1179,8 +1325,14 @@ router.put('/notifications/:id/read', authMiddleware, (req: AuthRequest, res) =>
 
 router.put('/notifications/read-all', authMiddleware, (req: AuthRequest, res) => {
   const db = getDb();
+  const userId = req.user!.id;
   db.notifications.forEach(n => {
-    if (n.userId === req.user!.id || n.userId === null) {
+    if (n.userId === null) {
+      if (!n.readBy) n.readBy = [];
+      if (!n.readBy.includes(userId)) {
+        n.readBy.push(userId);
+      }
+    } else if (n.userId === userId) {
       n.isRead = true;
     }
   });
@@ -1369,7 +1521,7 @@ router.put('/admin/translations/:code', adminOnly, (req: AuthRequest, res) => {
 });
 
 router.post('/admin/announcements', adminOnly, (req: AuthRequest, res) => {
-  const { title, message } = req.body;
+  const { title, message, type = 'announcement' } = req.body;
   if (!title || !message) {
     res.status(400).json({ error: 'Title and message are required' });
     return;
@@ -1379,10 +1531,11 @@ router.post('/admin/announcements', adminOnly, (req: AuthRequest, res) => {
   const notif: AppNotification = {
     id: `notif-${Date.now()}`,
     userId: null, // Broadcast to all
-    type: 'announcement',
-    titleKey: title,
-    messageKey: message,
+    type: (type as any) || 'announcement',
+    titleKey: String(title).trim(),
+    messageKey: String(message).trim(),
     isRead: false,
+    readBy: [],
     createdAt: new Date().toISOString(),
   };
 

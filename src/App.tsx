@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { AuthProvider, useAuth } from './lib/auth';
 import { I18nProvider, useI18n } from './lib/i18n';
 import { api } from './lib/api';
+import { playNotificationChime, triggerNativePushNotification } from './lib/pushNotifications';
 import {
   Wallet,
   Category,
@@ -26,6 +27,7 @@ import { UpgradeModal } from './components/UpgradeModal';
 import { AiAdvisorModal } from './components/AiAdvisorModal';
 import { NotificationDrawer } from './components/NotificationDrawer';
 import { DownloadAppModal } from './components/DownloadAppModal';
+import { LiveNotificationToast } from './components/LiveNotificationToast';
 
 // Views
 import { LandingPage } from './views/LandingPage';
@@ -43,7 +45,7 @@ import { AdminView } from './views/AdminView';
 import { LegalViews } from './views/LegalViews';
 
 const MainAppContent: React.FC = () => {
-  const { user, token, logout, loginDemoUser } = useAuth();
+  const { user, token, logout, loginDemoUser, loginWithGoogle } = useAuth();
   const { isRTL, currency, setCurrency } = useI18n();
 
   // Navigation State
@@ -63,7 +65,9 @@ const MainAppContent: React.FC = () => {
   const [loans, setLoans] = useState<Loan[]>([]);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadNotifsCount, setUnreadNotifsCount] = useState<number>(0);
+  const [liveToastNotification, setLiveToastNotification] = useState<AppNotification | null>(null);
   const [loadingData, setLoadingData] = useState<boolean>(false);
+  const knownNotificationIds = useRef<Set<string>>(new Set());
 
   // Modals
   const [isTxModalOpen, setIsTxModalOpen] = useState(false);
@@ -130,9 +134,10 @@ const MainAppContent: React.FC = () => {
       setBudgets((budgetsRes as any).budgets || budgetsRes || []);
       setSavingsGoals((goalsRes as any).savingsGoals || goalsRes || []);
       setLoans((loansRes as any).loans || loansRes || []);
-      const notifsList = (notifsRes as any).notifications || notifsRes || [];
+      const notifsList: AppNotification[] = (notifsRes as any).notifications || notifsRes || [];
       setNotifications(notifsList);
       setUnreadNotifsCount(notifsList.filter((n: any) => !n.isRead).length);
+      notifsList.forEach(n => knownNotificationIds.current.add(n.id));
     } catch (err: any) {
       console.error('Failed to load application data:', err);
     } finally {
@@ -149,6 +154,51 @@ const MainAppContent: React.FC = () => {
       }
     }
   }, [user, token, loadAllData]);
+
+  // Background Push Notification Polling (Realtime Sync)
+  useEffect(() => {
+    if (!user || !token) return;
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const res = await api.pollNotifications();
+        if (res && res.notifications) {
+          const freshList = res.notifications;
+          setNotifications(freshList);
+          setUnreadNotifsCount(res.unreadCount);
+
+          // Find newly arrived unread notifications not known yet
+          const brandNew = freshList.find(
+            n => !n.isRead && !knownNotificationIds.current.has(n.id)
+          );
+
+          if (brandNew) {
+            setLiveToastNotification(brandNew);
+            playNotificationChime();
+            triggerNativePushNotification(
+              brandNew.userId === null ? `📢 ${brandNew.titleKey}` : `🔔 ${brandNew.titleKey}`,
+              brandNew.messageKey
+            );
+          }
+
+          freshList.forEach(n => knownNotificationIds.current.add(n.id));
+        }
+      } catch (err) {
+        // Silent polling error catch
+      }
+    }, 10000);
+
+    return () => clearInterval(pollInterval);
+  }, [user, token]);
+
+  // Auto-dismiss live toast after 6s
+  useEffect(() => {
+    if (!liveToastNotification) return;
+    const timer = setTimeout(() => {
+      setLiveToastNotification(null);
+    }, 6000);
+    return () => clearTimeout(timer);
+  }, [liveToastNotification]);
 
   // Public Landing / Auth Views
   if (!user || !token) {
@@ -172,6 +222,15 @@ const MainAppContent: React.FC = () => {
         <LandingPage
           onGetStarted={() => setActiveView('auth')}
           onLogin={() => setActiveView('auth')}
+          onGoogleSignIn={async () => {
+            try {
+              await loginWithGoogle();
+              setActiveView('dashboard');
+              loadAllData();
+            } catch {
+              setActiveView('auth');
+            }
+          }}
           onDemoUser={async () => {
             await loginDemoUser();
             setActiveView('dashboard');
@@ -553,6 +612,18 @@ const MainAppContent: React.FC = () => {
       <DownloadAppModal
         isOpen={isDownloadModalOpen}
         onClose={() => setIsDownloadModalOpen(false)}
+      />
+
+      <LiveNotificationToast
+        notification={liveToastNotification}
+        onClose={() => setLiveToastNotification(null)}
+        onClick={() => {
+          if (liveToastNotification) {
+            handleMarkNotifRead(liveToastNotification.id);
+          }
+          setLiveToastNotification(null);
+          setIsNotifDrawerOpen(true);
+        }}
       />
     </div>
   );

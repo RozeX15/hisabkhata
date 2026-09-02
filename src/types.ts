@@ -13,6 +13,7 @@ export interface User {
   status: UserStatus;
   emailVerified: boolean;
   avatarUrl?: string;
+  firebaseUid?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -161,6 +162,7 @@ export interface AppNotification {
   messageKey: string;
   params?: Record<string, any>;
   isRead: boolean;
+  readBy?: string[]; // user IDs who have read this global notification
   createdAt: string;
 }
 
