@@ -106,13 +106,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </button>
 
             <button
-              id="hero-instant-demo-btn"
+              id="hero-signin-btn"
               type="button"
-              onClick={onDemoUser}
+              onClick={onLogin}
               className="w-full sm:w-auto px-6 py-3.5 bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-200 font-extrabold text-sm rounded-2xl transition flex items-center justify-center gap-2 cursor-pointer"
             >
-              <Zap className="w-4 h-4 text-amber-400" />
-              <span>Explore Instant Demo</span>
+              <Lock className="w-4 h-4 text-teal-400" />
+              <span>Sign In to Account</span>
             </button>
           </div>
 

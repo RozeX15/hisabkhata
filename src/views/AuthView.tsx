@@ -21,7 +21,7 @@ interface AuthViewProps {
 
 export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
   const { t } = useI18n();
-  const { login, register, loginDemoUser, loginDemoAdmin, loading, error, clearError } = useAuth();
+  const { login, register, loading, error, clearError } = useAuth();
 
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [name, setName] = useState('');
@@ -34,37 +34,29 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
     setFormError(null);
     clearError();
 
+    const cleanEmail = email.trim();
+    if (!cleanEmail || !password) {
+      setFormError('Please enter both email and password');
+      return;
+    }
+
     try {
       if (mode === 'login') {
-        await login(email, password);
+        await login(cleanEmail, password);
       } else {
         if (!name.trim()) {
-          setFormError('Please provide your name');
+          setFormError('Please provide your full name');
           return;
         }
-        await register(name.trim(), email, password);
+        if (password.length < 6) {
+          setFormError('Password must be at least 6 characters');
+          return;
+        }
+        await register(name.trim(), cleanEmail, password);
       }
       onSuccess();
     } catch (err: any) {
-      setFormError(err.message || 'Authentication failed');
-    }
-  };
-
-  const handleDemoUser = async () => {
-    try {
-      await loginDemoUser();
-      onSuccess();
-    } catch (err: any) {
-      setFormError(err.message);
-    }
-  };
-
-  const handleDemoAdmin = async () => {
-    try {
-      await loginDemoAdmin();
-      onSuccess();
-    } catch (err: any) {
-      setFormError(err.message);
+      setFormError(err.message || 'Authentication failed. Please check your credentials.');
     }
   };
 
@@ -118,7 +110,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
                 clearError();
                 setFormError(null);
               }}
-              className={`py-2 rounded-lg text-xs font-bold transition cursor-pointer ${
+              className={`py-2.5 rounded-lg text-xs font-bold transition cursor-pointer ${
                 mode === 'login' ? 'bg-teal-700 text-white shadow-sm' : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -131,7 +123,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
                 clearError();
                 setFormError(null);
               }}
-              className={`py-2 rounded-lg text-xs font-bold transition cursor-pointer ${
+              className={`py-2.5 rounded-lg text-xs font-bold transition cursor-pointer ${
                 mode === 'register' ? 'bg-teal-700 text-white shadow-sm' : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -140,7 +132,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
           </div>
 
           {(formError || error) && (
-            <div className="p-3 mb-4 text-xs font-semibold text-red-400 bg-red-950/50 rounded-xl border border-red-900/50">
+            <div className="p-3.5 mb-4 text-xs font-semibold text-red-300 bg-red-950/60 rounded-xl border border-red-900/60 leading-relaxed">
               {formError || error}
             </div>
           )}
@@ -159,7 +151,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Tahmid Rahman"
+                    placeholder="Enter your name"
                     className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-white text-sm font-medium focus:ring-2 focus:ring-teal-500 outline-none"
                     required
                   />
@@ -178,7 +170,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="demo@hishabkhata.io"
+                  placeholder="name@example.com"
                   className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-white text-sm font-medium focus:ring-2 focus:ring-teal-500 outline-none"
                   required
                 />
@@ -207,56 +199,52 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
               id="auth-submit-btn"
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-teal-600 hover:bg-teal-500 text-white font-extrabold text-sm rounded-xl shadow-lg shadow-teal-900/30 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 mt-2"
+              className="w-full py-3 bg-teal-600 hover:bg-teal-500 text-white font-extrabold text-sm rounded-xl shadow-lg shadow-teal-900/30 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 mt-4"
             >
               {loading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <>
-                  <span>{mode === 'login' ? 'Sign In to Dashboard' : 'Create Account'}</span>
+                  <span>{mode === 'login' ? 'Sign In to Account' : 'Create Account'}</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
             </button>
           </form>
 
-          {/* 1-Click Instant Demo Logins */}
-          <div className="mt-6 pt-6 border-t border-slate-700/80 space-y-2.5">
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider text-center mb-2">
-              Instant 1-Click Testing Access
-            </p>
-
-            <button
-              id="auth-demo-user-btn"
-              type="button"
-              onClick={handleDemoUser}
-              disabled={loading}
-              className="w-full py-2.5 px-4 rounded-xl border border-slate-700 bg-slate-900/90 hover:bg-slate-900 text-slate-200 text-xs font-bold transition flex items-center justify-between cursor-pointer group"
-            >
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                <span>Demo User (Tahmid Rahman)</span>
-              </div>
-              <span className="text-[11px] text-teal-400 font-semibold group-hover:translate-x-0.5 transition-transform">
-                Log In →
-              </span>
-            </button>
-
-            <button
-              id="auth-demo-admin-btn"
-              type="button"
-              onClick={handleDemoAdmin}
-              disabled={loading}
-              className="w-full py-2.5 px-4 rounded-xl border border-slate-700 bg-slate-900/90 hover:bg-slate-900 text-slate-200 text-xs font-bold transition flex items-center justify-between cursor-pointer group"
-            >
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-amber-400" />
-                <span>Demo SuperAdmin (Rafiqul Islam)</span>
-              </div>
-              <span className="text-[11px] text-amber-400 font-semibold group-hover:translate-x-0.5 transition-transform">
-                Log In →
-              </span>
-            </button>
+          {/* Mode toggle helper text */}
+          <div className="mt-6 text-center text-xs text-slate-400">
+            {mode === 'login' ? (
+              <p>
+                Don't have an account?{' '}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode('register');
+                    clearError();
+                    setFormError(null);
+                  }}
+                  className="text-teal-400 font-bold hover:underline cursor-pointer"
+                >
+                  Create one now
+                </button>
+              </p>
+            ) : (
+              <p>
+                Already have an account?{' '}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode('login');
+                    clearError();
+                    setFormError(null);
+                  }}
+                  className="text-teal-400 font-bold hover:underline cursor-pointer"
+                >
+                  Sign in here
+                </button>
+              </p>
+            )}
           </div>
         </div>
       </div>

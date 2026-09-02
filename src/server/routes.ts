@@ -49,21 +49,22 @@ router.post('/auth/register', (req, res) => {
     return;
   }
 
+  const cleanEmail = String(email).trim().toLowerCase();
   const db = getDb();
-  const existing = db.users.find(u => u.email.toLowerCase() === email.toLowerCase());
+  const existing = db.users.find(u => u.email.trim().toLowerCase() === cleanEmail);
   if (existing) {
-    res.status(400).json({ error: 'An account with this email already exists' });
+    res.status(400).json({ error: 'An account with this email already exists. Please sign in instead.' });
     return;
   }
 
   const now = new Date().toISOString();
   const userId = `usr-${Date.now()}`;
-  const passwordHash = bcrypt.hashSync(password, 10);
+  const passwordHash = bcrypt.hashSync(String(password), 10);
 
   const newUser: User = {
     id: userId,
-    name,
-    email: email.toLowerCase(),
+    name: String(name).trim(),
+    email: cleanEmail,
     role: 'user',
     preferredLanguage,
     preferredCurrency,
@@ -112,7 +113,7 @@ router.post('/auth/register', (req, res) => {
     userId,
     type: 'system',
     titleKey: 'Welcome to Hishab Khata!',
-    messageKey: 'Your smart financial journey begins today. Create budgets and add your first income or expense transaction.',
+    messageKey: 'Your financial workspace is ready. Add your first income or expense to get started.',
     isRead: false,
     createdAt: now,
   });
@@ -131,8 +132,9 @@ router.post('/auth/login', (req, res) => {
     return;
   }
 
+  const cleanEmail = String(email).trim().toLowerCase();
   const db = getDb();
-  const user = db.users.find(u => u.email.toLowerCase() === email.toLowerCase());
+  const user = db.users.find(u => u.email.trim().toLowerCase() === cleanEmail);
 
   if (!user) {
     res.status(401).json({ error: 'Invalid email or password' });
@@ -145,7 +147,7 @@ router.post('/auth/login', (req, res) => {
   }
 
   const hash = db.passwordHashes[user.id];
-  const isMatch = bcrypt.compareSync(password, hash || '');
+  const isMatch = bcrypt.compareSync(String(password), hash || '');
 
   if (!isMatch) {
     res.status(401).json({ error: 'Invalid email or password' });
