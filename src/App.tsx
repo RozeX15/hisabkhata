@@ -28,6 +28,7 @@ import { AiAdvisorModal } from './components/AiAdvisorModal';
 import { NotificationDrawer } from './components/NotificationDrawer';
 import { DownloadAppModal } from './components/DownloadAppModal';
 import { LiveNotificationToast } from './components/LiveNotificationToast';
+import { usePresenceTracker } from './lib/usePresenceTracker';
 
 // Views
 import { LandingPage } from './views/LandingPage';
@@ -54,6 +55,9 @@ const MainAppContent: React.FC = () => {
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
     return localStorage.getItem('hishab_dark_mode') === 'true';
   });
+
+  // Realtime Live Presence Tracker
+  usePresenceTracker(user, token, activeView);
 
   // Data States
   const [summary, setSummary] = useState<DashboardSummary | null>(null);

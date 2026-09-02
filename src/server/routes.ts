@@ -12,7 +12,10 @@ import {
   AppNotification,
   BudgetProgress,
   DashboardSummary,
-  AdminLog
+  AdminLog,
+  SubscriptionPayment,
+  AdminPaymentConfig,
+  UserPresence
 } from '../types';
 import { generateSmartInsights } from '../lib/insights';
 import { GoogleGenAI } from '@google/genai';
@@ -475,7 +478,25 @@ router.get('/dashboard/summary', authMiddleware, (req: AuthRequest, res) => {
 
 router.get('/wallets', authMiddleware, (req: AuthRequest, res) => {
   const db = getDb();
-  const wallets = db.wallets.filter(w => w.userId === req.user!.id);
+  let wallets = db.wallets.filter(w => w.userId === req.user!.id);
+  if (wallets.length === 0) {
+    const now = new Date().toISOString();
+    const defaultCashWallet: Wallet = {
+      id: `w-cash-${Date.now()}`,
+      userId: req.user!.id,
+      name: 'Cash / Main Balance (নগদ হিসাব)',
+      type: 'cash',
+      balance: 0,
+      currency: req.user!.preferredCurrency || 'BDT',
+      color: '#10B981',
+      isDefault: true,
+      createdAt: now,
+      updatedAt: now,
+    };
+    db.wallets.push(defaultCashWallet);
+    saveDb();
+    wallets = [defaultCashWallet];
+  }
   res.json(wallets);
 });
 
@@ -598,25 +619,46 @@ router.get('/transactions', authMiddleware, (req: AuthRequest, res) => {
 });
 
 router.post('/transactions', authMiddleware, (req: AuthRequest, res) => {
-  const { walletId, toWalletId, type, amount, currency, categoryId, date, description, note, isRecurring } = req.body;
+  let { walletId, toWalletId, type, amount, currency, categoryId, date, description, note, isRecurring } = req.body;
   const numAmount = Number(amount);
 
-  if (!walletId || !type || !numAmount || numAmount <= 0) {
-    res.status(400).json({ error: 'Wallet, transaction type, and valid positive amount are required' });
+  if (!type || !numAmount || numAmount <= 0) {
+    res.status(400).json({ error: 'Transaction type and valid positive amount are required' });
     return;
   }
 
   const db = getDb();
-  const sourceWallet = db.wallets.find(w => w.id === walletId && w.userId === req.user!.id);
+  const now = new Date().toISOString();
+
+  // Auto-resolve or create user wallet if none exists or none provided
+  let userWallets = db.wallets.filter(w => w.userId === req.user!.id);
+  if (userWallets.length === 0) {
+    const defaultCashWallet: Wallet = {
+      id: `w-cash-${Date.now()}`,
+      userId: req.user!.id,
+      name: 'Cash / Main Balance (নগদ হিসাব)',
+      type: 'cash',
+      balance: 0,
+      currency: currency || req.user!.preferredCurrency || 'BDT',
+      color: '#10B981',
+      isDefault: true,
+      createdAt: now,
+      updatedAt: now,
+    };
+    db.wallets.push(defaultCashWallet);
+    userWallets = [defaultCashWallet];
+  }
+
+  let sourceWallet = db.wallets.find(w => w.id === walletId && w.userId === req.user!.id);
   if (!sourceWallet) {
-    res.status(404).json({ error: 'Source wallet not found' });
-    return;
+    sourceWallet = userWallets.find(w => w.isDefault) || userWallets[0];
+    walletId = sourceWallet.id;
   }
 
   // Check plan limits
   if (req.user!.plan === 'free') {
-    const now = new Date();
-    const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const nowDate = new Date();
+    const currentMonthStr = `${nowDate.getFullYear()}-${String(nowDate.getMonth() + 1).padStart(2, '0')}`;
     const monthlyCount = db.transactions.filter(t => t.userId === req.user!.id && t.date.startsWith(currentMonthStr)).length;
     if (monthlyCount >= db.systemLimits.freeMaxTransactionsPerMonth) {
       res.status(403).json({ error: `Monthly transaction limit (${db.systemLimits.freeMaxTransactionsPerMonth}) reached on Free plan. Upgrade to PRO for unlimited transactions.` });
@@ -624,7 +666,6 @@ router.post('/transactions', authMiddleware, (req: AuthRequest, res) => {
     }
   }
 
-  const now = new Date().toISOString();
   const txId = `tx-${Date.now()}`;
 
   // Atomic balance modification
@@ -1219,7 +1260,7 @@ Provide an empowering, highly practical, fintech-grade response with bullet poin
     if (apiKey) {
       const ai = new GoogleGenAI({ apiKey });
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3.7-flash',
         contents: summaryPrompt,
       });
 
@@ -1436,6 +1477,319 @@ router.put('/admin/users/:id/plan', adminOnly, (req: AuthRequest, res) => {
   logAdmin(req, 'USER_PLAN_CHANGE', 'USER', user.id, `Changed user ${user.email} plan to ${plan}`);
   saveDb();
   res.json(user);
+});
+
+router.put('/admin/users/:id/role', adminOnly, (req: AuthRequest, res) => {
+  const { role } = req.body;
+  if (role !== 'admin' && role !== 'user') {
+    res.status(400).json({ error: 'Role must be admin or user' });
+    return;
+  }
+  const db = getDb();
+  const user = db.users.find(u => u.id === req.params.id);
+  if (!user) {
+    res.status(404).json({ error: 'User not found' });
+    return;
+  }
+
+  user.role = role;
+  user.updatedAt = new Date().toISOString();
+  logAdmin(req, 'USER_ROLE_CHANGE', 'USER', user.id, `Changed user ${user.email} role to ${role}`);
+  saveDb();
+  res.json(user);
+});
+
+// -------------------------------------------------------------
+// USER PRESENCE & LIVE ACTIVITY HEARTBEAT
+// -------------------------------------------------------------
+
+router.post('/presence/heartbeat', authMiddleware, (req: AuthRequest, res) => {
+  const { currentView = 'dashboard', deviceType = 'desktop', browser = 'Browser', lastAction } = req.body;
+  const db = getDb();
+  const user = req.user!;
+  const now = new Date().toISOString();
+
+  if (!db.userPresences) {
+    db.userPresences = {};
+  }
+
+  db.userPresences[user.id] = {
+    userId: user.id,
+    userName: user.name,
+    userEmail: user.email,
+    avatarUrl: user.avatarUrl,
+    plan: user.plan,
+    role: user.role,
+    isOnline: true,
+    currentView: String(currentView),
+    lastActiveAt: now,
+    deviceType: deviceType || 'desktop',
+    browser: String(browser),
+    lastAction: lastAction ? String(lastAction) : undefined,
+  };
+
+  saveDb();
+  res.json({ success: true, serverTime: now });
+});
+
+router.get('/admin/presences', adminOnly, (req: AuthRequest, res) => {
+  const db = getDb();
+  if (!db.userPresences) {
+    db.userPresences = {};
+  }
+
+  const nowMs = Date.now();
+  const presenceList = Object.values(db.userPresences).map(p => {
+    const lastActiveMs = new Date(p.lastActiveAt).getTime();
+    // User is considered online if active within last 45 seconds
+    const isActuallyOnline = (nowMs - lastActiveMs) < 45000;
+    return {
+      ...p,
+      isOnline: isActuallyOnline,
+    };
+  });
+
+  // Sort: online first, then by last active timestamp
+  presenceList.sort((a, b) => {
+    if (a.isOnline === b.isOnline) {
+      return new Date(b.lastActiveAt).getTime() - new Date(a.lastActiveAt).getTime();
+    }
+    return a.isOnline ? -1 : 1;
+  });
+
+  res.json(presenceList);
+});
+
+// -------------------------------------------------------------
+// SUBSCRIPTION PAYMENT & MOBILE/BANKING TRANSACTIONS
+// -------------------------------------------------------------
+
+router.get('/subscriptions/config', authMiddleware, (req: AuthRequest, res) => {
+  const db = getDb();
+  res.json(db.adminPaymentConfig);
+});
+
+router.put('/admin/payment-config', adminOnly, (req: AuthRequest, res) => {
+  const db = getDb();
+  const body = req.body || {};
+  
+  db.adminPaymentConfig = {
+    ...db.adminPaymentConfig,
+    bkashNumber: body.bkashNumber !== undefined ? String(body.bkashNumber) : db.adminPaymentConfig.bkashNumber,
+    bkashType: body.bkashType === 'merchant' ? 'merchant' : 'personal',
+    nagadNumber: body.nagadNumber !== undefined ? String(body.nagadNumber) : db.adminPaymentConfig.nagadNumber,
+    nagadType: body.nagadType === 'merchant' ? 'merchant' : 'personal',
+    rocketNumber: body.rocketNumber !== undefined ? String(body.rocketNumber) : db.adminPaymentConfig.rocketNumber,
+    bankName: body.bankName !== undefined ? String(body.bankName) : db.adminPaymentConfig.bankName,
+    bankAccountName: body.bankAccountName !== undefined ? String(body.bankAccountName) : db.adminPaymentConfig.bankAccountName,
+    bankAccountNumber: body.bankAccountNumber !== undefined ? String(body.bankAccountNumber) : db.adminPaymentConfig.bankAccountNumber,
+    bankBranch: body.bankBranch !== undefined ? String(body.bankBranch) : db.adminPaymentConfig.bankBranch,
+    bankRoutingNumber: body.bankRoutingNumber !== undefined ? String(body.bankRoutingNumber) : db.adminPaymentConfig.bankRoutingNumber,
+    proMonthlyPriceBDT: Number(body.proMonthlyPriceBDT) > 0 ? Number(body.proMonthlyPriceBDT) : db.adminPaymentConfig.proMonthlyPriceBDT,
+    proYearlyPriceBDT: Number(body.proYearlyPriceBDT) > 0 ? Number(body.proYearlyPriceBDT) : db.adminPaymentConfig.proYearlyPriceBDT,
+    proLifetimePriceBDT: Number(body.proLifetimePriceBDT) > 0 ? Number(body.proLifetimePriceBDT) : (db.adminPaymentConfig.proLifetimePriceBDT || 9999),
+    proMonthlyPriceUSD: Number(body.proMonthlyPriceUSD) > 0 ? Number(body.proMonthlyPriceUSD) : db.adminPaymentConfig.proMonthlyPriceUSD,
+    proYearlyPriceUSD: Number(body.proYearlyPriceUSD) > 0 ? Number(body.proYearlyPriceUSD) : db.adminPaymentConfig.proYearlyPriceUSD,
+    proLifetimePriceUSD: Number(body.proLifetimePriceUSD) > 0 ? Number(body.proLifetimePriceUSD) : (db.adminPaymentConfig.proLifetimePriceUSD || 99.99),
+    yearlyDiscountPercent: Number(body.yearlyDiscountPercent) >= 0 ? Number(body.yearlyDiscountPercent) : (db.adminPaymentConfig.yearlyDiscountPercent ?? 20),
+    instructionsBn: body.instructionsBn !== undefined ? String(body.instructionsBn) : db.adminPaymentConfig.instructionsBn,
+    instructionsEn: body.instructionsEn !== undefined ? String(body.instructionsEn) : db.adminPaymentConfig.instructionsEn,
+  };
+  
+  logAdmin(req, 'UPDATE_PAYMENT_CONFIG', 'PAYMENT', 'ADMIN_CONFIG', `Updated subscription pricing and payment details: Monthly ${db.adminPaymentConfig.proMonthlyPriceBDT} BDT / $${db.adminPaymentConfig.proMonthlyPriceUSD}, Yearly ${db.adminPaymentConfig.proYearlyPriceBDT} BDT / $${db.adminPaymentConfig.proYearlyPriceUSD}`);
+  saveDb();
+  res.json(db.adminPaymentConfig);
+});
+
+router.post('/subscriptions/submit-payment', authMiddleware, (req: AuthRequest, res) => {
+  const {
+    billingCycle = 'yearly',
+    paymentMethod = 'bkash',
+    senderNumberOrAccount,
+    transactionId,
+    amount,
+    currency = 'BDT',
+    notes,
+  } = req.body;
+
+  if (!senderNumberOrAccount || !transactionId) {
+    res.status(400).json({ error: 'Sender mobile/account number and Transaction ID (TrxID) are required' });
+    return;
+  }
+
+  const db = getDb();
+  const user = req.user!;
+  const now = new Date().toISOString();
+
+  let targetAmount = Number(amount);
+  if (!targetAmount || targetAmount <= 0) {
+    if (currency === 'USD') {
+      if (billingCycle === 'monthly') targetAmount = db.adminPaymentConfig.proMonthlyPriceUSD;
+      else if (billingCycle === 'lifetime') targetAmount = db.adminPaymentConfig.proLifetimePriceUSD || 99.99;
+      else targetAmount = db.adminPaymentConfig.proYearlyPriceUSD;
+    } else {
+      if (billingCycle === 'monthly') targetAmount = db.adminPaymentConfig.proMonthlyPriceBDT;
+      else if (billingCycle === 'lifetime') targetAmount = db.adminPaymentConfig.proLifetimePriceBDT || 9999;
+      else targetAmount = db.adminPaymentConfig.proYearlyPriceBDT;
+    }
+  }
+
+  const newPayment: SubscriptionPayment = {
+    id: `pay-${Date.now()}`,
+    userId: user.id,
+    userName: user.name,
+    userEmail: user.email,
+    plan: 'pro',
+    billingCycle: billingCycle || 'yearly',
+    amount: targetAmount,
+    currency: currency || 'BDT',
+    paymentMethod: paymentMethod || 'bkash',
+    senderNumberOrAccount: String(senderNumberOrAccount).trim(),
+    transactionId: String(transactionId).trim(),
+    notes: notes ? String(notes).trim() : undefined,
+    status: 'pending',
+    createdAt: now,
+  };
+
+  if (!db.subscriptionPayments) db.subscriptionPayments = [];
+  db.subscriptionPayments.unshift(newPayment);
+
+  // Send acknowledgement notification to user
+  db.notifications.unshift({
+    id: `notif-${Date.now()}`,
+    userId: user.id,
+    type: 'system',
+    titleKey: 'Subscription Payment Submitted',
+    messageKey: `We received your payment request (${newPayment.amount} ${newPayment.currency} via ${newPayment.paymentMethod.toUpperCase()}, TrxID: ${newPayment.transactionId}). Admin will verify and activate your PRO subscription shortly.`,
+    isRead: false,
+    createdAt: now,
+  });
+
+  saveDb();
+  res.status(201).json({ success: true, payment: newPayment });
+});
+
+router.get('/subscriptions/my-payments', authMiddleware, (req: AuthRequest, res) => {
+  const db = getDb();
+  const userPayments = (db.subscriptionPayments || []).filter(p => p.userId === req.user!.id);
+  res.json(userPayments);
+});
+
+router.get('/admin/subscription-payments', adminOnly, (req: AuthRequest, res) => {
+  const db = getDb();
+  res.json(db.subscriptionPayments || []);
+});
+
+router.put('/admin/subscription-payments/:id/approve', adminOnly, (req: AuthRequest, res) => {
+  const db = getDb();
+  const payment = (db.subscriptionPayments || []).find(p => p.id === req.params.id);
+  if (!payment) {
+    res.status(404).json({ error: 'Subscription payment record not found' });
+    return;
+  }
+
+  const now = new Date().toISOString();
+  payment.status = 'approved';
+  payment.reviewedAt = now;
+  payment.reviewedBy = req.user!.email;
+
+  // Elevate user to PRO plan
+  const user = db.users.find(u => u.id === payment.userId);
+  if (user) {
+    user.plan = 'pro';
+    user.updatedAt = now;
+
+    // Send congratulatory notification
+    db.notifications.unshift({
+      id: `notif-${Date.now()}`,
+      userId: user.id,
+      type: 'system',
+      titleKey: '🎉 PRO Subscription Activated!',
+      messageKey: `Your ${payment.paymentMethod.toUpperCase()} payment of ${payment.amount} ${payment.currency} (TrxID: ${payment.transactionId}) has been verified and approved by Admin. Enjoy unlimited wallets, full Gemini 3.7 AI intelligence, and premium exports!`,
+      isRead: false,
+      createdAt: now,
+    });
+  }
+
+  logAdmin(req, 'APPROVE_SUBSCRIPTION_PAYMENT', 'PAYMENT', payment.id, `Approved PRO payment for ${payment.userEmail} (${payment.amount} ${payment.currency})`);
+  saveDb();
+  res.json({ success: true, payment, user });
+});
+
+router.put('/admin/subscription-payments/:id/reject', adminOnly, (req: AuthRequest, res) => {
+  const { adminNotes } = req.body;
+  const db = getDb();
+  const payment = (db.subscriptionPayments || []).find(p => p.id === req.params.id);
+  if (!payment) {
+    res.status(404).json({ error: 'Subscription payment record not found' });
+    return;
+  }
+
+  const now = new Date().toISOString();
+  payment.status = 'rejected';
+  payment.adminNotes = adminNotes ? String(adminNotes).trim() : 'Transaction could not be verified.';
+  payment.reviewedAt = now;
+  payment.reviewedBy = req.user!.email;
+
+  // Send rejection notification
+  db.notifications.unshift({
+    id: `notif-${Date.now()}`,
+    userId: payment.userId,
+    type: 'system',
+    titleKey: '⚠️ Payment Verification Issue',
+    messageKey: `Your subscription payment (TrxID: ${payment.transactionId}) could not be verified. Note from Admin: ${payment.adminNotes}. Please check your TrxID and re-submit or contact support.`,
+    isRead: false,
+    createdAt: now,
+  });
+
+  logAdmin(req, 'REJECT_SUBSCRIPTION_PAYMENT', 'PAYMENT', payment.id, `Rejected payment for ${payment.userEmail}: ${payment.adminNotes}`);
+  saveDb();
+  res.json({ success: true, payment });
+});
+
+// -------------------------------------------------------------
+// DIRECT USER NOTIFICATION / MESSAGING API
+// -------------------------------------------------------------
+
+router.post('/admin/notify-user', adminOnly, (req: AuthRequest, res) => {
+  const { targetUserId, title, message, type = 'announcement' } = req.body;
+  if (!title || !message) {
+    res.status(400).json({ error: 'Notification title and message are required' });
+    return;
+  }
+
+  const db = getDb();
+  const now = new Date().toISOString();
+
+  const isBroadcast = !targetUserId || targetUserId === 'all';
+  const targetUser = !isBroadcast ? db.users.find(u => u.id === targetUserId) : null;
+
+  if (!isBroadcast && !targetUser) {
+    res.status(404).json({ error: 'Target user not found' });
+    return;
+  }
+
+  const notif: AppNotification = {
+    id: `notif-${Date.now()}`,
+    userId: isBroadcast ? null : targetUserId,
+    type: (type as any) || 'announcement',
+    titleKey: String(title).trim(),
+    messageKey: String(message).trim(),
+    isRead: false,
+    readBy: [],
+    createdAt: now,
+  };
+
+  db.notifications.unshift(notif);
+  logAdmin(
+    req,
+    'SEND_NOTIFICATION',
+    'NOTIFICATION',
+    notif.id,
+    isBroadcast ? `Broadcasted: ${title}` : `Direct message to ${targetUser?.email}: ${title}`
+  );
+  saveDb();
+  res.status(201).json({ success: true, notification: notif });
 });
 
 router.get('/admin/languages', adminOnly, (req: AuthRequest, res) => {

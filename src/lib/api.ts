@@ -10,7 +10,10 @@ import {
   AdminStats,
   AdminLog,
   LanguageInfo,
-  SystemPlanLimits
+  SystemPlanLimits,
+  SubscriptionPayment,
+  AdminPaymentConfig,
+  UserPresence
 } from '../types';
 
 const API_BASE = '/api';
@@ -153,14 +156,44 @@ export const api = {
   // Languages & Translations
   getLanguages: () => request<LanguageInfo[]>('/languages'),
 
+  // Heartbeat & Presence
+  sendHeartbeat: (data: { currentView?: string; deviceType?: string; browser?: string; lastAction?: string }) =>
+    request<{ success: boolean; serverTime: string }>('/presence/heartbeat', { method: 'POST', body: JSON.stringify(data) }),
+  getAdminPresences: () => request<UserPresence[]>('/admin/presences'),
+
+  // Subscription Payments & Config
+  getSubscriptionConfig: () => request<AdminPaymentConfig>('/subscriptions/config'),
+  updateAdminPaymentConfig: (data: Partial<AdminPaymentConfig>) =>
+    request<AdminPaymentConfig>('/admin/payment-config', { method: 'PUT', body: JSON.stringify(data) }),
+  submitSubscriptionPayment: (data: {
+    billingCycle: 'monthly' | 'yearly' | 'lifetime';
+    paymentMethod: string;
+    senderNumberOrAccount: string;
+    transactionId: string;
+    amount?: number;
+    currency?: string;
+    notes?: string;
+  }) => request<{ success: boolean; payment: SubscriptionPayment }>('/subscriptions/submit-payment', { method: 'POST', body: JSON.stringify(data) }),
+  getMySubscriptionPayments: () => request<SubscriptionPayment[]>('/subscriptions/my-payments'),
+  getAdminSubscriptionPayments: () => request<SubscriptionPayment[]>('/admin/subscription-payments'),
+  approveSubscriptionPayment: (id: string) => request<{ success: boolean; payment: SubscriptionPayment; user: User }>(`/admin/subscription-payments/${id}/approve`, { method: 'PUT' }),
+  rejectSubscriptionPayment: (id: string, adminNotes?: string) =>
+    request<{ success: boolean; payment: SubscriptionPayment }>(`/admin/subscription-payments/${id}/reject`, { method: 'PUT', body: JSON.stringify({ adminNotes }) }),
+
+  // Direct Admin User Notifications
+  sendDirectNotification: (data: { targetUserId: string; title: string; message: string; type?: string }) =>
+    request<{ success: boolean; notification: AppNotification }>('/admin/notify-user', { method: 'POST', body: JSON.stringify(data) }),
+
   // Admin
   getAdminStats: () => request<AdminStats>('/admin/stats'),
   getAdminUsers: () => request<any[]>('/admin/users'),
   updateUserStatus: (id: string, status: string) => request<any>(`/admin/users/${id}/status`, { method: 'PUT', body: JSON.stringify({ status }) }),
   updateUserPlan: (id: string, plan: string) => request<any>(`/admin/users/${id}/plan`, { method: 'PUT', body: JSON.stringify({ plan }) }),
+  updateUserRole: (id: string, role: string) => request<any>(`/admin/users/${id}/role`, { method: 'PUT', body: JSON.stringify({ role }) }),
   updateAdminUser: (id: string, data: any) => {
     if (data.status) return request<any>(`/admin/users/${id}/status`, { method: 'PUT', body: JSON.stringify({ status: data.status }) });
     if (data.plan) return request<any>(`/admin/users/${id}/plan`, { method: 'PUT', body: JSON.stringify({ plan: data.plan }) });
+    if (data.role) return request<any>(`/admin/users/${id}/role`, { method: 'PUT', body: JSON.stringify({ role: data.role }) });
     return Promise.resolve({ success: true });
   },
   getAdminLanguages: () => request<LanguageInfo[]>('/admin/languages'),

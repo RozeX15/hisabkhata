@@ -14,7 +14,10 @@ import {
   AppNotification,
   LanguageInfo,
   AdminLog,
-  SystemPlanLimits
+  SystemPlanLimits,
+  SubscriptionPayment,
+  AdminPaymentConfig,
+  UserPresence
 } from '../types';
 import { defaultLanguages, baseTranslations } from '../lib/translations';
 
@@ -34,6 +37,9 @@ export interface DatabaseSchema {
   translations: Record<string, Record<string, string>>;
   adminLogs: AdminLog[];
   systemLimits: SystemPlanLimits;
+  subscriptionPayments: SubscriptionPayment[];
+  adminPaymentConfig: AdminPaymentConfig;
+  userPresences: Record<string, UserPresence>;
 }
 
 const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), 'data');
@@ -245,6 +251,31 @@ function getSeedData(): DatabaseSchema {
     proYearlyPriceUSD: 49.99,
   };
 
+  const adminPaymentConfig: AdminPaymentConfig = {
+    bkashNumber: '01711-234567',
+    bkashType: 'personal',
+    nagadNumber: '01811-234567',
+    nagadType: 'personal',
+    rocketNumber: '01911-234567-8',
+    bankName: 'Islami Bank Bangladesh PLC / City Bank',
+    bankAccountName: 'Hishab Khata SaaS Admin',
+    bankAccountNumber: '2050112020345678',
+    bankBranch: 'Dhanmondi Branch, Dhaka',
+    bankRoutingNumber: '125272847',
+    proMonthlyPriceBDT: 499,
+    proYearlyPriceBDT: 4999,
+    proLifetimePriceBDT: 9999,
+    proMonthlyPriceUSD: 4.99,
+    proYearlyPriceUSD: 49.99,
+    proLifetimePriceUSD: 99.99,
+    yearlyDiscountPercent: 20,
+    instructionsBn: 'বিকাশ বা নগদ অ্যাপ থেকে "Send Money" বা "Payment" করুন। পেমেন্ট সফল হলে প্রাপ্ত TrxID এবং আপনার মোবাইল নম্বর সাবমিট করুন। অ্যাডমিন ৫-১০ মিনিটের মধ্যে ভেরিফাই করে PRO একাউন্ট একটিভ করে দিবে।',
+    instructionsEn: 'Send the exact subscription fee to the bKash, Nagad or Bank Account above. Enter your Sender Number/Account and the Transaction ID (TrxID) below. Admin verifies and activates PRO within minutes.'
+  };
+
+  const subscriptionPayments: SubscriptionPayment[] = [];
+  const userPresences: Record<string, UserPresence> = {};
+
   return {
     users,
     passwordHashes,
@@ -261,6 +292,9 @@ function getSeedData(): DatabaseSchema {
     translations: baseTranslations,
     adminLogs,
     systemLimits,
+    subscriptionPayments,
+    adminPaymentConfig,
+    userPresences,
   };
 }
 
@@ -275,6 +309,31 @@ export function getDb(): DatabaseSchema {
     try {
       const data = fs.readFileSync(DB_FILE, 'utf-8');
       inMemoryDb = JSON.parse(data);
+      if (!inMemoryDb!.subscriptionPayments) inMemoryDb!.subscriptionPayments = [];
+      if (!inMemoryDb!.adminPaymentConfig) {
+        inMemoryDb!.adminPaymentConfig = {
+          bkashNumber: '01711-234567',
+          bkashType: 'personal',
+          nagadNumber: '01811-234567',
+          nagadType: 'personal',
+          rocketNumber: '01911-234567-8',
+          bankName: 'Islami Bank Bangladesh PLC / City Bank',
+          bankAccountName: 'Hishab Khata SaaS Admin',
+          bankAccountNumber: '2050112020345678',
+          bankBranch: 'Dhanmondi Branch, Dhaka',
+          bankRoutingNumber: '125272847',
+          proMonthlyPriceBDT: 499,
+          proYearlyPriceBDT: 4999,
+          proLifetimePriceBDT: 9999,
+          proMonthlyPriceUSD: 4.99,
+          proYearlyPriceUSD: 49.99,
+          proLifetimePriceUSD: 99.99,
+          yearlyDiscountPercent: 20,
+          instructionsBn: 'বিকাশ বা নগদ অ্যাপ থেকে "Send Money" বা "Payment" করুন। পেমেন্ট সফল হলে প্রাপ্ত TrxID এবং আপনার মোবাইল নম্বর সাবমিট করুন। অ্যাডমিন ৫-১০ মিনিটের মধ্যে ভেরিফাই করে PRO একাউন্ট একটিভ করে দিবে।',
+          instructionsEn: 'Send the exact subscription fee to the bKash, Nagad or Bank Account above. Enter your Sender Number/Account and the Transaction ID (TrxID) below. Admin verifies and activates PRO within minutes.'
+        };
+      }
+      if (!inMemoryDb!.userPresences) inMemoryDb!.userPresences = {};
       return inMemoryDb!;
     } catch (err) {
       console.error('Error reading database file, reseeding:', err);

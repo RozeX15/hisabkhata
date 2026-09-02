@@ -48,11 +48,26 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const availableWallets: Wallet[] = wallets && wallets.length > 0 ? wallets : [
+    {
+      id: 'w-default-cash',
+      userId: '',
+      name: 'Cash / Main Account (নগদ হিসাব)',
+      type: 'cash',
+      balance: 0,
+      currency: defaultCurrency,
+      color: '#10B981',
+      isDefault: true,
+      createdAt: '',
+      updatedAt: '',
+    }
+  ];
+
   useEffect(() => {
     if (transaction) {
       setType(transaction.type);
       setAmount(String(transaction.amount));
-      setWalletId(transaction.walletId);
+      setWalletId(transaction.walletId || availableWallets[0]?.id);
       setToWalletId(transaction.toWalletId || '');
       setCategoryId(transaction.categoryId || '');
       setDate(transaction.date);
@@ -62,9 +77,9 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
     } else {
       setType(initialType);
       setAmount('');
-      const defaultW = wallets.find(w => w.isDefault) || wallets[0];
-      setWalletId(defaultW ? defaultW.id : '');
-      const otherW = wallets.find(w => w.id !== defaultW?.id);
+      const defaultW = availableWallets.find(w => w.isDefault) || availableWallets[0];
+      setWalletId(defaultW ? defaultW.id : availableWallets[0]?.id || '');
+      const otherW = availableWallets.find(w => w.id !== defaultW?.id);
       setToWalletId(otherW ? otherW.id : '');
       const firstCat = categories.find(c => c.type === (initialType === 'transfer' ? 'income' : initialType));
       setCategoryId(firstCat ? firstCat.id : '');
@@ -90,12 +105,9 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
       return;
     }
 
-    if (!walletId) {
-      setError('Please select an active wallet.');
-      return;
-    }
+    const effectiveWalletId = walletId || availableWallets[0]?.id || 'w-default-cash';
 
-    if (type === 'transfer' && (!toWalletId || toWalletId === walletId)) {
+    if (type === 'transfer' && (!toWalletId || toWalletId === effectiveWalletId)) {
       setError('Please select a different destination wallet.');
       return;
     }
@@ -105,7 +117,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
       await onSave({
         type,
         amount: numAmount,
-        walletId,
+        walletId: effectiveWalletId,
         toWalletId: type === 'transfer' ? toWalletId : null,
         categoryId: type === 'transfer' ? 'cat-oin' : (categoryId || filteredCategories[0]?.id || 'cat-oex'),
         date,
@@ -217,65 +229,70 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
             </div>
           </div>
 
-          {/* Wallets selection */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
-                {type === 'transfer' ? t('from_wallet') : t('wallet')}
+          {/* Wallets / Payment Source selection */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                {type === 'transfer' ? t('from_wallet') : 'Payment Account / Source (হিসাবের উৎস)'}
               </label>
-              <select
-                id="tx-wallet-select"
-                value={walletId}
-                onChange={(e) => setWalletId(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-teal-500"
-              >
-                {wallets.map((w) => (
-                  <option key={w.id} value={w.id}>
-                    {w.name} ({defaultCurrency} {w.balance.toLocaleString()})
-                  </option>
-                ))}
-              </select>
+              <span className="text-[11px] text-slate-400">Default: Cash Account</span>
             </div>
 
-            {type === 'transfer' && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
-                  {t('to_wallet')}
-                </label>
                 <select
-                  id="tx-to-wallet-select"
-                  value={toWalletId}
-                  onChange={(e) => setToWalletId(e.target.value)}
+                  id="tx-wallet-select"
+                  value={walletId}
+                  onChange={(e) => setWalletId(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-teal-500"
                 >
-                  {wallets.filter(w => w.id !== walletId).map((w) => (
+                  {availableWallets.map((w) => (
                     <option key={w.id} value={w.id}>
                       {w.name} ({defaultCurrency} {w.balance.toLocaleString()})
                     </option>
                   ))}
                 </select>
               </div>
-            )}
 
-            {type !== 'transfer' && (
-              <div>
-                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
-                  {t('category')}
-                </label>
-                <select
-                  id="tx-category-select"
-                  value={categoryId}
-                  onChange={(e) => setCategoryId(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-teal-500"
-                >
-                  {filteredCategories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.customName || t(c.nameKey) || c.id}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
+              {type === 'transfer' && (
+                <div>
+                  <select
+                    id="tx-to-wallet-select"
+                    value={toWalletId}
+                    onChange={(e) => setToWalletId(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  >
+                    {availableWallets.filter(w => w.id !== (walletId || availableWallets[0]?.id)).map((w) => (
+                      <option key={w.id} value={w.id}>
+                        {w.name} ({defaultCurrency} {w.balance.toLocaleString()})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {type !== 'transfer' && (
+                <div>
+                  <select
+                    id="tx-category-select"
+                    value={categoryId}
+                    onChange={(e) => setCategoryId(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  >
+                    {filteredCategories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.customName || t(c.nameKey) || c.id}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+
+            {/* Quick Helper Tips */}
+            <p className="text-[11px] text-slate-400 dark:text-slate-500">
+              💡 Money will be deducted from or added to this account (e.g. Cash, bKash, Bank). If unsure, keep Cash selected.
+            </p>
           </div>
 
           {/* Date & Description */}

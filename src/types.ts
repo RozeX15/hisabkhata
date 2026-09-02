@@ -245,3 +245,64 @@ export interface SystemPlanLimits {
   proMonthlyPriceUSD: number;
   proYearlyPriceUSD: number;
 }
+
+export type PaymentMethodType = 'bkash' | 'nagad' | 'rocket' | 'bank_transfer' | 'card';
+export type PaymentStatus = 'pending' | 'approved' | 'rejected';
+
+export interface SubscriptionPayment {
+  id: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  plan: 'pro';
+  billingCycle: 'monthly' | 'yearly' | 'lifetime';
+  amount: number;
+  currency: string;
+  paymentMethod: PaymentMethodType;
+  senderNumberOrAccount: string;
+  transactionId: string;
+  notes?: string;
+  status: PaymentStatus;
+  adminNotes?: string;
+  createdAt: string;
+  reviewedAt?: string;
+  reviewedBy?: string;
+}
+
+export interface AdminPaymentConfig {
+  bkashNumber: string;
+  bkashType: 'personal' | 'merchant';
+  nagadNumber: string;
+  nagadType: 'personal' | 'merchant';
+  rocketNumber: string;
+  bankName: string;
+  bankAccountName: string;
+  bankAccountNumber: string;
+  bankBranch: string;
+  bankRoutingNumber: string;
+  proMonthlyPriceBDT: number;
+  proYearlyPriceBDT: number;
+  proLifetimePriceBDT?: number;
+  proMonthlyPriceUSD: number;
+  proYearlyPriceUSD: number;
+  proLifetimePriceUSD?: number;
+  yearlyDiscountPercent?: number;
+  instructionsBn?: string;
+  instructionsEn?: string;
+}
+
+export interface UserPresence {
+  userId: string;
+  userName: string;
+  userEmail: string;
+  avatarUrl?: string;
+  plan: SubscriptionPlan;
+  role: UserRole;
+  isOnline: boolean;
+  currentView: string;
+  lastActiveAt: string;
+  deviceType: 'desktop' | 'mobile' | 'tablet';
+  browser: string;
+  lastAction?: string;
+}
+
