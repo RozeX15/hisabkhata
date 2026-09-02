@@ -1,0 +1,96 @@
+import React from 'react';
+import { useI18n } from '../lib/i18n';
+import {
+  LayoutDashboard,
+  ArrowLeftRight,
+  Plus,
+  Target,
+  Settings
+} from 'lucide-react';
+
+interface MobileNavProps {
+  currentView?: string;
+  activeView?: string;
+  onNavigate: (view: string) => void;
+  onOpenAddTransaction: () => void;
+}
+
+export const MobileNav: React.FC<MobileNavProps> = ({
+  currentView: propCurrent,
+  activeView: propActive,
+  onNavigate,
+  onOpenAddTransaction,
+}) => {
+  const currentView = propActive || propCurrent || 'dashboard';
+  const { t } = useI18n();
+
+  return (
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800 px-2 py-1.5 flex items-center justify-around shadow-lg">
+      <button
+        id="mobile-nav-dashboard"
+        type="button"
+        onClick={() => onNavigate('dashboard')}
+        className={`flex flex-col items-center py-1 px-3 rounded-lg text-xs font-semibold ${
+          currentView === 'dashboard'
+            ? 'text-teal-700 dark:text-teal-400'
+            : 'text-slate-500 dark:text-slate-400'
+        }`}
+      >
+        <LayoutDashboard className="w-5 h-5" />
+        <span className="text-[10px] mt-0.5">{t('nav_dashboard')}</span>
+      </button>
+
+      <button
+        id="mobile-nav-transactions"
+        type="button"
+        onClick={() => onNavigate('transactions')}
+        className={`flex flex-col items-center py-1 px-3 rounded-lg text-xs font-semibold ${
+          currentView === 'transactions'
+            ? 'text-teal-700 dark:text-teal-400'
+            : 'text-slate-500 dark:text-slate-400'
+        }`}
+      >
+        <ArrowLeftRight className="w-5 h-5" />
+        <span className="text-[10px] mt-0.5">{t('nav_transactions')}</span>
+      </button>
+
+      {/* Floating Add Center Button */}
+      <button
+        id="mobile-nav-add-btn"
+        type="button"
+        onClick={onOpenAddTransaction}
+        className="-mt-5 w-12 h-12 rounded-full bg-teal-700 hover:bg-teal-800 text-white flex items-center justify-center shadow-lg shadow-teal-700/40 border-4 border-white dark:border-slate-900"
+      >
+        <Plus className="w-6 h-6" />
+      </button>
+
+      <button
+        id="mobile-nav-goals"
+        type="button"
+        onClick={() => onNavigate('savings_goals')}
+        className={`flex flex-col items-center py-1 px-3 rounded-lg text-xs font-semibold ${
+          currentView === 'savings_goals'
+            ? 'text-teal-700 dark:text-teal-400'
+            : 'text-slate-500 dark:text-slate-400'
+        }`}
+      >
+        <Target className="w-5 h-5" />
+        <span className="text-[10px] mt-0.5">{t('nav_savings_goals')}</span>
+      </button>
+
+      <button
+        id="mobile-nav-settings"
+        type="button"
+        onClick={() => onNavigate('settings')}
+        className={`flex flex-col items-center py-1 px-3 rounded-lg text-xs font-semibold ${
+          currentView === 'settings'
+            ? 'text-teal-700 dark:text-teal-400'
+            : 'text-slate-500 dark:text-slate-400'
+        }`}
+      >
+        <Settings className="w-5 h-5" />
+        <span className="text-[10px] mt-0.5">{t('nav_settings')}</span>
+      </button>
+    </nav>
+  );
+};

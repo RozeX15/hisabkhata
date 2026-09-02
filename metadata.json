@@ -1,0 +1,6 @@
+{
+  "name": "Hishab Khata",
+  "description": "Global personal finance & multi-currency SaaS platform for managing income, expenses, wallets, budgets, savings goals, loans, and spending insights.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
