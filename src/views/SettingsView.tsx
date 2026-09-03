@@ -20,7 +20,9 @@ import {
   Download,
   Smartphone,
   Laptop,
-  Palette
+  Palette,
+  ShieldAlert,
+  LogOut
 } from 'lucide-react';
 
 interface SettingsViewProps {
@@ -29,6 +31,7 @@ interface SettingsViewProps {
   isDarkMode?: boolean;
   onToggleDarkMode?: () => void;
   onOpenDownloadApp?: () => void;
+  onNavigate?: (view: string) => void;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
@@ -37,9 +40,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   isDarkMode = false,
   onToggleDarkMode,
   onOpenDownloadApp,
+  onNavigate,
 }) => {
   const { t, isRTL } = useI18n();
-  const { user, updateUserProfile, refreshUser } = useAuth();
+  const { user, updateUserProfile, refreshUser, logout } = useAuth();
 
   const [name, setName] = useState(user?.name || '');
   const [profileLoading, setProfileLoading] = useState(false);
@@ -152,6 +156,37 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </button>
         )}
       </div>
+
+      {/* SuperAdmin Quick Access Banner (if admin) */}
+      {user?.role === 'admin' && onNavigate && (
+        <div className="p-6 rounded-3xl bg-gradient-to-r from-purple-900 via-indigo-950 to-slate-950 text-white shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-purple-500/30">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-purple-500 text-white flex items-center justify-center font-black shadow-lg shadow-purple-500/30 shrink-0">
+              <ShieldAlert className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-extrabold text-base sm:text-lg">SuperAdmin Console</h3>
+                <span className="px-2 py-0.5 rounded-full bg-purple-500/30 text-purple-300 text-[10px] font-extrabold uppercase tracking-wider">
+                  Root Privileges
+                </span>
+              </div>
+              <p className="text-xs text-purple-200/90 mt-0.5">
+                Manage all registered accounts, verify mobile payments (bKash, Nagad, Rocket, Bank), live telemetry, and system-wide broadcast alerts.
+              </p>
+            </div>
+          </div>
+          <button
+            id="settings-open-admin-btn"
+            type="button"
+            onClick={() => onNavigate('admin')}
+            className="px-5 py-2.5 bg-purple-500 hover:bg-purple-600 text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-lg transition shrink-0 cursor-pointer flex items-center justify-center gap-2"
+          >
+            <ShieldAlert className="w-4 h-4" />
+            <span>Open Admin Panel</span>
+          </button>
+        </div>
+      )}
 
       {/* Profile & Security Details */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -391,6 +426,59 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </p>
         </div>
       )}
+
+      {/* Account Session & Logout */}
+      <div className="p-6 rounded-3xl bg-white dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 shadow-xs space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <UserIcon className="w-5 h-5 text-teal-600" />
+            <h3 className="font-bold text-slate-900 dark:text-white text-sm">
+              Account Session & Security
+            </h3>
+          </div>
+          <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-200 dark:border-emerald-800/60">
+            Active Session
+          </span>
+        </div>
+
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800">
+          <div className="flex items-center gap-3 min-w-0">
+            <div
+              className={`w-11 h-11 rounded-xl flex items-center justify-center text-sm font-black text-white shrink-0 shadow-xs ${
+                user?.role === 'admin' ? 'bg-purple-700' : 'bg-teal-700'
+              }`}
+            >
+              {user?.name?.charAt(0).toUpperCase() || 'U'}
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <p className="font-extrabold text-sm text-slate-900 dark:text-white truncate">
+                  {user?.name}
+                </p>
+                {user?.role === 'admin' && (
+                  <span className="text-[10px] px-2 py-0.5 rounded-md bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 font-black uppercase tracking-wider shrink-0">
+                    SuperAdmin
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                {user?.email}
+              </p>
+            </div>
+          </div>
+
+          <button
+            id="settings-logout-btn"
+            type="button"
+            onClick={logout}
+            className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center justify-center gap-2 cursor-pointer shrink-0"
+            title={t('nav_logout')}
+          >
+            <LogOut className="w-4 h-4" />
+            <span>{t('nav_logout')}</span>
+          </button>
+        </div>
+      </div>
 
       {/* Reset / Demo Data Reset */}
       <div className="p-6 rounded-3xl bg-red-50/50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 shadow-xs space-y-3">

@@ -529,6 +529,7 @@ const MainAppContent: React.FC = () => {
       <Sidebar
         activeView={activeView}
         onNavigate={(v) => setActiveView(v)}
+        unreadNotifsCount={unreadNotifsCount}
         onOpenUpgrade={() => setIsUpgradeModalOpen(true)}
         onOpenDownloadApp={() => setIsDownloadModalOpen(true)}
       />
@@ -547,6 +548,8 @@ const MainAppContent: React.FC = () => {
           isDarkMode={isDarkMode}
           onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
           onOpenDownloadApp={() => setIsDownloadModalOpen(true)}
+          activeView={activeView}
+          onNavigate={(v) => setActiveView(v)}
         />
 
         {/* Dynamic View Switcher */}
@@ -686,17 +689,19 @@ const MainAppContent: React.FC = () => {
               isDarkMode={isDarkMode}
               onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
               onOpenDownloadApp={() => setIsDownloadModalOpen(true)}
+              onNavigate={(v) => setActiveView(v)}
             />
           )}
 
           {activeView === 'admin' && user.role === 'admin' && (
-            <AdminView />
+            <AdminView onNavigate={(v) => setActiveView(v)} />
           )}
         </main>
 
         {/* Mobile Bottom Navigation */}
         <MobileNav
           activeView={activeView}
+          isAdmin={user.role === 'admin'}
           onNavigate={(v) => setActiveView(v)}
           onOpenAddTransaction={() => {
             setEditingTx(null);
@@ -792,6 +797,7 @@ const MainAppContent: React.FC = () => {
         onMarkAllRead={handleMarkAllNotifsRead}
         onDelete={handleDeleteNotif}
         onClearAll={handleClearAllNotifs}
+        onNavigate={(v) => setActiveView(v)}
       />
 
       <DownloadAppModal

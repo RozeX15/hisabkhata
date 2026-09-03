@@ -24,6 +24,7 @@ interface NotificationDrawerProps {
   onMarkAllRead: () => void;
   onDelete?: (id: string) => void;
   onClearAll?: () => void;
+  onNavigate?: (view: string) => void;
 }
 
 export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
@@ -34,6 +35,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
   onMarkAllRead,
   onDelete,
   onClearAll,
+  onNavigate,
 }) => {
   const { t } = useI18n();
   const [pushStatus, setPushStatus] = useState<NotificationPermission>('default');
@@ -208,6 +210,23 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
             ))
           )}
         </div>
+
+        {/* Footer Link to Dedicated Page */}
+        {onNavigate && (
+          <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
+            <button
+              id="notif-drawer-view-all-btn"
+              type="button"
+              onClick={() => {
+                onClose();
+                onNavigate('notifications');
+              }}
+              className="w-full py-2.5 px-4 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer shadow-sm"
+            >
+              <span>Open Dedicated Notifications Center</span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
