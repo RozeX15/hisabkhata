@@ -49,7 +49,7 @@ import { AdminView } from './views/AdminView';
 import { LegalViews } from './views/LegalViews';
 
 const MainAppContent: React.FC = () => {
-  const { user, token, logout, loginDemoUser, loginWithGoogle } = useAuth();
+  const { user, token, logout, loginDemoUser, loginWithGoogle, loginSultanAdmin } = useAuth();
   const { isRTL, currency, setCurrency } = useI18n();
 
   // Navigation State
@@ -216,8 +216,13 @@ const MainAppContent: React.FC = () => {
     if (activeView === 'auth' || activeView === 'login' || activeView === 'register') {
       return (
         <AuthView
-          onSuccess={() => {
-            setActiveView('dashboard');
+          onBackToLanding={() => setActiveView('landing')}
+          onSuccess={(loggedInUser) => {
+            if (loggedInUser?.role === 'admin' || loggedInUser?.email === 'sultanitbangladesh@gmail.com') {
+              setActiveView('admin');
+            } else {
+              setActiveView('dashboard');
+            }
             loadAllData();
           }}
         />
@@ -229,10 +234,23 @@ const MainAppContent: React.FC = () => {
         <LandingPage
           onGetStarted={() => setActiveView('auth')}
           onLogin={() => setActiveView('auth')}
+          onAdminLogin={async () => {
+            try {
+              const adminUser = await loginSultanAdmin();
+              setActiveView('admin');
+              loadAllData();
+            } catch {
+              setActiveView('auth');
+            }
+          }}
           onGoogleSignIn={async () => {
             try {
-              await loginWithGoogle();
-              setActiveView('dashboard');
+              const loggedIn = await loginWithGoogle();
+              if (loggedIn?.role === 'admin' || loggedIn?.email === 'sultanitbangladesh@gmail.com') {
+                setActiveView('admin');
+              } else {
+                setActiveView('dashboard');
+              }
               loadAllData();
             } catch {
               setActiveView('auth');

@@ -18,7 +18,8 @@ import {
   Lock,
   ChevronRight,
   Star,
-  Download
+  Download,
+  Crown
 } from 'lucide-react';
 
 interface LandingPageProps {
@@ -26,6 +27,7 @@ interface LandingPageProps {
   onLogin: () => void;
   onGoogleSignIn?: () => void;
   onDemoUser: () => void;
+  onAdminLogin?: () => void;
   onViewLegal: (type: 'privacy' | 'terms' | 'about') => void;
   onOpenDownloadApp?: () => void;
 }
@@ -35,6 +37,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   onLogin,
   onGoogleSignIn,
   onDemoUser,
+  onAdminLogin,
   onViewLegal,
   onOpenDownloadApp,
 }) => {
@@ -52,6 +55,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           <div className="hidden md:block">
             <LanguageSelector />
           </div>
+
+          {onAdminLogin && (
+            <button
+              id="landing-admin-login-btn"
+              type="button"
+              onClick={onAdminLogin}
+              className="px-3 py-1.5 text-xs font-black text-amber-300 bg-amber-950/60 hover:bg-amber-900/60 border border-amber-500/50 rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-sm shadow-amber-900/30"
+              title="SuperAdmin Portal for Sultan"
+            >
+              <Crown className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+              <span>Admin Access</span>
+            </button>
+          )}
 
           {onOpenDownloadApp && (
             <button
@@ -140,6 +156,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <Lock className="w-4 h-4 text-teal-400" />
               <span>Sign In</span>
             </button>
+
+            {onAdminLogin && (
+              <button
+                id="hero-admin-portal-btn"
+                type="button"
+                onClick={onAdminLogin}
+                className="w-full sm:w-auto px-5 py-3.5 bg-amber-950/40 hover:bg-amber-900/60 border border-amber-500/50 text-amber-300 font-extrabold text-sm rounded-2xl transition flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-amber-950/40"
+              >
+                <Crown className="w-4 h-4 text-amber-400" />
+                <span>SuperAdmin Portal</span>
+              </button>
+            )}
           </div>
 
           {onOpenDownloadApp && (

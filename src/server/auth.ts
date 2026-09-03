@@ -40,6 +40,17 @@ export function authMiddleware(req: AuthRequest, res: Response, next: NextFuncti
       return;
     }
 
+    // Always ensure superadmin privilege for the platform owner/admins
+    if (
+      user.email === 'sultanitbangladesh@gmail.com' ||
+      user.email === 'admin@hishabkhata.com' ||
+      user.email === 'admin@hishabkhata.io'
+    ) {
+      user.role = 'admin';
+      user.status = 'active';
+      user.plan = 'pro';
+    }
+
     if (user.status === 'deactivated') {
       res.status(403).json({ error: 'Account has been deactivated. Please contact support.' });
       return;

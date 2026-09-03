@@ -10,14 +10,15 @@ interface AuthContextType {
   error: string | null;
   isAuthenticated: boolean;
   isAdmin: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  loginWithGoogle: () => Promise<void>;
-  register: (nameOrData: any, email?: string, password?: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
+  loginWithGoogle: () => Promise<User>;
+  register: (nameOrData: any, email?: string, password?: string) => Promise<User>;
   updateUserProfile: (data: any) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
-  loginDemoUser: () => Promise<void>;
-  loginDemoAdmin: () => Promise<void>;
+  loginDemoUser: () => Promise<User>;
+  loginDemoAdmin: () => Promise<User>;
+  loginSultanAdmin: () => Promise<User>;
   clearError: () => void;
 }
 
@@ -57,7 +58,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     refreshUser();
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<User> => {
     setLoading(true);
     setError(null);
     try {
@@ -65,6 +66,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setAuthToken(res.token);
       setTokenState(res.token);
       setUser(res.user);
+      return res.user;
     } catch (err: any) {
       setError(err.message || 'Login failed');
       throw err;
@@ -73,7 +75,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const loginWithGoogle = async () => {
+  const loginWithGoogle = async (): Promise<User> => {
     setLoading(true);
     setError(null);
     try {
@@ -92,6 +94,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setAuthToken(res.token);
       setTokenState(res.token);
       setUser(res.user);
+      return res.user;
     } catch (err: any) {
       if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
         setError(null);
@@ -104,7 +107,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const register = async (nameOrData: any, email?: string, password?: string) => {
+  const register = async (nameOrData: any, email?: string, password?: string): Promise<User> => {
     setLoading(true);
     setError(null);
     const data = typeof nameOrData === 'string' ? { name: nameOrData, email, password } : nameOrData;
@@ -113,6 +116,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setAuthToken(res.token);
       setTokenState(res.token);
       setUser(res.user);
+      return res.user;
     } catch (err: any) {
       setError(err.message || 'Registration failed');
       throw err;
@@ -140,12 +144,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setUser(null);
   };
 
-  const loginDemoUser = async () => {
-    await login('user@hishabkhata.com', 'password123');
+  const loginDemoUser = async (): Promise<User> => {
+    return await login('user@hishabkhata.com', 'password123');
   };
 
-  const loginDemoAdmin = async () => {
-    await login('admin@hishabkhata.com', 'admin123');
+  const loginDemoAdmin = async (): Promise<User> => {
+    return await login('admin@hishabkhata.com', 'admin123');
+  };
+
+  const loginSultanAdmin = async (): Promise<User> => {
+    return await login('sultanitbangladesh@gmail.com', 'admin123');
   };
 
   return (
@@ -164,6 +172,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       refreshUser,
       loginDemoUser,
       loginDemoAdmin,
+      loginSultanAdmin,
       clearError,
     }}>
       {children}

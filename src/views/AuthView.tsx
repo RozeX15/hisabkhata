@@ -21,10 +21,11 @@ import {
 } from 'lucide-react';
 
 interface AuthViewProps {
-  onSuccess: () => void;
+  onSuccess: (user?: any) => void;
+  onBackToLanding?: () => void;
 }
 
-export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
+export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }) => {
   const { t } = useI18n();
   const { login, loginWithGoogle, register, loading, error, clearError } = useAuth();
 
@@ -42,10 +43,10 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
     setFormError(null);
     clearError();
     try {
-      await login(fillEmail, fillPass);
-      onSuccess();
+      const loggedIn = await login(fillEmail, fillPass);
+      onSuccess(loggedIn);
     } catch (err: any) {
-      setFormError(err.message || 'Login failed');
+      setFormError(err.message || 'Login failed. Please check credentials.');
     }
   };
 
@@ -54,8 +55,8 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
     clearError();
     setGoogleLoading(true);
     try {
-      await loginWithGoogle();
-      onSuccess();
+      const loggedIn = await loginWithGoogle();
+      onSuccess(loggedIn);
     } catch (err: any) {
       if (err.message) {
         setFormError(err.message);
@@ -78,7 +79,8 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
 
     try {
       if (mode === 'login') {
-        await login(cleanEmail, password);
+        const loggedIn = await login(cleanEmail, password);
+        onSuccess(loggedIn);
       } else {
         if (!name.trim()) {
           setFormError('Please provide your full name');
@@ -88,9 +90,9 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
           setFormError('Password must be at least 6 characters');
           return;
         }
-        await register(name.trim(), cleanEmail, password);
+        const registered = await register(name.trim(), cleanEmail, password);
+        onSuccess(registered);
       }
-      onSuccess();
     } catch (err: any) {
       setFormError(err.message || 'Authentication failed. Please check your credentials.');
     }
@@ -108,16 +110,27 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
           <AppLogo variant="full" size="md" subtitle="Smart Global Financial SaaS" />
         </div>
 
-        <LanguageSelector />
+        <div className="flex items-center gap-3">
+          {onBackToLanding && (
+            <button
+              type="button"
+              onClick={onBackToLanding}
+              className="text-xs font-semibold text-slate-400 hover:text-white px-3 py-1.5 rounded-lg hover:bg-slate-800 transition cursor-pointer"
+            >
+              Back to Home
+            </button>
+          )}
+          <LanguageSelector />
+        </div>
       </div>
 
       {/* Main Authentication Card */}
       <div className="relative z-10 max-w-md w-full mx-auto my-8">
-        <div className="p-8 sm:p-10 rounded-3xl bg-slate-800/90 border border-slate-700 shadow-2xl backdrop-blur-md">
+        <div className="p-6 sm:p-8 rounded-3xl bg-slate-800/95 border border-slate-700 shadow-2xl backdrop-blur-md">
           {/* Header */}
-          <div className="text-center mb-6">
+          <div className="text-center mb-5">
             <h2 className="text-2xl font-black text-white tracking-tight">
-              {mode === 'login' ? 'Welcome Back' : 'Create Free Account'}
+              {mode === 'login' ? 'Sign In to Hishab Khata' : 'Create Free Account'}
             </h2>
             <p className="text-xs text-slate-400 mt-1">
               {mode === 'login'
@@ -127,7 +140,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
           </div>
 
           {/* Mode Switcher */}
-          <div className="grid grid-cols-2 gap-1 p-1 bg-slate-900/80 rounded-xl mb-6">
+          <div className="grid grid-cols-2 gap-1 p-1 bg-slate-900/80 rounded-xl mb-5">
             <button
               type="button"
               onClick={() => {
@@ -155,6 +168,67 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
               Sign Up
             </button>
           </div>
+
+          {/* Dedicated SuperAdmin 1-Click Access Card */}
+          {mode === 'login' && (
+            <div className="mb-5 p-3.5 rounded-2xl bg-gradient-to-br from-amber-500/15 via-slate-900/90 to-teal-500/15 border-2 border-amber-500/40 shadow-xl">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-400/50 flex items-center justify-center text-amber-300">
+                    <Crown className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="text-[11px] font-black text-amber-300 uppercase tracking-wider block">
+                      Owner &amp; SuperAdmin Login
+                    </span>
+                    <span className="text-xs font-bold text-white">
+                      Sultan (Owner Admin)
+                    </span>
+                  </div>
+                </div>
+                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/40">
+                  SuperAdmin
+                </span>
+              </div>
+
+              <div className="text-[11px] text-slate-300 bg-slate-950/70 p-2 rounded-xl border border-slate-700/60 mb-2.5 space-y-0.5 font-mono">
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400">Email:</span>
+                  <span className="text-teal-300 font-bold">sultanitbangladesh@gmail.com</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400">Password:</span>
+                  <span className="text-amber-300 font-bold">admin123 <span className="text-slate-500 font-normal">or</span> password123</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  id="quick-admin-login-direct-btn"
+                  type="button"
+                  onClick={() => handleQuickLogin('sultanitbangladesh@gmail.com', 'admin123')}
+                  disabled={loading}
+                  className="w-full py-2.5 px-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs rounded-xl shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  <Zap className="w-3.5 h-3.5 fill-current" />
+                  <span>1-Click Admin Sign In</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmail('sultanitbangladesh@gmail.com');
+                    setPassword('admin123');
+                    setFormError(null);
+                  }}
+                  className="w-full py-2.5 px-3 bg-slate-900 hover:bg-slate-850 text-slate-200 font-bold text-xs rounded-xl border border-slate-700 hover:border-slate-500 transition flex items-center justify-center gap-1 cursor-pointer"
+                >
+                  <KeyRound className="w-3.5 h-3.5 text-teal-400" />
+                  <span>Fill In Fields</span>
+                </button>
+              </div>
+            </div>
+          )}
 
           {(formError || error) && (
             <div className="p-3.5 mb-4 text-xs font-semibold text-red-300 bg-red-950/60 rounded-xl border border-red-900/60 leading-relaxed">

@@ -155,22 +155,24 @@ export const Topbar: React.FC<TopbarProps> = ({
               id="topbar-return-dashboard-btn"
               type="button"
               onClick={() => onNavigate('dashboard')}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold rounded-lg shadow-xs transition cursor-pointer"
+              className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold rounded-lg shadow-xs transition cursor-pointer"
               title="Return to User App / Dashboard"
             >
               <LayoutDashboard className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">User App</span>
+              <span className="text-[11px] sm:text-xs">App</span>
+              <span className="hidden sm:inline">Dashboard</span>
             </button>
           ) : (
             <button
               id="topbar-admin-panel-btn"
               type="button"
               onClick={() => onNavigate('admin')}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold rounded-lg shadow-xs transition cursor-pointer"
+              className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold rounded-lg shadow-xs transition cursor-pointer"
               title="Open SuperAdmin Panel"
             >
               <ShieldAlert className="w-3.5 h-3.5 text-amber-300" />
-              <span className="hidden sm:inline">Admin Panel</span>
+              <span className="text-[11px] sm:text-xs">Admin</span>
+              <span className="hidden sm:inline">Panel</span>
             </button>
           )
         )}

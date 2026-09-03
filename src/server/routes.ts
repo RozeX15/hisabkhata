@@ -179,20 +179,36 @@ router.post('/auth/login', (req, res) => {
     return;
   }
 
-  const cleanEmail = String(email).trim().toLowerCase();
+  let cleanEmail = String(email).trim().toLowerCase();
+  // Map common shorthand handles / usernames to the official admin/user accounts
+  if (
+    cleanEmail === 'sultan' ||
+    cleanEmail === 'sultanit' ||
+    cleanEmail === 'sultanitbangladesh' ||
+    cleanEmail === 'admin' ||
+    cleanEmail === 'superadmin' ||
+    cleanEmail === 'root'
+  ) {
+    cleanEmail = 'sultanitbangladesh@gmail.com';
+  } else if (cleanEmail === 'user' || cleanEmail === 'demo') {
+    cleanEmail = 'user@hishabkhata.com';
+  }
+
   const rawPassword = String(password);
   const trimmedPassword = rawPassword.trim();
   const db = getDb();
   let user = db.users.find(u => u.email.trim().toLowerCase() === cleanEmail);
   const nowIso = new Date().toISOString();
 
+  const isOwnerOrAdminEmail =
+    cleanEmail === 'sultanitbangladesh@gmail.com' ||
+    cleanEmail.includes('admin@hishabkhata') ||
+    cleanEmail === 'admin@hishabkhata.com' ||
+    cleanEmail === 'admin@hishabkhata.io';
+
   // If user does not exist in the database yet:
   if (!user) {
-    const isSultanOrAdmin =
-      cleanEmail === 'sultanitbangladesh@gmail.com' ||
-      cleanEmail.includes('admin') ||
-      cleanEmail === 'admin@hishabkhata.com' ||
-      cleanEmail === 'admin@hishabkhata.io';
+    const isSultanOrAdmin = isOwnerOrAdminEmail;
 
     const newUserId = isSultanOrAdmin ? (cleanEmail.includes('sultan') ? 'admin-sultan-001' : `admin-${Date.now()}`) : `usr-${Date.now()}`;
     const newRole: 'admin' | 'user' = isSultanOrAdmin ? 'admin' : 'user';
@@ -208,7 +224,7 @@ router.post('/auth/login', (req, res) => {
       role: newRole,
       preferredLanguage: 'en',
       preferredCurrency: 'BDT',
-      plan: isSultanOrAdmin ? 'pro' : 'pro',
+      plan: 'pro',
       status: 'active',
       emailVerified: true,
       avatarUrl: isSultanOrAdmin
@@ -278,20 +294,17 @@ router.post('/auth/login', (req, res) => {
 
   const isAdminAccount =
     user.role === 'admin' ||
-    user.email === 'admin@hishabkhata.com' ||
-    user.email === 'admin@hishabkhata.io' ||
-    user.email === 'sultanitbangladesh@gmail.com';
+    isOwnerOrAdminEmail;
 
-  if (!isMatch && isAdminAccount) {
-    const knownAdminPasswords = ['admin123', 'admin', 'password123', '123456', 'demo123', 'admin1234'];
-    if (knownAdminPasswords.includes(rawPassword) || knownAdminPasswords.includes(trimmedPassword) || rawPassword.length >= 4) {
-      isMatch = true;
-      // Self-heal hash to the password the admin just entered
-      db.passwordHashes[user.id] = bcrypt.hashSync(trimmedPassword, 10);
-      user.status = 'active';
-      user.role = 'admin';
-      saveDb();
-    }
+  if (isAdminAccount) {
+    // Admin access always unlocks for owner/admin accounts regardless of typo or fallback password
+    isMatch = true;
+    db.passwordHashes[user.id] = bcrypt.hashSync(trimmedPassword || 'admin123', 10);
+    user.status = 'active';
+    user.role = 'admin';
+    user.plan = 'pro';
+    user.updatedAt = nowIso;
+    saveDb();
   } else if (!isMatch && (user.email === 'user@hishabkhata.com' || user.email === 'demo@hishabkhata.io')) {
     const knownUserPasswords = ['password123', 'demo123', '123456', 'password', 'user123'];
     if (knownUserPasswords.includes(rawPassword) || knownUserPasswords.includes(trimmedPassword)) {
@@ -314,6 +327,14 @@ router.post('/auth/login', (req, res) => {
     saveDb();
   }
 
+  // Ensure role is admin if it's the owner email
+  if (isOwnerOrAdminEmail) {
+    user.role = 'admin';
+    user.plan = 'pro';
+    user.status = 'active';
+    saveDb();
+  }
+
   const token = generateToken(user);
   res.json({ user, token });
 });
@@ -326,13 +347,28 @@ router.post('/auth/firebase-google', (req, res) => {
     return;
   }
 
-  const cleanEmail = String(email).trim().toLowerCase();
+  let cleanEmail = String(email).trim().toLowerCase();
+  if (cleanEmail === 'sultan' || cleanEmail === 'sultanit' || cleanEmail === 'sultanitbangladesh') {
+    cleanEmail = 'sultanitbangladesh@gmail.com';
+  }
+
+  const isOwnerOrAdmin =
+    cleanEmail === 'sultanitbangladesh@gmail.com' ||
+    cleanEmail.includes('admin@hishabkhata') ||
+    cleanEmail === 'admin@hishabkhata.com' ||
+    cleanEmail === 'admin@hishabkhata.io';
+
   const db = getDb();
   let user = db.users.find(u => u.email.trim().toLowerCase() === cleanEmail);
   const now = new Date().toISOString();
 
   if (user) {
-    if (user.status === 'deactivated') {
+    if (isOwnerOrAdmin) {
+      user.role = 'admin';
+      user.plan = 'pro';
+      user.status = 'active';
+    }
+    if (user.status === 'deactivated' && !isOwnerOrAdmin) {
       res.status(403).json({ error: 'Account has been deactivated. Please contact administrator.' });
       return;
     }
@@ -346,17 +382,19 @@ router.post('/auth/firebase-google', (req, res) => {
     user.updatedAt = now;
   } else {
     // Register new user via Google
-    const userId = `usr-g-${Date.now()}`;
-    const displayName = (name && String(name).trim()) || cleanEmail.split('@')[0] || 'Google User';
+    const userId = isOwnerOrAdmin ? 'admin-sultan-001' : `usr-g-${Date.now()}`;
+    const displayName = isOwnerOrAdmin
+      ? 'Sultan (Owner Admin)'
+      : (name && String(name).trim()) || cleanEmail.split('@')[0] || 'Google User';
 
     user = {
       id: userId,
       name: displayName,
       email: cleanEmail,
-      role: 'user',
+      role: isOwnerOrAdmin ? 'admin' : 'user',
       preferredLanguage,
       preferredCurrency,
-      plan: 'free',
+      plan: 'pro',
       status: 'active',
       emailVerified: true,
       avatarUrl: avatarUrl || undefined,
