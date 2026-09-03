@@ -1,7 +1,12 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useI18n } from '../lib/i18n';
 import { DashboardSummary, Wallet, Category, Transaction, SavingsGoal, Loan } from '../types';
-import { formatCurrency } from '../lib/currencies';
+import {
+  formatCurrency,
+  convertCurrency,
+  getExchangeRate,
+  useLiveExchangeRates
+} from '../lib/currencies';
 import {
   Wallet as WalletIcon,
   TrendingUp,
@@ -41,6 +46,8 @@ interface DashboardViewProps {
   wallets: Wallet[];
   categories: Category[];
   currency: string;
+  transactions?: Transaction[];
+  baseCurrency?: string;
   onOpenAddTransaction: (type?: 'income' | 'expense' | 'transfer') => void;
   onOpenAddGoal: () => void;
   onOpenContributeGoal: (goal: SavingsGoal) => void;
@@ -54,6 +61,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   wallets,
   categories,
   currency,
+  transactions,
+  baseCurrency,
   onOpenAddTransaction,
   onOpenAddGoal,
   onOpenContributeGoal,
@@ -62,6 +71,86 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onNavigate,
 }) => {
   const { t } = useI18n();
+  useLiveExchangeRates();
+
+  // Determine base account currency (default BDT)
+  const base = baseCurrency || 'BDT';
+  const isConverted = currency !== base;
+
+  // 1. Live converted total balance
+  const displayTotalBalance = useMemo(() => {
+    if (wallets && wallets.length > 0) {
+      return wallets.reduce((sum, w) => {
+        const wCurr = w.currency || base;
+        return sum + convertCurrency(Number(w.balance) || 0, wCurr, currency);
+      }, 0);
+    }
+    return convertCurrency(summary?.totalBalance || 0, base, currency);
+  }, [wallets, summary?.totalBalance, base, currency]);
+
+  // 2. Live converted this month income
+  const displayIncomeThisMonth = useMemo(() => {
+    if (transactions && transactions.length > 0) {
+      const currentMonthStr = new Date().toISOString().substring(0, 7);
+      const monthTx = transactions.filter(t => t.type === 'income' && t.date && t.date.startsWith(currentMonthStr));
+      if (monthTx.length > 0) {
+        return monthTx.reduce((sum, t) => {
+          const tCurr = t.currency || base;
+          return sum + convertCurrency(Number(t.amount) || 0, tCurr, currency);
+        }, 0);
+      }
+    }
+    return convertCurrency(summary?.totalIncomeThisMonth || 0, base, currency);
+  }, [transactions, summary?.totalIncomeThisMonth, base, currency]);
+
+  // 3. Live converted this month expenses
+  const displayExpensesThisMonth = useMemo(() => {
+    if (transactions && transactions.length > 0) {
+      const currentMonthStr = new Date().toISOString().substring(0, 7);
+      const monthTx = transactions.filter(t => t.type === 'expense' && t.date && t.date.startsWith(currentMonthStr));
+      if (monthTx.length > 0) {
+        return monthTx.reduce((sum, t) => {
+          const tCurr = t.currency || base;
+          return sum + convertCurrency(Number(t.amount) || 0, tCurr, currency);
+        }, 0);
+      }
+    }
+    return convertCurrency(summary?.totalExpensesThisMonth || 0, base, currency);
+  }, [transactions, summary?.totalExpensesThisMonth, base, currency]);
+
+  // 4. Live converted net savings / cashflow
+  const displayNetSavings = displayIncomeThisMonth - displayExpensesThisMonth;
+
+  // 5. Converted monthly spending trend for the chart
+  const convertedMonthlyTrend = useMemo(() => {
+    if (!summary?.monthlySpendingTrend) return [];
+    return summary.monthlySpendingTrend.map((m) => ({
+      month: m.month,
+      income: Math.round(convertCurrency(m.income, base, currency)),
+      expense: Math.round(convertCurrency(m.expense, base, currency)),
+    }));
+  }, [summary?.monthlySpendingTrend, base, currency]);
+
+  // 6. Converted top expense categories & pie data
+  const convertedTopCategories = useMemo(() => {
+    if (!summary?.topExpenseCategories) return [];
+    return summary.topExpenseCategories.map((c) => ({
+      ...c,
+      convertedAmount: convertCurrency(c.amount, base, currency),
+    }));
+  }, [summary?.topExpenseCategories, base, currency]);
+
+  const categoryPieData = useMemo(() => {
+    return convertedTopCategories.map(c => ({
+      name: c.name,
+      value: c.convertedAmount,
+      color: c.color,
+    }));
+  }, [convertedTopCategories]);
+
+  // Exchange rate details
+  const rateFromBaseToCurr = getExchangeRate(base, currency);
+  const rateFromCurrToBase = getExchangeRate(currency, base);
 
   if (!summary) {
     return (
@@ -78,14 +167,53 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     );
   }
 
-  const categoryPieData = summary.topExpenseCategories.map(c => ({
-    name: c.name,
-    value: c.amount,
-    color: c.color,
-  }));
-
   return (
     <div className="space-y-6 pb-12">
+      {/* Live Conversion Banner */}
+      {isConverted ? (
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-teal-500/10 via-emerald-500/10 to-teal-500/5 border-2 border-teal-500/30 flex flex-wrap items-center justify-between gap-3 text-xs shadow-xs">
+          <div className="flex items-center gap-3">
+            <span className="relative flex h-3 w-3 shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+            </span>
+            <div>
+              <p className="font-black text-slate-900 dark:text-white flex items-center gap-2">
+                <span>Live Currency Conversion Active ({currency})</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 uppercase tracking-wider">
+                  Live FX
+                </span>
+              </p>
+              <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5 font-medium">
+                Balance, Income, Expenses & Budgets auto-convert from <strong>{base}</strong> to <strong>{currency}</strong> in real time.
+                <span className="font-mono font-black text-teal-700 dark:text-teal-400 ml-2">
+                  1 {base} ≈ {formatCurrency(rateFromBaseToCurr, currency)} &nbsp;|&nbsp; 1 {currency} ≈ {formatCurrency(rateFromCurrToBase, base)}
+                </span>
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="px-2.5 py-1 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[11px] font-extrabold text-slate-700 dark:text-slate-200 shadow-2xs">
+              Base: {base}
+            </span>
+            <span className="px-2.5 py-1 rounded-xl bg-teal-700 text-white text-[11px] font-extrabold shadow-2xs">
+              Viewing: {currency}
+            </span>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-center justify-between px-4 py-2.5 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 text-xs shadow-xs">
+          <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300 font-medium">
+            <span className="w-2.5 h-2.5 rounded-full bg-teal-500 shrink-0" />
+            <span>Active Financial Base Currency: <strong className="text-slate-900 dark:text-white font-black">{base}</strong></span>
+            <span className="text-slate-400 dark:text-slate-500">({wallets.length} active wallets)</span>
+          </div>
+          <div className="text-[11px] text-slate-500 dark:text-slate-400 hidden md:block">
+            Change currency anytime from the top bar for live conversion across balance, income, expense and savings
+          </div>
+        </div>
+      )}
+
       {/* 1. Hero Balance & Metrics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Net Balance Card */}
@@ -100,11 +228,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
           <div className="text-2xl sm:text-3xl font-black tracking-tight mb-1">
-            {formatCurrency(summary.totalBalance, currency)}
+            {formatCurrency(displayTotalBalance, currency)}
           </div>
-          <p className="text-xs text-teal-200 font-medium">
-            Across {wallets.length} active {wallets.length === 1 ? 'account' : 'accounts'}
-          </p>
+          <div className="flex items-center justify-between text-xs text-teal-200 font-medium">
+            <span>Across {wallets.length} active {wallets.length === 1 ? 'account' : 'accounts'}</span>
+            {isConverted && (
+              <span className="text-[11px] text-teal-200/80 font-mono">
+                ≈ {formatCurrency(summary.totalBalance, base)}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* This Month Income */}
@@ -118,13 +251,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
           <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight mb-1">
-            {formatCurrency(summary.totalIncomeThisMonth, currency)}
+            {formatCurrency(displayIncomeThisMonth, currency)}
           </div>
-          <div className="flex items-center gap-1.5 text-xs">
-            <span className={`font-bold ${summary.incomeChangePercent >= 0 ? 'text-emerald-600' : 'text-slate-400'}`}>
-              {summary.incomeChangePercent >= 0 ? `+${summary.incomeChangePercent}%` : `${summary.incomeChangePercent}%`}
-            </span>
-            <span className="text-slate-400 dark:text-slate-500">vs last month</span>
+          <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center gap-1.5">
+              <span className={`font-bold ${summary.incomeChangePercent >= 0 ? 'text-emerald-600' : 'text-slate-400'}`}>
+                {summary.incomeChangePercent >= 0 ? `+${summary.incomeChangePercent}%` : `${summary.incomeChangePercent}%`}
+              </span>
+              <span className="text-slate-400 dark:text-slate-500">vs last month</span>
+            </div>
+            {isConverted && (
+              <span className="text-[10px] text-slate-400 font-mono">
+                ≈ {formatCurrency(summary.totalIncomeThisMonth, base)}
+              </span>
+            )}
           </div>
         </div>
 
@@ -139,13 +279,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
           <div className="text-2xl font-black text-red-600 dark:text-red-400 tracking-tight mb-1">
-            {formatCurrency(summary.totalExpensesThisMonth, currency)}
+            {formatCurrency(displayExpensesThisMonth, currency)}
           </div>
-          <div className="flex items-center gap-1.5 text-xs">
-            <span className={`font-bold ${summary.expenseChangePercent > 0 ? 'text-red-500' : 'text-emerald-600'}`}>
-              {summary.expenseChangePercent >= 0 ? `+${summary.expenseChangePercent}%` : `${summary.expenseChangePercent}%`}
-            </span>
-            <span className="text-slate-400 dark:text-slate-500">vs last month</span>
+          <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center gap-1.5">
+              <span className={`font-bold ${summary.expenseChangePercent > 0 ? 'text-red-500' : 'text-emerald-600'}`}>
+                {summary.expenseChangePercent >= 0 ? `+${summary.expenseChangePercent}%` : `${summary.expenseChangePercent}%`}
+              </span>
+              <span className="text-slate-400 dark:text-slate-500">vs last month</span>
+            </div>
+            {isConverted && (
+              <span className="text-[10px] text-slate-400 font-mono">
+                ≈ {formatCurrency(summary.totalExpensesThisMonth, base)}
+              </span>
+            )}
           </div>
         </div>
 
@@ -159,12 +306,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <PiggyBank className="w-4 h-4" />
             </div>
           </div>
-          <div className={`text-2xl font-black tracking-tight mb-1 ${summary.netSavingsThisMonth >= 0 ? 'text-teal-700 dark:text-teal-400' : 'text-red-500'}`}>
-            {formatCurrency(summary.netSavingsThisMonth, currency)}
+          <div className={`text-2xl font-black tracking-tight mb-1 ${displayNetSavings >= 0 ? 'text-teal-700 dark:text-teal-400' : 'text-red-500'}`}>
+            {formatCurrency(displayNetSavings, currency)}
           </div>
-          <p className="text-xs text-slate-400 dark:text-slate-500">
-            {summary.netSavingsThisMonth >= 0 ? 'Positive cashflow surplus' : 'Deficit this month'}
-          </p>
+          <div className="flex items-center justify-between text-xs text-slate-400 dark:text-slate-500">
+            <span>{displayNetSavings >= 0 ? 'Positive cashflow surplus' : 'Deficit this month'}</span>
+            {isConverted && (
+              <span className="text-[10px] font-mono">
+                ≈ {formatCurrency(summary.netSavingsThisMonth, base)}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -282,11 +434,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={summary.monthlySpendingTrend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <BarChart data={convertedMonthlyTrend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <XAxis dataKey="month" stroke="#94A3B8" fontSize={11} tickLine={false} />
                 <YAxis stroke="#94A3B8" fontSize={11} tickLine={false} />
                 <Tooltip
-                  formatter={(val: number) => [`${currency} ${val.toLocaleString()}`, '']}
+                  formatter={(val: number) => [formatCurrency(val, currency), '']}
                   contentStyle={{ backgroundColor: '#0F172A', borderRadius: '12px', border: 'none', color: '#fff', fontSize: '12px' }}
                 />
                 <Bar dataKey="income" fill="#10B981" radius={[6, 6, 0, 0]} />
@@ -327,7 +479,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     ))}
                   </Pie>
                   <Tooltip
-                    formatter={(val: number) => [`${currency} ${val.toLocaleString()}`, '']}
+                    formatter={(val: number) => [formatCurrency(val, currency), '']}
                     contentStyle={{ backgroundColor: '#0F172A', borderRadius: '12px', border: 'none', color: '#fff', fontSize: '12px' }}
                   />
                 </PieChart>
@@ -337,14 +489,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
           {/* Legend categories */}
           <div className="mt-2 space-y-1.5 max-h-32 overflow-y-auto">
-            {summary.topExpenseCategories.slice(0, 4).map((c, i) => (
+            {convertedTopCategories.slice(0, 4).map((c, i) => (
               <div key={i} className="flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2 truncate">
                   <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
                   <span className="text-slate-600 dark:text-slate-300 font-medium truncate">{c.name}</span>
                 </div>
                 <span className="font-bold text-slate-900 dark:text-white shrink-0">
-                  {c.percentage}% ({formatCurrency(c.amount, currency)})
+                  {c.percentage}% ({formatCurrency(c.convertedAmount, currency)})
                 </span>
               </div>
             ))}
@@ -383,6 +535,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               summary.budgetSummaries.map((b) => {
                 const isOver = b.status === 'over_budget';
                 const isWarning = b.status === 'warning';
+                const convertedSpent = convertCurrency(b.spent, base, currency);
+                const convertedAmount = convertCurrency(b.amount, base, currency);
                 return (
                   <div key={b.id} className="space-y-1.5">
                     <div className="flex items-center justify-between text-xs">
@@ -390,8 +544,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         {b.categoryName}
                       </span>
                       <div className="flex items-center gap-2">
-                        <span className="text-slate-500">
-                          {formatCurrency(b.spent, currency)} / {formatCurrency(b.amount, currency)}
+                        <span className="text-slate-500 dark:text-slate-400 font-medium">
+                          {formatCurrency(convertedSpent, currency)} / {formatCurrency(convertedAmount, currency)}
                         </span>
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
                           isOver ? 'bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-300' :
@@ -446,6 +600,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               summary.savingsGoals.map((g) => {
                 const percent = Math.round((g.currentAmount / g.targetAmount) * 100);
                 const isCompleted = percent >= 100;
+                const convertedCurrent = convertCurrency(g.currentAmount, g.currency || base, currency);
+                const convertedTarget = convertCurrency(g.targetAmount, g.currency || base, currency);
                 return (
                   <div key={g.id} className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
                     <div className="flex-1 min-w-0">
@@ -464,8 +620,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         />
                       </div>
                       <div className="flex items-center justify-between text-[11px] text-slate-400">
-                        <span>{formatCurrency(g.currentAmount, currency)} saved</span>
-                        <span>Target: {formatCurrency(g.targetAmount, currency)}</span>
+                        <span>{formatCurrency(convertedCurrent, currency)} saved</span>
+                        <span>Target: {formatCurrency(convertedTarget, currency)}</span>
                       </div>
                     </div>
                     {!isCompleted && (
@@ -513,6 +669,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             summary.recentTransactions.map((tx) => {
               const isIncome = tx.type === 'income';
               const isTransfer = tx.type === 'transfer';
+              const convertedTxAmount = convertCurrency(tx.amount, tx.currency || base, currency);
               return (
                 <div key={tx.id} className="py-3 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
@@ -540,11 +697,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       isTransfer ? 'text-blue-600 dark:text-blue-400' :
                       'text-red-600 dark:text-red-400'
                     }`}>
-                      {isIncome ? '+' : isTransfer ? '' : '-'}{formatCurrency(tx.amount, currency)}
+                      {isIncome ? '+' : isTransfer ? '' : '-'}{formatCurrency(convertedTxAmount, currency)}
                     </p>
-                    <span className="text-[10px] text-slate-400 uppercase font-semibold">
-                      {tx.type}
-                    </span>
+                    <div className="flex items-center justify-end gap-1 text-[10px] text-slate-400">
+                      <span className="uppercase font-semibold">{tx.type}</span>
+                      {isConverted && (
+                        <span className="font-mono">({formatCurrency(tx.amount, tx.currency || base)})</span>
+                      )}
+                    </div>
                   </div>
                 </div>
               );

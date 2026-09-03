@@ -96,6 +96,7 @@ export interface SavingsGoal {
   name: string;
   targetAmount: number;
   currentAmount: number;
+  currency?: string;
   targetDate: string; // YYYY-MM-DD
   description?: string;
   color: string;

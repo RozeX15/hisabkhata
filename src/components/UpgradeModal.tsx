@@ -493,31 +493,33 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
               </div>
 
               {/* Step 2: Admin Receiving Account Details */}
-              <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-slate-900 to-teal-950 text-white space-y-3">
+              <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 dark:bg-slate-900 border-2 border-slate-300 dark:border-slate-700 space-y-3.5 shadow-xs">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Smartphone className="w-4 h-4 text-amber-400" />
-                    <h4 className="text-xs font-extrabold uppercase tracking-wider text-amber-300">
+                    <Smartphone className="w-4 h-4 text-teal-700 dark:text-teal-400" />
+                    <h4 className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white">
                       2. Admin Receiving Account:
                     </h4>
                   </div>
-                  <span className="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300">
+                  <span className="text-xs font-black px-3 py-1 rounded-full bg-slate-900 text-white dark:bg-emerald-500 dark:text-slate-950 shadow-xs">
                     Fee: {priceInfo.bdt}
                   </span>
                 </div>
 
                 {paymentMethod === 'bkash' && (
-                  <div className="flex items-center justify-between bg-slate-800/80 p-3 rounded-xl border border-slate-700">
+                  <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border-2 border-slate-300 dark:border-slate-700 flex items-center justify-between shadow-xs">
                     <div>
-                      <p className="text-[11px] text-slate-400">bKash Account ({config?.bkashType || 'Personal'}):</p>
-                      <p className="font-mono text-base sm:text-lg font-black text-pink-300">
+                      <p className="text-xs font-extrabold text-slate-800 dark:text-slate-200">
+                        bKash Account ({config?.bkashType || 'Personal'}):
+                      </p>
+                      <p className="font-mono text-xl sm:text-2xl font-black text-slate-950 dark:text-white tracking-wider mt-0.5 select-all">
                         {config?.bkashNumber || '01711-234567'}
                       </p>
                     </div>
                     <button
                       type="button"
                       onClick={() => handleCopy(config?.bkashNumber || '01711-234567', 'bkash')}
-                      className="px-3 py-1.5 bg-pink-600 hover:bg-pink-700 text-white text-xs font-bold rounded-lg transition flex items-center gap-1 cursor-pointer"
+                      className="px-4 py-2 bg-pink-600 hover:bg-pink-700 text-white text-xs font-extrabold rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-sm"
                     >
                       {copiedField === 'bkash' ? <CheckCheck className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                       <span>{copiedField === 'bkash' ? 'Copied' : 'Copy'}</span>
@@ -526,17 +528,19 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
                 )}
 
                 {paymentMethod === 'nagad' && (
-                  <div className="flex items-center justify-between bg-slate-800/80 p-3 rounded-xl border border-slate-700">
+                  <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border-2 border-slate-300 dark:border-slate-700 flex items-center justify-between shadow-xs">
                     <div>
-                      <p className="text-[11px] text-slate-400">Nagad Account ({config?.nagadType || 'Personal'}):</p>
-                      <p className="font-mono text-base sm:text-lg font-black text-orange-300">
+                      <p className="text-xs font-extrabold text-slate-800 dark:text-slate-200">
+                        Nagad Account ({config?.nagadType || 'Personal'}):
+                      </p>
+                      <p className="font-mono text-xl sm:text-2xl font-black text-slate-950 dark:text-white tracking-wider mt-0.5 select-all">
                         {config?.nagadNumber || '01811-234567'}
                       </p>
                     </div>
                     <button
                       type="button"
                       onClick={() => handleCopy(config?.nagadNumber || '01811-234567', 'nagad')}
-                      className="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-lg transition flex items-center gap-1 cursor-pointer"
+                      className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-extrabold rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-sm"
                     >
                       {copiedField === 'nagad' ? <CheckCheck className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                       <span>{copiedField === 'nagad' ? 'Copied' : 'Copy'}</span>
@@ -545,17 +549,19 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
                 )}
 
                 {paymentMethod === 'rocket' && (
-                  <div className="flex items-center justify-between bg-slate-800/80 p-3 rounded-xl border border-slate-700">
+                  <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border-2 border-slate-300 dark:border-slate-700 flex items-center justify-between shadow-xs">
                     <div>
-                      <p className="text-[11px] text-slate-400">Rocket Account Number:</p>
-                      <p className="font-mono text-base sm:text-lg font-black text-purple-300">
+                      <p className="text-xs font-extrabold text-slate-800 dark:text-slate-200">
+                        Rocket Account Number:
+                      </p>
+                      <p className="font-mono text-xl sm:text-2xl font-black text-slate-950 dark:text-white tracking-wider mt-0.5 select-all">
                         {config?.rocketNumber || '01911-234567-8'}
                       </p>
                     </div>
                     <button
                       type="button"
                       onClick={() => handleCopy(config?.rocketNumber || '01911-234567-8', 'rocket')}
-                      className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-lg transition flex items-center gap-1 cursor-pointer"
+                      className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-extrabold rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-sm"
                     >
                       {copiedField === 'rocket' ? <CheckCheck className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                       <span>{copiedField === 'rocket' ? 'Copied' : 'Copy'}</span>
@@ -564,40 +570,40 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
                 )}
 
                 {paymentMethod === 'bank_transfer' && (
-                  <div className="space-y-2 text-xs">
-                    <div className="p-3 bg-slate-800/80 rounded-xl border border-slate-700 space-y-1.5">
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-400">Bank Name:</span>
-                        <span className="font-bold text-white">{config?.bankName || 'Islami Bank Bangladesh PLC'}</span>
+                  <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border-2 border-slate-300 dark:border-slate-700 space-y-2 text-xs shadow-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-700 dark:text-slate-300 font-bold">Bank Name:</span>
+                      <span className="font-black text-slate-950 dark:text-white text-sm">{config?.bankName || 'Islami Bank Bangladesh PLC'}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-700 dark:text-slate-300 font-bold">Account Name:</span>
+                      <span className="font-black text-slate-950 dark:text-white text-sm">{config?.bankAccountName || 'Hishab Khata SaaS Admin'}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-700 dark:text-slate-300 font-bold">Account Number:</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-black text-slate-950 dark:text-teal-300 text-base">{config?.bankAccountNumber || '2050112020345678'}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleCopy(config?.bankAccountNumber || '2050112020345678', 'bankAc')}
+                          className="px-3 py-1 bg-slate-900 hover:bg-black dark:bg-teal-600 text-white rounded-lg text-xs font-extrabold cursor-pointer"
+                        >
+                          {copiedField === 'bankAc' ? 'Copied' : 'Copy'}
+                        </button>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-400">Account Name:</span>
-                        <span className="font-bold text-white">{config?.bankAccountName || 'Hishab Khata SaaS Admin'}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-400">Account Number:</span>
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono font-bold text-teal-300">{config?.bankAccountNumber || '2050112020345678'}</span>
-                          <button
-                            type="button"
-                            onClick={() => handleCopy(config?.bankAccountNumber || '2050112020345678', 'bankAc')}
-                            className="px-2 py-0.5 bg-teal-700 hover:bg-teal-600 rounded text-[10px] font-bold cursor-pointer"
-                          >
-                            {copiedField === 'bankAc' ? 'Copied' : 'Copy'}
-                          </button>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-400">Branch & Routing:</span>
-                        <span className="text-slate-300">{config?.bankBranch || 'Dhanmondi Branch'} (Routing: {config?.bankRoutingNumber || '125272847'})</span>
-                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-700 dark:text-slate-300 font-bold">Branch & Routing:</span>
+                      <span className="text-slate-900 dark:text-slate-200 font-semibold">{config?.bankBranch || 'Dhanmondi Branch'} (Routing: {config?.bankRoutingNumber || '125272847'})</span>
                     </div>
                   </div>
                 )}
 
-                <p className="text-[11px] text-teal-200/90 leading-relaxed italic">
-                  {config?.instructionsBn || 'বিকাশ বা নগদ অ্যাপ থেকে উল্লেখিত নম্বরে Send Money করুন। সফল ট্রানজেকশনের TrxID নিচে প্রদান করুন।'}
-                </p>
+                <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/60">
+                  <p className="text-xs text-slate-900 dark:text-amber-100 font-semibold leading-relaxed">
+                    {config?.instructionsBn || 'বিকাশ বা নগদ অ্যাপ থেকে "Send Money" বা "Payment" করুন। পেমেন্ট সফল হলে প্রাপ্ত TrxID এবং আপনার মোবাইল নম্বর সাবমিট করুন। অ্যাডমিন ৫-১০ মিনিটের মধ্যে ভেরিফাই করে PRO একাউন্ট একটিভ করে দিবে।'}
+                  </p>
+                </div>
               </div>
 
               {/* Step 3: Submission Form */}

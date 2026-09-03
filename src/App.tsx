@@ -417,6 +417,8 @@ const MainAppContent: React.FC = () => {
               wallets={wallets}
               categories={categories}
               currency={currency}
+              transactions={transactions}
+              baseCurrency={user?.preferredCurrency || 'BDT'}
               onOpenAddTransaction={(type) => {
                 setEditingTx(null);
                 setTxModalInitialType(type || 'expense');
