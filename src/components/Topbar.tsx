@@ -55,7 +55,7 @@ export const Topbar: React.FC<TopbarProps> = ({
   isDarkMode,
   onToggleTheme,
   onToggleDarkMode,
-  title = 'Hishab Khata',
+  title,
   subtitle,
   activeView = 'dashboard',
   onNavigate,
@@ -70,6 +70,16 @@ export const Topbar: React.FC<TopbarProps> = ({
   const effectiveUnread = unreadNotificationsCount ?? propUnread ?? 0;
   const effectiveIsDark = isDarkMode ?? (theme === 'dark');
   const effectiveToggleDark = onToggleDarkMode || onToggleTheme || (() => {});
+
+  const displayTitle = React.useMemo(() => {
+    if (activeView === 'suggestions') return t('nav_suggestions');
+    if (activeView === 'savings_goals' || activeView === 'savings') return t('nav_savings_goals');
+    if (activeView === 'admin') return t('nav_admin');
+    const navKey = `nav_${activeView}`;
+    const translated = t(navKey);
+    if (translated && translated !== navKey) return translated;
+    return title || 'Hishab Khata';
+  }, [activeView, t, title]);
 
   // Close profile dropdown on outside click
   useEffect(() => {
@@ -95,7 +105,7 @@ export const Topbar: React.FC<TopbarProps> = ({
         </div>
         <div className="min-w-0">
           <h1 className="text-sm sm:text-lg lg:text-xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-none truncate">
-            {title}
+            {displayTitle}
           </h1>
           {subtitle && (
             <p className="hidden sm:block text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">
@@ -175,6 +185,24 @@ export const Topbar: React.FC<TopbarProps> = ({
               <span className="hidden sm:inline">Panel</span>
             </button>
           )
+        )}
+
+        {/* Suggest & SuperChat Button */}
+        {onNavigate && (
+          <button
+            id="topbar-suggest-superchat-btn"
+            type="button"
+            onClick={() => onNavigate('suggestions')}
+            className={`hidden md:inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer shadow-xs ${
+              activeView === 'suggestions'
+                ? 'bg-amber-500 text-slate-950 font-black'
+                : 'bg-amber-50 dark:bg-amber-950/50 hover:bg-amber-100 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60'
+            }`}
+            title="Suggest features or send SuperChat to Sultan Admin"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+            <span>SuperChat</span>
+          </button>
         )}
 
         {/* AI Advisor Button */}
@@ -287,6 +315,21 @@ export const Topbar: React.FC<TopbarProps> = ({
                     >
                       <ShieldAlert className="w-4 h-4 shrink-0" />
                       <span>{activeView === 'admin' ? 'Return to User App' : 'SuperAdmin Panel'}</span>
+                    </button>
+                  )}
+
+                  {onNavigate && (
+                    <button
+                      id="topbar-menu-suggest-btn"
+                      type="button"
+                      onClick={() => {
+                        setIsProfileOpen(false);
+                        onNavigate('suggestions');
+                      }}
+                      className="w-full flex items-center gap-2 px-2.5 py-2 rounded-xl text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/40 font-bold transition cursor-pointer"
+                    >
+                      <Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
+                      <span>{t('nav_suggestions')}</span>
                     </button>
                   )}
 

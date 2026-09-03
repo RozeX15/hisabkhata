@@ -17,7 +17,8 @@ import {
   LogOut,
   Zap,
   ChevronRight,
-  Download
+  Download,
+  MessageSquareHeart
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -48,6 +49,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'budgets', label: t('nav_budgets'), icon: PieChart },
     { id: 'savings_goals', label: t('nav_savings_goals'), icon: Target },
     { id: 'loans', label: t('nav_loans'), icon: HandCoins },
+    { id: 'suggestions', label: t('nav_suggestions'), icon: MessageSquareHeart, badge: 'SUPERCHAT' },
     { id: 'insights', label: t('nav_insights'), icon: Sparkles, badge: 'AI' },
     { id: 'reports', label: t('nav_reports'), icon: BarChart3 },
     { id: 'notifications', label: t('nav_notifications'), icon: Bell, count: unreadNotifsCount },

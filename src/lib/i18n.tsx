@@ -17,6 +17,23 @@ interface I18nContextType {
 
 const I18nContext = createContext<I18nContextType | undefined>(undefined);
 
+const KEY_ALIASES: Record<string, string> = {
+  total_income: 'dash_monthly_income',
+  total_expenses: 'dash_monthly_expense',
+  total_balance: 'dash_total_balance',
+  net_savings: 'dash_net_savings',
+  recent_transactions: 'dash_recent_transactions',
+  add_transaction: 'tx_add_title',
+  edit_transaction: 'tx_edit_title',
+  add_wallet: 'wallets_add',
+  edit_wallet: 'wallets_edit_title',
+  set_budget: 'budget_add',
+  add_loan: 'loan_add',
+  add_goal: 'goal_add',
+  person_name: 'loan_person',
+  note: 'notes',
+};
+
 export const I18nProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<string>(() => {
     return localStorage.getItem('hk_language') || 'en';
@@ -29,7 +46,18 @@ export const I18nProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [languages, setLanguagesList] = useState<LanguageInfo[]>(() => {
     const saved = localStorage.getItem('hk_languages_list');
     if (saved) {
-      try { return JSON.parse(saved); } catch { /* ignore */ }
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const map = new Map<string, LanguageInfo>();
+          defaultLanguages.forEach(dl => map.set(dl.code, dl));
+          parsed.forEach((p: any) => {
+            const existing = map.get(p.code);
+            map.set(p.code, { ...existing, ...p, isEnabled: p.isEnabled ?? true });
+          });
+          return Array.from(map.values());
+        }
+      } catch { /* ignore */ }
     }
     return defaultLanguages;
   });
@@ -42,8 +70,10 @@ export const I18nProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return {};
   });
 
-  const currentLangObj = languages.find(l => l.code === language) || defaultLanguages[0];
-  const isRtl = currentLangObj.isRtl;
+  const currentLangObj = languages.find(l => l.code === language)
+    || defaultLanguages.find(l => l.code === language)
+    || defaultLanguages[0];
+  const isRtl = Boolean(currentLangObj?.isRtl);
 
   const setCurrency = (curr: string) => {
     setCurrencyState(curr);
@@ -57,12 +87,31 @@ export const I18nProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, [language, isRtl]);
 
   const setLanguage = (newLang: string) => {
-    const exists = languages.find(l => l.code === newLang && l.isEnabled);
-    if (exists) {
-      setLanguageState(newLang);
-    } else {
-      setLanguageState('en');
-    }
+    const targetLang = languages.find(l => l.code === newLang)
+      || defaultLanguages.find(l => l.code === newLang);
+    
+    const validCode = targetLang ? targetLang.code : 'en';
+    setLanguageState(validCode);
+    localStorage.setItem('hk_language', validCode);
+
+    const isLangRtl = Boolean(targetLang?.isRtl);
+    document.documentElement.dir = isLangRtl ? 'rtl' : 'ltr';
+    document.documentElement.lang = validCode;
+
+    // Background sync with user profile if logged in
+    try {
+      const token = localStorage.getItem('hk_auth_token');
+      if (token) {
+        fetch('/api/users/profile', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ preferredLanguage: validCode })
+        }).catch(() => {});
+      }
+    } catch { /* ignore */ }
   };
 
   const updateCustomTranslations = (lang: string, key: string, val: string) => {
@@ -80,20 +129,22 @@ export const I18nProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const t = (key: string, params?: Record<string, string | number>): string => {
+    const alias = KEY_ALIASES[key];
+
     // 1. Check custom admin translations
-    let text = customTranslations[language]?.[key];
+    let text = customTranslations[language]?.[key] || (alias ? customTranslations[language]?.[alias] : undefined);
 
     // 2. Check base dictionary for current language
     if (!text && baseTranslations[language]) {
-      text = baseTranslations[language][key];
+      text = baseTranslations[language][key] || (alias ? baseTranslations[language][alias] : undefined);
     }
 
     // 3. Fallback to English
     if (!text && baseTranslations['en']) {
-      text = baseTranslations['en'][key];
+      text = baseTranslations['en'][key] || (alias ? baseTranslations['en'][alias] : undefined);
     }
 
-    // 4. Fallback to key if not found
+    // 4. Fallback to key or alias title if not found
     if (!text) {
       return key;
     }

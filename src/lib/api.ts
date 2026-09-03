@@ -15,7 +15,8 @@ import {
   AdminPaymentConfig,
   UserPresence,
   LiveUserActivity,
-  EmailLogEntry
+  EmailLogEntry,
+  SuggestionSuperChat
 } from '../types';
 
 const API_BASE = '/api';
@@ -223,4 +224,14 @@ export const api = {
   getSystemLimits: () => request<SystemPlanLimits>('/admin/system-limits'),
   updateSystemLimits: (data: Partial<SystemPlanLimits>) => request<SystemPlanLimits>('/admin/system-limits', { method: 'PUT', body: JSON.stringify(data) }),
   resetDemoData: () => request<{ message: string }>('/admin/system-limits', { method: 'GET' }), // Safe no-op or reload
+
+  // Suggestions & SuperChat
+  getSuggestions: () => request<SuggestionSuperChat[]>('/suggestions'),
+  submitSuggestion: (data: Partial<SuggestionSuperChat> & { walletId?: string }) =>
+    request<SuggestionSuperChat>('/suggestions', { method: 'POST', body: JSON.stringify(data) }),
+  upvoteSuggestion: (id: string) => request<{ upvotes: number; hasUpvoted: boolean }>(`/suggestions/${id}/upvote`, { method: 'POST' }),
+  getAdminSuggestions: () => request<{ suggestions: SuggestionSuperChat[]; stats: any }>('/admin/suggestions'),
+  updateAdminSuggestion: (id: string, data: { status?: string; adminReply?: string; isSuperChatVerified?: boolean }) =>
+    request<SuggestionSuperChat>(`/admin/suggestions/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  deleteAdminSuggestion: (id: string) => request<{ message: string }>(`/admin/suggestions/${id}`, { method: 'DELETE' }),
 };

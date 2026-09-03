@@ -17,7 +17,8 @@ import {
   AdminPaymentConfig,
   UserPresence,
   LiveUserActivity,
-  EmailLogEntry
+  EmailLogEntry,
+  SuggestionSuperChat
 } from '../types';
 import { generateSmartInsights } from '../lib/insights';
 import { GoogleGenAI } from '@google/genai';
@@ -2495,6 +2496,265 @@ router.put('/admin/system-limits', adminOnly, (req: AuthRequest, res) => {
   logAdmin(req, 'UPDATE_SYSTEM_LIMITS', 'SETTINGS', 'GLOBAL', 'Updated platform tiers and quotas');
   saveDb();
   res.json(db.systemLimits);
+});
+
+// ==========================================
+// SUGGESTIONS & SUPERCHAT APIS
+// ==========================================
+
+router.get('/suggestions', (req: AuthRequest, res) => {
+  const db = getDb();
+  const suggestions = db.suggestions || [];
+  res.json(suggestions);
+});
+
+router.post('/suggestions', authMiddleware, (req: AuthRequest, res) => {
+  const db = getDb();
+  const user = req.user!;
+  const {
+    title,
+    description,
+    category = 'feature',
+    impact = 'medium',
+    hasSuperChat = false,
+    superChatAmount = 0,
+    superChatCurrency = 'BDT',
+    superChatTier = 'bronze',
+    superChatMessage = '',
+    paymentMethod = 'bkash',
+    paymentTrxId = '',
+    senderNumber = '',
+    walletId,
+  } = req.body;
+
+  if (!title || !description) {
+    return res.status(400).json({ error: 'Title and description are required' });
+  }
+
+  const numAmount = Math.max(0, parseFloat(String(superChatAmount)) || 0);
+  let isVerified = false;
+
+  // If paying via in-app wallet balance
+  if (hasSuperChat && numAmount > 0 && paymentMethod === 'wallet_balance' && walletId) {
+    const wallet = db.wallets.find(w => w.id === walletId && w.userId === user.id);
+    if (!wallet) {
+      return res.status(400).json({ error: 'Selected wallet not found' });
+    }
+    if (wallet.balance < numAmount) {
+      return res.status(400).json({ error: 'Insufficient wallet balance for this SuperChat' });
+    }
+
+    // Deduct wallet balance and create a recorded transaction
+    wallet.balance -= numAmount;
+    wallet.updatedAt = new Date().toISOString();
+
+    const txId = `tx-sc-${Date.now()}`;
+    db.transactions.unshift({
+      id: txId,
+      userId: user.id,
+      walletId: wallet.id,
+      type: 'expense',
+      amount: numAmount,
+      currency: wallet.currency || 'BDT',
+      categoryId: 'cat-oth-exp',
+      category: 'App SuperChat',
+      date: new Date().toISOString().substring(0, 10),
+      description: `SuperChat to Admin for App Improvement: ${title}`,
+      note: superChatMessage || 'Contribution to Hishab Khata development',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+
+    isVerified = true;
+  }
+
+  // Determine tier based on amount
+  let calculatedTier: 'bronze' | 'silver' | 'gold' | 'diamond' = 'bronze';
+  if (numAmount >= 1000) calculatedTier = 'diamond';
+  else if (numAmount >= 500) calculatedTier = 'gold';
+  else if (numAmount >= 250) calculatedTier = 'silver';
+
+  const newSuggestion: SuggestionSuperChat = {
+    id: `sug-${Date.now()}`,
+    userId: user.id,
+    userName: user.name,
+    userEmail: user.email,
+    userAvatar: user.avatarUrl,
+    category,
+    title: String(title).trim(),
+    description: String(description).trim(),
+    impact,
+    status: 'pending',
+    hasSuperChat: Boolean(hasSuperChat && numAmount > 0),
+    superChatAmount: hasSuperChat ? numAmount : 0,
+    superChatCurrency,
+    superChatTier: hasSuperChat ? (superChatTier || calculatedTier) : undefined,
+    superChatMessage: hasSuperChat ? superChatMessage : undefined,
+    paymentMethod: hasSuperChat ? paymentMethod : undefined,
+    paymentTrxId: hasSuperChat ? paymentTrxId : undefined,
+    senderNumber: hasSuperChat ? senderNumber : undefined,
+    isSuperChatVerified: isVerified,
+    upvotes: 1,
+    upvotedUserIds: [user.id],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  if (!db.suggestions) db.suggestions = [];
+  db.suggestions.unshift(newSuggestion);
+
+  // Notify Sultan Admin
+  const adminNotification: AppNotification = {
+    id: `notif-admin-${Date.now()}`,
+    userId: 'admin-sultan-001',
+    type: 'announcement',
+    titleKey: hasSuperChat
+      ? `💖 New SuperChat (${numAmount} ${superChatCurrency}) & Suggestion from ${user.name}!`
+      : `💡 New Feature Suggestion from ${user.name}`,
+    messageKey: `"${title}": ${description.slice(0, 120)}...`,
+    isRead: false,
+    createdAt: new Date().toISOString(),
+  };
+  db.notifications.unshift(adminNotification);
+
+  // Notify the submitting user
+  const userNotification: AppNotification = {
+    id: `notif-user-${Date.now()}`,
+    userId: user.id,
+    type: 'announcement',
+    titleKey: hasSuperChat ? 'SuperChat & Suggestion Sent!' : 'Suggestion Submitted!',
+    messageKey: hasSuperChat
+      ? `Thank you for supporting Hishab Khata with ${numAmount} ${superChatCurrency}! Sultan Admin will review your idea soon.`
+      : `Your suggestion "${title}" has been submitted to Sultan Admin. We appreciate your feedback!`,
+    isRead: false,
+    createdAt: new Date().toISOString(),
+  };
+  db.notifications.unshift(userNotification);
+
+  saveDb();
+  res.status(201).json(newSuggestion);
+});
+
+router.post('/suggestions/:id/upvote', authMiddleware, (req: AuthRequest, res) => {
+  const db = getDb();
+  const user = req.user!;
+  const suggestion = (db.suggestions || []).find(s => s.id === req.params.id);
+
+  if (!suggestion) {
+    return res.status(404).json({ error: 'Suggestion not found' });
+  }
+
+  if (!suggestion.upvotedUserIds) suggestion.upvotedUserIds = [];
+  const alreadyUpvoted = suggestion.upvotedUserIds.includes(user.id);
+
+  if (alreadyUpvoted) {
+    suggestion.upvotedUserIds = suggestion.upvotedUserIds.filter(id => id !== user.id);
+    suggestion.upvotes = Math.max(0, (suggestion.upvotes || 1) - 1);
+  } else {
+    suggestion.upvotedUserIds.push(user.id);
+    suggestion.upvotes = (suggestion.upvotes || 0) + 1;
+  }
+  suggestion.updatedAt = new Date().toISOString();
+
+  saveDb();
+  res.json({ upvotes: suggestion.upvotes, hasUpvoted: !alreadyUpvoted });
+});
+
+router.get('/admin/suggestions', adminOnly, (req: AuthRequest, res) => {
+  const db = getDb();
+  const suggestions = db.suggestions || [];
+
+  const totalSuggestions = suggestions.length;
+  const superChats = suggestions.filter(s => s.hasSuperChat);
+  const totalSuperChats = superChats.length;
+  const verifiedSuperChats = superChats.filter(s => s.isSuperChatVerified).length;
+  const totalFundsBDT = superChats.reduce((sum, s) => sum + (Number(s.superChatAmount) || 0), 0);
+  const pendingReview = suggestions.filter(s => s.status === 'pending').length;
+  const plannedCount = suggestions.filter(s => s.status === 'planned' || s.status === 'in_progress').length;
+  const completedCount = suggestions.filter(s => s.status === 'completed').length;
+
+  res.json({
+    suggestions,
+    stats: {
+      totalSuggestions,
+      totalSuperChats,
+      verifiedSuperChats,
+      totalFundsBDT,
+      pendingReview,
+      plannedCount,
+      completedCount,
+    }
+  });
+});
+
+router.patch('/admin/suggestions/:id', adminOnly, (req: AuthRequest, res) => {
+  const db = getDb();
+  const suggestion = (db.suggestions || []).find(s => s.id === req.params.id);
+
+  if (!suggestion) {
+    return res.status(404).json({ error: 'Suggestion not found' });
+  }
+
+  const { status, adminReply, isSuperChatVerified } = req.body;
+  const nowIso = new Date().toISOString();
+
+  if (status) {
+    suggestion.status = status;
+  }
+
+  if (adminReply !== undefined) {
+    suggestion.adminReply = String(adminReply).trim();
+    suggestion.adminRepliedAt = nowIso;
+
+    // Send in-app notification to the original user
+    if (suggestion.adminReply) {
+      db.notifications.unshift({
+        id: `notif-reply-${Date.now()}`,
+        userId: suggestion.userId,
+        type: 'announcement',
+        titleKey: `💬 Sultan Admin Replied to Your Suggestion: "${suggestion.title}"`,
+        messageKey: suggestion.adminReply,
+        isRead: false,
+        createdAt: nowIso,
+      });
+    }
+  }
+
+  if (isSuperChatVerified !== undefined) {
+    suggestion.isSuperChatVerified = Boolean(isSuperChatVerified);
+    if (suggestion.isSuperChatVerified && suggestion.hasSuperChat) {
+      db.notifications.unshift({
+        id: `notif-sc-ver-${Date.now()}`,
+        userId: suggestion.userId,
+        type: 'announcement',
+        titleKey: `🎉 SuperChat Verified: ৳${suggestion.superChatAmount}!`,
+        messageKey: `Sultan Admin has verified your SuperChat contribution. Thank you deeply for helping Hishab Khata grow!`,
+        isRead: false,
+        createdAt: nowIso,
+      });
+    }
+  }
+
+  suggestion.updatedAt = nowIso;
+  logAdmin(req, 'UPDATE_SUGGESTION', 'SUGGESTION', suggestion.id, `Updated status to ${suggestion.status}`);
+  saveDb();
+
+  res.json(suggestion);
+});
+
+router.delete('/admin/suggestions/:id', adminOnly, (req: AuthRequest, res) => {
+  const db = getDb();
+  const index = (db.suggestions || []).findIndex(s => s.id === req.params.id);
+
+  if (index === -1) {
+    return res.status(404).json({ error: 'Suggestion not found' });
+  }
+
+  const removed = db.suggestions.splice(index, 1)[0];
+  logAdmin(req, 'DELETE_SUGGESTION', 'SUGGESTION', removed.id, `Deleted suggestion: ${removed.title}`);
+  saveDb();
+
+  res.json({ message: 'Suggestion deleted successfully' });
 });
 
 export default router;

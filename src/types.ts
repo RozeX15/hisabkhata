@@ -338,4 +338,39 @@ export interface EmailLogEntry {
   sentAt: string;
 }
 
+export type SuggestionCategory = 'feature' | 'improvement' | 'ui_ux' | 'bug' | 'performance' | 'other';
+export type SuggestionStatus = 'pending' | 'reviewed' | 'planned' | 'in_progress' | 'completed' | 'declined';
+export type SuperChatTier = 'bronze' | 'silver' | 'gold' | 'diamond';
+
+export interface SuggestionSuperChat {
+  id: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  userAvatar?: string;
+  category: SuggestionCategory;
+  title: string;
+  description: string;
+  impact: 'low' | 'medium' | 'high' | 'critical';
+  status: SuggestionStatus;
+  adminReply?: string;
+  adminRepliedAt?: string;
+
+  // SuperChat contribution fields
+  hasSuperChat: boolean;
+  superChatAmount?: number;
+  superChatCurrency?: string;
+  superChatTier?: SuperChatTier;
+  superChatMessage?: string;
+  paymentMethod?: 'bkash' | 'nagad' | 'rocket' | 'bank' | 'wallet_balance' | 'card';
+  paymentTrxId?: string;
+  senderNumber?: string;
+  isSuperChatVerified?: boolean;
+
+  upvotes?: number;
+  upvotedUserIds?: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 

@@ -46,6 +46,7 @@ import { ReportsView } from './views/ReportsView';
 import { NotificationsView } from './views/NotificationsView';
 import { SettingsView } from './views/SettingsView';
 import { AdminView } from './views/AdminView';
+import { SuggestionsView } from './views/SuggestionsView';
 import { LegalViews } from './views/LegalViews';
 
 const MainAppContent: React.FC = () => {
@@ -708,6 +709,15 @@ const MainAppContent: React.FC = () => {
               onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
               onOpenDownloadApp={() => setIsDownloadModalOpen(true)}
               onNavigate={(v) => setActiveView(v)}
+            />
+          )}
+
+          {activeView === 'suggestions' && (
+            <SuggestionsView
+              currency={currency}
+              wallets={wallets}
+              onNavigate={(v) => setActiveView(v)}
+              onRefreshWallets={loadAllData}
             />
           )}
 

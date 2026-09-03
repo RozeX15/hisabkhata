@@ -19,7 +19,8 @@ import {
   AdminPaymentConfig,
   UserPresence,
   LiveUserActivity,
-  EmailLogEntry
+  EmailLogEntry,
+  SuggestionSuperChat
 } from '../types';
 import { defaultLanguages, baseTranslations } from '../lib/translations';
 
@@ -44,6 +45,7 @@ export interface DatabaseSchema {
   userPresences: Record<string, UserPresence>;
   liveActivities: LiveUserActivity[];
   emailLogs: EmailLogEntry[];
+  suggestions: SuggestionSuperChat[];
 }
 
 const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), 'data');
@@ -353,6 +355,62 @@ function getSeedData(): DatabaseSchema {
   ];
   const emailLogs: EmailLogEntry[] = [];
 
+  const suggestions: SuggestionSuperChat[] = [
+    {
+      id: 'sug-001',
+      userId: demoUserId,
+      userName: 'User Account',
+      userEmail: 'user@hishabkhata.com',
+      userAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
+      category: 'feature',
+      title: 'SMS Automatic Transaction Parsing for bKash & Nagad',
+      description: 'It would be amazing if the mobile PWA can auto-read or paste bKash/Nagad cash in & out transaction SMS to record entries automatically with 1 click!',
+      impact: 'high',
+      status: 'planned',
+      adminReply: 'Great idea! We are actively implementing smart SMS parser regex for all Bangladeshi MFS in the next update. Thank you!',
+      adminRepliedAt: nowIso,
+      hasSuperChat: true,
+      superChatAmount: 500,
+      superChatCurrency: 'BDT',
+      superChatTier: 'gold',
+      superChatMessage: 'Keep up the extraordinary work Sultan bhai! Love this SaaS so much!',
+      paymentMethod: 'bkash',
+      paymentTrxId: '9K28X1M90P',
+      senderNumber: '01712-889900',
+      isSuperChatVerified: true,
+      upvotes: 14,
+      upvotedUserIds: [demoUserId, 'user-farhan-002'],
+      createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
+      updatedAt: nowIso,
+    },
+    {
+      id: 'sug-002',
+      userId: 'user-farhan-002',
+      userName: 'Farhan Ahmed',
+      userEmail: 'farhan@smartfintech.bd',
+      category: 'improvement',
+      title: 'Export Monthly Statement Directly to WhatsApp & Telegram',
+      description: 'Allow 1-click sharing of generated monthly PDF summaries directly to WhatsApp contact or Telegram chat for family budgeting.',
+      impact: 'medium',
+      status: 'in_progress',
+      adminReply: 'In progress! We are adding Web Share API integration so you can share directly to WhatsApp, Telegram, or Email.',
+      adminRepliedAt: nowIso,
+      hasSuperChat: true,
+      superChatAmount: 250,
+      superChatCurrency: 'BDT',
+      superChatTier: 'silver',
+      superChatMessage: 'Small tip for the development team. Hishab Khata is a lifesaver!',
+      paymentMethod: 'nagad',
+      paymentTrxId: '7B34Y902KL',
+      senderNumber: '01819-334455',
+      isSuperChatVerified: true,
+      upvotes: 9,
+      upvotedUserIds: ['user-farhan-002'],
+      createdAt: new Date(Date.now() - 86400000).toISOString(),
+      updatedAt: nowIso,
+    }
+  ];
+
   return {
     users,
     passwordHashes,
@@ -374,6 +432,7 @@ function getSeedData(): DatabaseSchema {
     userPresences,
     liveActivities,
     emailLogs,
+    suggestions,
   };
 }
 
@@ -415,6 +474,37 @@ export function getDb(): DatabaseSchema {
       if (!inMemoryDb!.userPresences) inMemoryDb!.userPresences = {};
       if (!inMemoryDb!.liveActivities) inMemoryDb!.liveActivities = [];
       if (!inMemoryDb!.emailLogs) inMemoryDb!.emailLogs = [];
+      if (!inMemoryDb!.suggestions) {
+        inMemoryDb!.suggestions = [
+          {
+            id: 'sug-001',
+            userId: 'user-regular-001',
+            userName: 'User Account',
+            userEmail: 'user@hishabkhata.com',
+            userAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
+            category: 'feature',
+            title: 'SMS Automatic Transaction Parsing for bKash & Nagad',
+            description: 'It would be amazing if the mobile PWA can auto-read or paste bKash/Nagad cash in & out transaction SMS to record entries automatically with 1 click!',
+            impact: 'high',
+            status: 'planned',
+            adminReply: 'Great idea! We are actively implementing smart SMS parser regex for all Bangladeshi MFS in the next update. Thank you!',
+            adminRepliedAt: new Date().toISOString(),
+            hasSuperChat: true,
+            superChatAmount: 500,
+            superChatCurrency: 'BDT',
+            superChatTier: 'gold',
+            superChatMessage: 'Keep up the extraordinary work Sultan bhai! Love this SaaS so much!',
+            paymentMethod: 'bkash',
+            paymentTrxId: '9K28X1M90P',
+            senderNumber: '01712-889900',
+            isSuperChatVerified: true,
+            upvotes: 14,
+            upvotedUserIds: ['user-regular-001', 'user-farhan-002'],
+            createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
+            updatedAt: new Date().toISOString(),
+          }
+        ];
+      }
       return inMemoryDb!;
     } catch (err) {
       console.error('Error reading database file, reseeding:', err);

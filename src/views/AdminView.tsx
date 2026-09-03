@@ -9,7 +9,8 @@ import {
   AdminPaymentConfig,
   PaymentMethodType,
   LiveUserActivity,
-  EmailLogEntry
+  EmailLogEntry,
+  SuggestionSuperChat
 } from '../types';
 import { BKashIcon, NagadIcon, RocketIcon, BankIconBadge, PaymentMethodBadge, BKashFullLogo, NagadFullLogo } from '../components/PaymentIcons';
 import confetti from 'canvas-confetti';
@@ -52,7 +53,11 @@ import {
   Zap,
   ListFilter,
   LayoutDashboard,
-  LogOut
+  LogOut,
+  Sparkles,
+  ThumbsUp,
+  Trash2,
+  Heart
 } from 'lucide-react';
 
 interface AdminViewProps {
@@ -64,7 +69,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
   const { user, logout } = useAuth();
 
   // Active Main Tab
-  const [activeTab, setActiveTab] = useState<'presence' | 'activities' | 'payments' | 'emailLogs' | 'users' | 'broadcast' | 'config'>('presence');
+  const [activeTab, setActiveTab] = useState<'presence' | 'activities' | 'payments' | 'suggestions' | 'emailLogs' | 'users' | 'broadcast' | 'config'>('presence');
 
   // Core Data
   const [stats, setStats] = useState<any>(null);
@@ -76,6 +81,17 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
   const [paymentConfig, setPaymentConfig] = useState<AdminPaymentConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Suggestions & SuperChats state
+  const [adminSuggestions, setAdminSuggestions] = useState<SuggestionSuperChat[]>([]);
+  const [suggestionStats, setSuggestionStats] = useState<any>(null);
+  const [suggestionFilter, setSuggestionFilter] = useState<'all' | 'superchat' | 'pending' | 'planned' | 'completed'>('all');
+  const [replyModalOpen, setReplyModalOpen] = useState(false);
+  const [selectedSuggestion, setSelectedSuggestion] = useState<SuggestionSuperChat | null>(null);
+  const [replyText, setReplyText] = useState('');
+  const [statusUpdate, setStatusUpdate] = useState<string>('pending');
+  const [superChatVerifyStatus, setSuperChatVerifyStatus] = useState<boolean>(true);
+  const [savingReply, setSavingReply] = useState(false);
 
   // Filters
   const [userSearch, setUserSearch] = useState('');
@@ -113,7 +129,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
 
   const fetchAllAdminData = async () => {
     try {
-      const [statsRes, usersRes, presencesRes, paymentsRes, configRes, activitiesRes, emailsRes] = await Promise.all([
+      const [statsRes, usersRes, presencesRes, paymentsRes, configRes, activitiesRes, emailsRes, sugRes] = await Promise.all([
         api.getAdminStats(),
         api.getAdminUsers(),
         api.getAdminPresences(),
@@ -121,6 +137,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
         api.getSubscriptionConfig(),
         api.getLiveActivities(),
         api.getEmailLogs(),
+        api.getAdminSuggestions().catch(() => ({ suggestions: [], stats: null })),
       ]);
 
       setStats((statsRes as any).stats || statsRes);
@@ -131,6 +148,8 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
       setConfigForm(configRes || {});
       setLiveActivities(activitiesRes || []);
       setEmailLogs(emailsRes || []);
+      setAdminSuggestions(sugRes?.suggestions || []);
+      setSuggestionStats(sugRes?.stats || null);
     } catch (err: any) {
       console.error('Failed to load admin suite data', err);
     } finally {
@@ -147,6 +166,10 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
       api.getAdminSubscriptionPayments().then(res => setPayments(res || [])).catch(() => {});
       api.getLiveActivities().then(res => setLiveActivities(res || [])).catch(() => {});
       api.getEmailLogs().then(res => setEmailLogs(res || [])).catch(() => {});
+      api.getAdminSuggestions().then(res => {
+        if (res?.suggestions) setAdminSuggestions(res.suggestions);
+        if (res?.stats) setSuggestionStats(res.stats);
+      }).catch(() => {});
     }, 10000);
     return () => clearInterval(interval);
   }, []);
@@ -295,6 +318,46 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
     }
   };
 
+  // Suggestion & SuperChat Handlers
+  const handleOpenReply = (item: SuggestionSuperChat) => {
+    setSelectedSuggestion(item);
+    setReplyText(item.adminReply || '');
+    setStatusUpdate(item.status || 'pending');
+    setSuperChatVerifyStatus(Boolean(item.isSuperChatVerified));
+    setReplyModalOpen(true);
+  };
+
+  const handleSaveReply = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedSuggestion) return;
+    setSavingReply(true);
+    try {
+      await api.updateAdminSuggestion(selectedSuggestion.id, {
+        adminReply: replyText.trim() || undefined,
+        status: statusUpdate,
+        isSuperChatVerified: selectedSuggestion.hasSuperChat ? superChatVerifyStatus : undefined,
+      });
+      setReplyModalOpen(false);
+      setSelectedSuggestion(null);
+      await fetchAllAdminData();
+    } catch (err: any) {
+      alert(err.message || 'Failed to update suggestion');
+    } finally {
+      setSavingReply(false);
+    }
+  };
+
+  const handleDeleteSuggestion = async (id: string) => {
+    if (window.confirm('Delete this user suggestion?')) {
+      try {
+        await api.deleteAdminSuggestion(id);
+        await fetchAllAdminData();
+      } catch (err: any) {
+        alert(err.message || 'Failed to delete suggestion');
+      }
+    }
+  };
+
   const onlineCount = presences.filter(p => p.isOnline).length;
   const pendingPaymentsCount = payments.filter(p => p.status === 'pending').length;
 
@@ -306,6 +369,14 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
   const filteredPayments = payments.filter(p => {
     if (paymentFilter === 'all') return true;
     return p.status === paymentFilter;
+  });
+
+  const filteredSuggestions = adminSuggestions.filter(s => {
+    if (suggestionFilter === 'superchat') return s.hasSuperChat;
+    if (suggestionFilter === 'pending') return s.status === 'pending';
+    if (suggestionFilter === 'planned') return s.status === 'planned' || s.status === 'in_progress';
+    if (suggestionFilter === 'completed') return s.status === 'completed';
+    return true;
   });
 
   if (loading && !stats) {
@@ -525,6 +596,25 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
           {pendingPaymentsCount > 0 && (
             <span className="px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 text-[10px] font-black animate-pulse">
               {pendingPaymentsCount} Pending
+            </span>
+          )}
+        </button>
+
+        <button
+          id="admin-tab-suggestions"
+          type="button"
+          onClick={() => setActiveTab('suggestions')}
+          className={`px-4 py-2.5 rounded-2xl transition cursor-pointer flex items-center gap-2 shrink-0 ${
+            activeTab === 'suggestions'
+              ? 'bg-amber-600 text-white shadow-md'
+              : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
+          }`}
+        >
+          <Sparkles className="w-4 h-4 text-amber-400" />
+          <span>Suggestions & SuperChat ({adminSuggestions.length})</span>
+          {suggestionStats?.totalFundsBDT > 0 && (
+            <span className="px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 text-[10px] font-black">
+              ৳{suggestionStats.totalFundsBDT}
             </span>
           )}
         </button>
@@ -1577,7 +1667,397 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
       )}
 
       {/* ------------------------------------------------------------- */}
-      {/* DIRECT MESSAGE MODAL */}
+      {/* SUGGESTIONS & SUPERCHAT TAB */}
+      {/* ------------------------------------------------------------- */}
+      {activeTab === 'suggestions' && (
+        <div className="space-y-6">
+          {/* Top KPI Metrics for Suggestions */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="p-4 rounded-3xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xs">
+              <div className="flex items-center justify-between text-slate-400 mb-1">
+                <span className="text-xs font-bold uppercase tracking-wider">Total Ideas</span>
+                <MessageSquare className="w-4 h-4 text-teal-600" />
+              </div>
+              <p className="text-2xl font-black text-slate-900 dark:text-white">
+                {suggestionStats?.totalSuggestions ?? adminSuggestions.length}
+              </p>
+              <p className="text-[11px] text-slate-400 mt-0.5">Submitted by users</p>
+            </div>
+
+            <div className="p-4 rounded-3xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xs">
+              <div className="flex items-center justify-between text-slate-400 mb-1">
+                <span className="text-xs font-bold uppercase tracking-wider">SuperChats</span>
+                <Crown className="w-4 h-4 text-amber-500" />
+              </div>
+              <p className="text-2xl font-black text-amber-600 dark:text-amber-400">
+                {suggestionStats?.totalSuperChats ?? adminSuggestions.filter(s => s.hasSuperChat).length}
+              </p>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                Funds: ৳{suggestionStats?.totalFundsBDT ?? adminSuggestions.reduce((a, b) => a + (Number(b.superChatAmount) || 0), 0)} BDT
+              </p>
+            </div>
+
+            <div className="p-4 rounded-3xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xs">
+              <div className="flex items-center justify-between text-slate-400 mb-1">
+                <span className="text-xs font-bold uppercase tracking-wider">Pending Review</span>
+                <Clock className="w-4 h-4 text-blue-500" />
+              </div>
+              <p className="text-2xl font-black text-blue-600 dark:text-blue-400">
+                {suggestionStats?.pendingReview ?? adminSuggestions.filter(s => s.status === 'pending').length}
+              </p>
+              <p className="text-[11px] text-slate-400 mt-0.5">Awaiting Sultan response</p>
+            </div>
+
+            <div className="p-4 rounded-3xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xs">
+              <div className="flex items-center justify-between text-slate-400 mb-1">
+                <span className="text-xs font-bold uppercase tracking-wider">Implemented</span>
+                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+              </div>
+              <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
+                {suggestionStats?.completedCount ?? adminSuggestions.filter(s => s.status === 'completed').length}
+              </p>
+              <p className="text-[11px] text-slate-400 mt-0.5">Live improvements</p>
+            </div>
+          </div>
+
+          {/* Filter Bar */}
+          <div className="flex items-center justify-between gap-3 flex-wrap bg-white dark:bg-slate-800 p-4 rounded-3xl border border-slate-200 dark:border-slate-700">
+            <div className="flex items-center gap-2 overflow-x-auto text-xs font-bold">
+              <button
+                type="button"
+                onClick={() => setSuggestionFilter('all')}
+                className={`px-3 py-1.5 rounded-xl transition cursor-pointer shrink-0 ${
+                  suggestionFilter === 'all'
+                    ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900'
+                    : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
+                }`}
+              >
+                All ({adminSuggestions.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setSuggestionFilter('superchat')}
+                className={`px-3 py-1.5 rounded-xl transition cursor-pointer flex items-center gap-1.5 shrink-0 ${
+                  suggestionFilter === 'superchat'
+                    ? 'bg-amber-500 text-slate-950 font-black'
+                    : 'bg-slate-100 dark:bg-slate-700 text-amber-600 dark:text-amber-400'
+                }`}
+              >
+                <Crown className="w-3.5 h-3.5" />
+                <span>SuperChats ({adminSuggestions.filter(s => s.hasSuperChat).length})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSuggestionFilter('pending')}
+                className={`px-3 py-1.5 rounded-xl transition cursor-pointer shrink-0 ${
+                  suggestionFilter === 'pending'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
+                }`}
+              >
+                Pending Review
+              </button>
+              <button
+                type="button"
+                onClick={() => setSuggestionFilter('planned')}
+                className={`px-3 py-1.5 rounded-xl transition cursor-pointer shrink-0 ${
+                  suggestionFilter === 'planned'
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
+                }`}
+              >
+                Planned / In Progress
+              </button>
+              <button
+                type="button"
+                onClick={() => setSuggestionFilter('completed')}
+                className={`px-3 py-1.5 rounded-xl transition cursor-pointer shrink-0 ${
+                  suggestionFilter === 'completed'
+                    ? 'bg-emerald-600 text-white'
+                    : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
+                }`}
+              >
+                Implemented
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={fetchAllAdminData}
+              className="px-3 py-1.5 text-xs font-bold text-teal-600 dark:text-teal-400 hover:underline flex items-center gap-1 cursor-pointer"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>Refresh List</span>
+            </button>
+          </div>
+
+          {/* Suggestions List */}
+          {filteredSuggestions.length === 0 ? (
+            <div className="p-12 text-center rounded-3xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 space-y-2">
+              <Sparkles className="w-8 h-8 text-slate-400 mx-auto" />
+              <p className="text-sm font-bold text-slate-600 dark:text-slate-300">
+                No user suggestions found in this category.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredSuggestions.map((item) => (
+                <div
+                  key={item.id}
+                  className={`p-5 rounded-3xl bg-white dark:bg-slate-800 border transition shadow-xs ${
+                    item.hasSuperChat
+                      ? 'border-amber-400 dark:border-amber-500/70 bg-gradient-to-r from-amber-500/5 via-white dark:via-slate-800 to-transparent'
+                      : 'border-slate-200 dark:border-slate-700'
+                  }`}
+                >
+                  <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
+                    <div className="space-y-2 max-w-3xl">
+                      {/* Badges */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {item.hasSuperChat && (
+                          <span className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-xs font-black bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-xs">
+                            <Crown className="w-3.5 h-3.5" />
+                            <span>SUPERCHAT ৳{item.superChatAmount} BDT</span>
+                            {item.isSuperChatVerified ? (
+                              <span className="ml-1 px-1.5 py-0.2 rounded-full bg-emerald-700 text-white text-[9px]">
+                                VERIFIED ✓
+                              </span>
+                            ) : (
+                              <span className="ml-1 px-1.5 py-0.2 rounded-full bg-amber-800 text-white text-[9px]">
+                                UNVERIFIED
+                              </span>
+                            )}
+                          </span>
+                        )}
+                        <span className="px-2.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold uppercase">
+                          {item.category}
+                        </span>
+                        <span className="text-xs text-slate-400">
+                          Upvotes: <strong className="text-teal-600">{item.upvotes || 0}</strong>
+                        </span>
+
+                        {/* Status */}
+                        {item.status === 'completed' && (
+                          <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-xs font-black uppercase">
+                            ✓ Implemented
+                          </span>
+                        )}
+                        {(item.status === 'planned' || item.status === 'in_progress') && (
+                          <span className="px-2.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-xs font-black uppercase">
+                            Clock In Progress
+                          </span>
+                        )}
+                        {item.status === 'pending' && (
+                          <span className="px-2.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 text-xs font-black uppercase">
+                            Pending Review
+                          </span>
+                        )}
+                        {item.status === 'declined' && (
+                          <span className="px-2.5 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 text-xs font-black uppercase">
+                            Declined
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Title & Description */}
+                      <h3 className="text-base font-black text-slate-900 dark:text-white">
+                        {item.title}
+                      </h3>
+                      <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line">
+                        {item.description}
+                      </p>
+
+                      {/* SuperChat details box if present */}
+                      {item.hasSuperChat && (
+                        <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-xs space-y-1">
+                          <div className="flex items-center gap-2 font-bold text-amber-900 dark:text-amber-200">
+                            <Zap className="w-3.5 h-3.5 text-amber-600" />
+                            <span>Payment Method: <strong>{item.paymentMethod}</strong></span>
+                            {item.paymentTrxId && (
+                              <span className="font-mono bg-white dark:bg-slate-900 px-2 py-0.5 rounded border border-amber-300 dark:border-amber-700">
+                                TrxID: {item.paymentTrxId}
+                              </span>
+                            )}
+                            {item.senderNumber && (
+                              <span>From: <strong>{item.senderNumber}</strong></span>
+                            )}
+                          </div>
+                          {item.superChatMessage && (
+                            <p className="italic text-slate-600 dark:text-slate-300">
+                              Donor note: "{item.superChatMessage}"
+                            </p>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Existing Admin Reply */}
+                      {item.adminReply && (
+                        <div className="p-3 rounded-2xl bg-teal-50 dark:bg-teal-950/30 border border-teal-200 dark:border-teal-800 text-xs space-y-1">
+                          <div className="flex items-center gap-1.5 font-bold text-teal-800 dark:text-teal-300">
+                            <ShieldCheck className="w-3.5 h-3.5 text-teal-600" />
+                            <span>Sultan Admin Response:</span>
+                            {item.adminRepliedAt && (
+                              <span className="text-[10px] text-teal-600 font-normal">
+                                ({new Date(item.adminRepliedAt).toLocaleString()})
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-slate-700 dark:text-slate-200">{item.adminReply}</p>
+                        </div>
+                      )}
+
+                      {/* Author details */}
+                      <div className="text-[11px] text-slate-400 flex items-center gap-3 pt-1">
+                        <span>Submitted by: <strong className="text-slate-700 dark:text-slate-200">{item.userName}</strong> ({item.userEmail})</span>
+                        <span>Date: {new Date(item.createdAt).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex items-center lg:flex-col gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenReply(item)}
+                        className="px-4 py-2 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition"
+                      >
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        <span>{item.adminReply ? 'Edit Reply / Status' : 'Reply & Status'}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteSuggestion(item.id)}
+                        className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs cursor-pointer transition"
+                        title="Delete suggestion"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ------------------------------------------------------------- */}
+      {/* SUGGESTION REPLY & STATUS MODAL */}
+      {/* ------------------------------------------------------------- */}
+      {replyModalOpen && selectedSuggestion && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs">
+          <div className="w-full max-w-lg bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Crown className="w-5 h-5 text-amber-500" />
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                  Respond to Suggestion
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setReplyModalOpen(false);
+                  setSelectedSuggestion(null);
+                }}
+                className="text-slate-400 hover:text-slate-600 text-lg cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Target Suggestion Overview */}
+            <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 space-y-1 text-xs">
+              <p className="font-bold text-slate-900 dark:text-white">{selectedSuggestion.title}</p>
+              <p className="text-slate-500 line-clamp-2">{selectedSuggestion.description}</p>
+              <p className="text-[11px] text-teal-600 dark:text-teal-400">
+                User: {selectedSuggestion.userName} ({selectedSuggestion.userEmail})
+              </p>
+            </div>
+
+            <form onSubmit={handleSaveReply} className="space-y-4">
+              {/* Status Selector */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Lifecycle Status
+                </label>
+                <select
+                  value={statusUpdate}
+                  onChange={(e) => setStatusUpdate(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold cursor-pointer"
+                >
+                  <option value="pending">Pending Review</option>
+                  <option value="reviewed">Under Review by Sultan Admin</option>
+                  <option value="planned">Planned for Next Release</option>
+                  <option value="in_progress">Currently In Development</option>
+                  <option value="completed">Implemented & Live 🎉</option>
+                  <option value="declined">Declined</option>
+                </select>
+              </div>
+
+              {/* SuperChat Verification Checkbox if SuperChat attached */}
+              {selectedSuggestion.hasSuperChat && (
+                <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-bold text-amber-900 dark:text-amber-200">
+                      SuperChat Amount: ৳{selectedSuggestion.superChatAmount} ({selectedSuggestion.paymentMethod})
+                    </p>
+                    {selectedSuggestion.paymentTrxId && (
+                      <p className="text-[11px] font-mono text-amber-800 dark:text-amber-300">
+                        TrxID: {selectedSuggestion.paymentTrxId}
+                      </p>
+                    )}
+                  </div>
+                  <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={superChatVerifyStatus}
+                      onChange={(e) => setSuperChatVerifyStatus(e.target.checked)}
+                      className="w-4 h-4 accent-emerald-600"
+                    />
+                    <span>Verified ✓</span>
+                  </label>
+                </div>
+              )}
+
+              {/* Reply Text */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Sultan Admin Reply Note (Will send in-app notification to user)
+                </label>
+                <textarea
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                  rows={3}
+                  placeholder="e.g. Thanks for the brilliant suggestion! We have scheduled this for release in v2.4."
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs outline-none resize-none focus:ring-2 focus:ring-teal-500"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setReplyModalOpen(false);
+                    setSelectedSuggestion(null);
+                  }}
+                  className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingReply}
+                  className="px-5 py-2 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  {savingReply ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  <span>Save & Notify User</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
       {/* ------------------------------------------------------------- */}
       {msgModalOpen && targetUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs">
