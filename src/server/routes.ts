@@ -964,6 +964,75 @@ router.delete('/transactions/:id', authMiddleware, (req: AuthRequest, res) => {
   res.json({ message: 'Transaction deleted successfully' });
 });
 
+// Clear transactions for a specific month (or specific type: 'all' | 'income' | 'expense')
+router.post('/transactions/clear-month', authMiddleware, (req: AuthRequest, res) => {
+  const { month, type = 'all' } = req.body;
+  if (!month) {
+    res.status(400).json({ error: 'Month parameter is required (e.g. YYYY-MM)' });
+    return;
+  }
+
+  const db = getDb();
+  const userId = req.user!.id;
+  const toDelete = db.transactions.filter(t => {
+    if (t.userId !== userId) return false;
+    if (!t.date || !t.date.startsWith(month)) return false;
+    if (type === 'income' && t.type !== 'income') return false;
+    if (type === 'expense' && t.type !== 'expense') return false;
+    return true;
+  });
+
+  if (toDelete.length === 0) {
+    res.json({ success: true, message: 'No transactions found for this month', deletedCount: 0 });
+    return;
+  }
+
+  // Revert balances for each deleted transaction
+  for (const tx of toDelete) {
+    const wallet = db.wallets.find(w => w.id === tx.walletId);
+    if (wallet) {
+      if (tx.type === 'income') wallet.balance -= tx.amount;
+      else if (tx.type === 'expense') wallet.balance += tx.amount;
+      else if (tx.type === 'transfer' && tx.toWalletId) {
+        wallet.balance += tx.amount;
+        const dest = db.wallets.find(w => w.id === tx.toWalletId);
+        if (dest) dest.balance -= tx.amount;
+      }
+    }
+  }
+
+  const idsToDelete = new Set(toDelete.map(t => t.id));
+  db.transactions = db.transactions.filter(t => !idsToDelete.has(t.id));
+
+  saveDb();
+  res.json({
+    success: true,
+    message: `Successfully cleared ${toDelete.length} ${type} transaction(s) for ${month}`,
+    deletedCount: toDelete.length,
+    month,
+  });
+});
+
+// Reset all wallet balances to 0 or a target amount
+router.post('/wallets/reset-all', authMiddleware, (req: AuthRequest, res) => {
+  const { targetBalance = 0 } = req.body;
+  const db = getDb();
+  const userId = req.user!.id;
+
+  const userWallets = db.wallets.filter(w => w.userId === userId);
+  for (const w of userWallets) {
+    w.balance = Number(targetBalance) || 0;
+    w.updatedAt = new Date().toISOString();
+  }
+
+  saveDb();
+  res.json({
+    success: true,
+    message: `All ${userWallets.length} wallet balance(s) reset to ${targetBalance}`,
+    wallets: userWallets,
+  });
+});
+
 // -------------------------------------------------------------
 // 5. CATEGORIES API
 // -------------------------------------------------------------
@@ -1395,10 +1464,22 @@ router.post('/ai/advisor', authMiddleware, async (req: AuthRequest, res) => {
     .filter(t => t.type === 'expense' && t.date.startsWith(currentMonthStr))
     .reduce((s, t) => s + t.amount, 0);
 
+  const allTimeIncome = userTransactions
+    .filter(t => t.type === 'income')
+    .reduce((s, t) => s + t.amount, 0);
+
+  const allTimeExpenses = userTransactions
+    .filter(t => t.type === 'expense')
+    .reduce((s, t) => s + t.amount, 0);
+
+  const recentTransactions = [...userTransactions]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 15);
+
   // Category breakdown
   const categoryExpenseMap: Record<string, number> = {};
   userTransactions
-    .filter(t => t.type === 'expense' && t.date.startsWith(currentMonthStr))
+    .filter(t => t.type === 'expense')
     .forEach(t => {
       const catKey = t.category || t.categoryId || 'General';
       categoryExpenseMap[catKey] = (categoryExpenseMap[catKey] || 0) + t.amount;
@@ -1411,7 +1492,7 @@ router.post('/ai/advisor', authMiddleware, async (req: AuthRequest, res) => {
   // Detect Bengali in question or preferences
   const isBengali = /[\u0980-\u09FF]/.test(userQuestion) || userLang === 'bn';
 
-  // Build financial context summary
+  // Build comprehensive financial context summary
   const summaryPrompt = `
 You are "Hishab AI Wealth Coach", an elite, personalized financial advisor inside Hishab Khata.
 Your role is to answer the user's question directly, accurately, and immediately, using their REAL financial numbers.
@@ -1419,23 +1500,28 @@ Your role is to answer the user's question directly, accurately, and immediately
 USER REAL FINANCIAL DATA:
 - Currency: ${preferredCurrency}
 - User Name: ${req.user!.name}
-- Total Net Balance: ${preferredCurrency} ${totalBalance}
-- This Month's Total Income: ${preferredCurrency} ${thisMonthIncome}
-- This Month's Total Expenses: ${preferredCurrency} ${thisMonthExpenses}
-- Net Cashflow This Month: ${preferredCurrency} ${thisMonthIncome - thisMonthExpenses}
-- Wallets: ${userWallets.map(w => `${w.name} (${w.type}): ${preferredCurrency} ${w.balance}`).join(', ') || 'None'}
-- Savings Goals: ${userGoals.map(g => `${g.name}: ${preferredCurrency} ${g.currentAmount} / ${preferredCurrency} ${g.targetAmount} (${Math.round((g.currentAmount / (g.targetAmount || 1)) * 100)}%)`).join(', ') || 'No active goals'}
-- Category Expenses (This Month): ${Object.entries(categoryExpenseMap).map(([c, a]) => `${c}: ${preferredCurrency} ${a}`).join(', ') || 'No expenses logged'}
+- Total Net Balance across all Wallets: ${preferredCurrency} ${totalBalance.toLocaleString()}
+- Wallets: ${userWallets.map(w => `${w.name} (${w.type}): ${preferredCurrency} ${w.balance.toLocaleString()}`).join(', ') || 'None'}
+- Current Month (${currentMonthStr}) Income: ${preferredCurrency} ${thisMonthIncome.toLocaleString()}
+- Current Month (${currentMonthStr}) Expenses: ${preferredCurrency} ${thisMonthExpenses.toLocaleString()}
+- Current Month Net Cashflow: ${preferredCurrency} ${(thisMonthIncome - thisMonthExpenses).toLocaleString()}
+- All-Time Total Income: ${preferredCurrency} ${allTimeIncome.toLocaleString()}
+- All-Time Total Expenses: ${preferredCurrency} ${allTimeExpenses.toLocaleString()}
+- All-Time Net Savings: ${preferredCurrency} ${(allTimeIncome - allTimeExpenses).toLocaleString()}
+- Total Logged Transactions: ${userTransactions.length}
+- Recent Transactions: ${recentTransactions.map(t => `${t.date}: ${t.type.toUpperCase()} ${preferredCurrency} ${t.amount} (${t.description || t.categoryId || 'General'})`).join('; ') || 'No transactions logged yet'}
+- Active Savings Goals: ${userGoals.map(g => `${g.name}: ${preferredCurrency} ${g.currentAmount.toLocaleString()} / ${preferredCurrency} ${g.targetAmount.toLocaleString()} (${Math.round((g.currentAmount / (g.targetAmount || 1)) * 100)}%)`).join(', ') || 'No active goals'}
+- Category Expenses: ${Object.entries(categoryExpenseMap).map(([c, a]) => `${c}: ${preferredCurrency} ${a.toLocaleString()}`).join(', ') || 'No expenses logged'}
 - Budgets: ${userBudgets.map(b => `${b.category || b.categoryId || 'Budget'}: limit ${preferredCurrency} ${b.amount}`).join(', ') || 'No active budgets'}
-- Active Loans: ${userLoans.map(l => `${l.type === 'owe_me' ? 'Lent to' : 'Borrowed from'} ${l.personName}: ${preferredCurrency} ${l.amount - l.paidAmount} remaining`).join(', ') || 'No loans'}
+- Active Loans/Debts: ${userLoans.map(l => `${l.type === 'owe_me' ? 'Lent to' : 'Borrowed from'} ${l.personName}: ${preferredCurrency} ${l.amount - l.paidAmount} remaining`).join(', ') || 'No loans'}
 
 USER'S EXACT QUESTION:
-"${userQuestion || (isBengali ? 'আমার আর্থিক অবস্থা বিশ্লেষণ করে ৩টি বাস্তবসম্মত পরামর্শ দিন।' : 'Please analyze my financial health and give me 3 actionable steps to save more money this month.')}"
+"${userQuestion || (isBengali ? 'আমার বর্তমান ব্যালেন্স ও ক্যাশফ্লো বিশ্লেষণ করে বাস্তবসম্মত পরামর্শ দিন।' : 'Please analyze my financial health and give me 3 actionable steps to grow my net balance.')}"
 
 CRITICAL INSTRUCTIONS:
-1. ANSWER THE USER'S QUESTION DIRECTLY and IMMEDIATELY. If they ask about food, talk about their food spending. If they ask about saving, calculate their exact savings capacity. If they ask how to cut expenses, give specific categories.
-2. LANGUAGE: ${isBengali ? 'Respond in fluent, clear, natural Bengali (বাংলায়).' : 'Respond in clear, professional, engaging English.'}
-3. CITE EXACT NUMBERS from their portfolio above in ${preferredCurrency}.
+1. ANSWER THE USER'S QUESTION DIRECTLY and IMMEDIATELY with precision. Citing their exact numbers in ${preferredCurrency}.
+2. ACCURACY: If monthly income/expense is 0, note that no transactions were logged for ${currentMonthStr}, cite their Total Net Balance (${preferredCurrency} ${totalBalance.toLocaleString()}) and all-time totals, and give practical advice.
+3. LANGUAGE: ${isBengali ? 'Respond in fluent, clear, natural Bengali (বাংলায়).' : 'Respond in clear, professional, engaging English.'}
 4. FORMAT: Use clear Markdown with bold headers, bullet points, and clean math calculations. Keep it concise, friendly, and practical.
 `;
 
@@ -1443,7 +1529,7 @@ CRITICAL INSTRUCTIONS:
     const apiKey = process.env.GEMINI_API_KEY;
     if (apiKey) {
       const ai = new GoogleGenAI({ apiKey });
-      const candidateModels = ['gemini-3.6-flash', 'gemini-3.8-flash', 'gemini-flash-latest'];
+      const candidateModels = ['gemini-3.8-flash', 'gemini-flash-latest', 'gemini-3.1-pro-preview'];
 
       for (const modelName of candidateModels) {
         try {
@@ -1455,7 +1541,7 @@ CRITICAL INSTRUCTIONS:
           if (response?.text) {
             res.json({
               advice: response.text,
-              metrics: { totalBalance, thisMonthIncome, thisMonthExpenses },
+              metrics: { totalBalance, thisMonthIncome, thisMonthExpenses, allTimeIncome, allTimeExpenses },
             });
             return;
           }
@@ -1934,19 +2020,62 @@ router.post('/subscriptions/submit-payment', authMiddleware, (req: AuthRequest, 
     paymentMethod = 'bkash',
     senderNumberOrAccount,
     transactionId,
+    userEmail,
     amount,
     currency = 'BDT',
     notes,
   } = req.body;
 
-  if (!senderNumberOrAccount || !transactionId) {
-    res.status(400).json({ error: 'Sender mobile/account number and Transaction ID (TrxID) are required' });
-    return;
-  }
-
   const db = getDb();
   const user = req.user!;
   const now = new Date().toISOString();
+
+  // 1. Strict Email Validation
+  const contactEmail = String(userEmail || user.email || '').trim().toLowerCase();
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!contactEmail || !emailRegex.test(contactEmail)) {
+    res.status(400).json({
+      error: 'Please provide a valid contact & billing email address (e.g. name@example.com) for subscription confirmation.',
+    });
+    return;
+  }
+
+  // 2. Strict Mobile / Account Number Validation
+  const rawNumber = String(senderNumberOrAccount || '').trim();
+  if (!rawNumber) {
+    res.status(400).json({ error: 'Sender mobile or account number is required' });
+    return;
+  }
+
+  const cleanDigits = rawNumber.replace(/[\s\-\+]/g, '');
+  const isMFS = ['bkash', 'nagad', 'rocket', 'upay'].includes(String(paymentMethod).toLowerCase());
+
+  if (isMFS) {
+    const isBdMobile = /^(?:88)?01[3-9]\d{8}$/.test(cleanDigits);
+    const isGeneralPhone = /^\d{10,15}$/.test(cleanDigits);
+    if (!isBdMobile && !isGeneralPhone) {
+      res.status(400).json({
+        error: `Invalid mobile number. Please enter a valid 11-digit ${paymentMethod.toUpperCase()} mobile number (e.g. 01712345678).`,
+      });
+      return;
+    }
+  } else {
+    if (rawNumber.length < 6) {
+      res.status(400).json({
+        error: 'Please enter a valid bank account number or sender identifier (minimum 6 characters).',
+      });
+      return;
+    }
+  }
+
+  // 3. Strict Transaction ID (TrxID) Validation
+  const rawTrxId = String(transactionId || '').trim();
+  if (!rawTrxId || rawTrxId.length < 6 || !/^[A-Za-z0-9\-_]{6,35}$/.test(rawTrxId)) {
+    res.status(400).json({
+      error: 'Transaction ID (TrxID) must be at least 6 alphanumeric characters (e.g. 9K7J3M2N1X) without spaces or special symbols.',
+    });
+    return;
+  }
 
   let targetAmount = Number(amount);
   if (!targetAmount || targetAmount <= 0) {
@@ -1965,14 +2094,14 @@ router.post('/subscriptions/submit-payment', authMiddleware, (req: AuthRequest, 
     id: `pay-${Date.now()}`,
     userId: user.id,
     userName: user.name,
-    userEmail: user.email,
+    userEmail: contactEmail,
     plan: 'pro',
     billingCycle: billingCycle || 'yearly',
     amount: targetAmount,
     currency: currency || 'BDT',
     paymentMethod: paymentMethod || 'bkash',
-    senderNumberOrAccount: String(senderNumberOrAccount).trim(),
-    transactionId: String(transactionId).trim(),
+    senderNumberOrAccount: rawNumber,
+    transactionId: rawTrxId,
     notes: notes ? String(notes).trim() : undefined,
     status: 'pending',
     createdAt: now,

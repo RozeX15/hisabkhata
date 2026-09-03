@@ -438,7 +438,9 @@
       "titleKey": "hi",
       "messageKey": "hello dear",
       "isRead": false,
-      "readBy": [],
+      "readBy": [
+        "admin-demo-002"
+      ],
       "createdAt": "2026-09-03T06:33:41.618Z"
     },
     {
@@ -447,7 +449,7 @@
       "type": "system",
       "titleKey": "🔔 New PRO Upgrade Payment Submitted",
       "messageKey": "yixinbd@gmail.com (yixinbd@gmail.com) submitted 4999 BDT via BKASH (TrxID: 1234). Please verify and approve.",
-      "isRead": false,
+      "isRead": true,
       "createdAt": "2026-09-03T06:30:39.285Z"
     },
     {
@@ -2064,7 +2066,7 @@
       "role": "admin",
       "isOnline": true,
       "currentView": "dashboard",
-      "lastActiveAt": "2026-09-03T06:43:07.808Z",
+      "lastActiveAt": "2026-09-03T06:59:27.747Z",
       "deviceType": "desktop",
       "browser": "Chrome",
       "lastAction": "Viewing dashboard"
@@ -2084,6 +2086,136 @@
     }
   },
   "liveActivities": [
+    {
+      "id": "act-1788418567755-44t1",
+      "userId": "admin-demo-002",
+      "userName": "Sultan Admin",
+      "userEmail": "admin@hishabkhata.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to DASHBOARD",
+      "currentView": "dashboard",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-03T06:56:07.755Z"
+    },
+    {
+      "id": "act-1788418412041-56os",
+      "userId": "admin-demo-002",
+      "userName": "Sultan Admin",
+      "userEmail": "admin@hishabkhata.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to NOTIFICATIONS",
+      "currentView": "notifications",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-03T06:53:32.041Z"
+    },
+    {
+      "id": "act-1788418155346-manf",
+      "userId": "admin-demo-002",
+      "userName": "Sultan Admin",
+      "userEmail": "admin@hishabkhata.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to ADMIN",
+      "currentView": "admin",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-03T06:49:15.346Z"
+    },
+    {
+      "id": "act-1788418086683-cyne",
+      "userId": "admin-demo-002",
+      "userName": "Sultan Admin",
+      "userEmail": "admin@hishabkhata.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to DASHBOARD",
+      "currentView": "dashboard",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-03T06:48:06.683Z"
+    },
+    {
+      "id": "act-1788418081858-8rzz",
+      "userId": "admin-demo-002",
+      "userName": "Sultan Admin",
+      "userEmail": "admin@hishabkhata.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to NOTIFICATIONS",
+      "currentView": "notifications",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-03T06:48:01.858Z"
+    },
+    {
+      "id": "act-1788418079532-z25h",
+      "userId": "admin-demo-002",
+      "userName": "Sultan Admin",
+      "userEmail": "admin@hishabkhata.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to SAVINGS_GOALS",
+      "currentView": "savings_goals",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-03T06:47:59.532Z"
+    },
+    {
+      "id": "act-1788418079161-4es3",
+      "userId": "admin-demo-002",
+      "userName": "Sultan Admin",
+      "userEmail": "admin@hishabkhata.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to BUDGETS",
+      "currentView": "budgets",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-03T06:47:59.161Z"
+    },
+    {
+      "id": "act-1788418078579-gs8a",
+      "userId": "admin-demo-002",
+      "userName": "Sultan Admin",
+      "userEmail": "admin@hishabkhata.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to WALLETS",
+      "currentView": "wallets",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-03T06:47:58.579Z"
+    },
+    {
+      "id": "act-1788418076602-mpx0",
+      "userId": "admin-demo-002",
+      "userName": "Sultan Admin",
+      "userEmail": "admin@hishabkhata.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to SETTINGS",
+      "currentView": "settings",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-03T06:47:56.602Z"
+    },
+    {
+      "id": "act-1788418072859-pzs8",
+      "userId": "admin-demo-002",
+      "userName": "Sultan Admin",
+      "userEmail": "admin@hishabkhata.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to NOTIFICATIONS",
+      "currentView": "notifications",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-03T06:47:52.858Z"
+    },
     {
       "id": "act-1788417562971-3uwa",
       "userId": "admin-demo-002",

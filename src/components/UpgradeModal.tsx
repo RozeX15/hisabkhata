@@ -54,10 +54,16 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
   const [loadingConfig, setLoadingConfig] = useState(false);
 
   // Form Fields
+  const [contactEmail, setContactEmail] = useState(user?.email || '');
   const [senderNumber, setSenderNumber] = useState('');
   const [trxId, setTrxId] = useState('');
   const [notes, setNotes] = useState('');
   
+  // Validation touch states
+  const [emailTouched, setEmailTouched] = useState(false);
+  const [phoneTouched, setPhoneTouched] = useState(false);
+  const [trxIdTouched, setTrxIdTouched] = useState(false);
+
   // State
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -66,10 +72,13 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
+      if (user?.email && !contactEmail) {
+        setContactEmail(user.email);
+      }
       loadPaymentConfig();
       loadMyPayments();
     }
-  }, [isOpen]);
+  }, [isOpen, user]);
 
   const loadPaymentConfig = async () => {
     setLoadingConfig(true);
@@ -183,10 +192,43 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
 
   const priceInfo = getTargetPriceDisplay();
 
+  const validateEmail = (val: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val.trim());
+  const isMFS = ['bkash', 'nagad', 'rocket', 'upay'].includes(paymentMethod);
+  const validatePhone = (val: string) => {
+    const clean = val.replace(/[\s\-\+]/g, '');
+    if (isMFS) {
+      return /^(?:88)?01[3-9]\d{8}$/.test(clean);
+    }
+    return clean.length >= 6;
+  };
+  const validateTrx = (val: string) => /^[A-Za-z0-9\-_]{6,35}$/.test(val.trim());
+
+  const isEmailValid = validateEmail(contactEmail);
+  const isPhoneValid = validatePhone(senderNumber);
+  const isTrxValid = validateTrx(trxId);
+
   const handleSubmitPayment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!senderNumber || !trxId) {
-      setError('Please provide your sender account/number and Transaction ID (TrxID)');
+    setEmailTouched(true);
+    setPhoneTouched(true);
+    setTrxIdTouched(true);
+
+    if (!isEmailValid) {
+      setError('Please provide a valid contact & billing email address (e.g. name@example.com).');
+      return;
+    }
+
+    if (!isPhoneValid) {
+      setError(
+        isMFS
+          ? `Please provide a valid 11-digit ${paymentMethod.toUpperCase()} mobile number (e.g. 01712345678).`
+          : 'Please enter a valid sender bank account or account identifier (at least 6 characters).'
+      );
+      return;
+    }
+
+    if (!isTrxValid) {
+      setError('Transaction ID (TrxID) must be at least 6 alphanumeric characters without spaces or symbols.');
       return;
     }
 
@@ -200,6 +242,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
         paymentMethod,
         senderNumberOrAccount: senderNumber.trim(),
         transactionId: trxId.trim(),
+        userEmail: contactEmail.trim(),
         amount: targetAmount,
         currency: priceInfo.curr,
         notes: notes.trim() || undefined,
@@ -219,7 +262,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
         category: 'SUBSCRIPTION',
         title: 'PRO Subscription Submitted!',
         message: `Payment request of ${priceInfo.curr} ${targetAmount} via ${paymentMethod.toUpperCase()} received for approval.`,
-        details: `TrxID: ${trxId.trim()} • Sender: ${senderNumber.trim()} (${billingCycle.toUpperCase()})`,
+        details: `TrxID: ${trxId.trim()} • Sender: ${senderNumber.trim()} • Email: ${contactEmail.trim()} (${billingCycle.toUpperCase()})`,
         amount: targetAmount,
         currency: priceInfo.curr,
         status: 'pending',
@@ -230,6 +273,9 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
         setSubmitSuccess(false);
         setSenderNumber('');
         setTrxId('');
+        setEmailTouched(false);
+        setPhoneTouched(false);
+        setTrxIdTouched(false);
       }, 2500);
     } catch (err: any) {
       setError(err.message || 'Payment submission failed. Please try again.');
@@ -692,39 +738,117 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
                     3. Submit Your Transaction Proof:
                   </label>
                   <p className="text-[11px] text-slate-400">
-                    Enter the details of the account from which you sent the money and the confirmation TrxID.
+                    Enter your verified billing email, the sender mobile/account number, and the confirmation TrxID.
                   </p>
+                </div>
+
+                {/* Email Address Field */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                      Billing & Confirmation Email Address *
+                    </label>
+                    {emailTouched && (
+                      <span className={`text-[10px] font-bold ${isEmailValid ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                        {isEmailValid ? '✓ Valid Email' : '✗ Invalid Email Format'}
+                      </span>
+                    )}
+                  </div>
+                  <input
+                    id="upgrade-contact-email"
+                    type="email"
+                    value={contactEmail}
+                    onChange={(e) => {
+                      setContactEmail(e.target.value);
+                      setEmailTouched(true);
+                    }}
+                    onBlur={() => setEmailTouched(true)}
+                    placeholder="e.g. yourname@example.com"
+                    className={`w-full px-3.5 py-2.5 rounded-xl border bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-xs font-semibold focus:ring-2 outline-none transition ${
+                      emailTouched && !isEmailValid
+                        ? 'border-rose-500 focus:ring-rose-500'
+                        : 'border-slate-200 dark:border-slate-700 focus:ring-teal-500'
+                    }`}
+                    required
+                  />
+                  {emailTouched && !isEmailValid && (
+                    <p className="text-[11px] text-rose-500 mt-1 font-medium">
+                      Please enter a valid email address for subscription activation receipt.
+                    </p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                      Sender Phone / Account Number *
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                        {isMFS ? `${paymentMethod.toUpperCase()} Mobile Number *` : 'Sender Account Number *'}
+                      </label>
+                      {phoneTouched && (
+                        <span className={`text-[10px] font-bold ${isPhoneValid ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                          {isPhoneValid ? '✓ Valid Number' : isMFS ? '✗ 11 Digits Req' : '✗ Min 6 Chars'}
+                        </span>
+                      )}
+                    </div>
                     <input
                       id="upgrade-sender-number"
                       type="text"
                       value={senderNumber}
-                      onChange={(e) => setSenderNumber(e.target.value)}
-                      placeholder="e.g. 01712-345678"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-xs font-semibold focus:ring-2 focus:ring-teal-500 outline-none"
+                      onChange={(e) => {
+                        setSenderNumber(e.target.value);
+                        setPhoneTouched(true);
+                      }}
+                      onBlur={() => setPhoneTouched(true)}
+                      placeholder={isMFS ? 'e.g. 01712345678' : 'e.g. 150-101-0023456'}
+                      className={`w-full px-3.5 py-2.5 rounded-xl border bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-xs font-semibold focus:ring-2 outline-none transition ${
+                        phoneTouched && !isPhoneValid
+                          ? 'border-rose-500 focus:ring-rose-500'
+                          : 'border-slate-200 dark:border-slate-700 focus:ring-teal-500'
+                      }`}
                       required
                     />
+                    {phoneTouched && !isPhoneValid && (
+                      <p className="text-[11px] text-rose-500 mt-1 font-medium">
+                        {isMFS
+                          ? 'Enter valid 11-digit mobile number (e.g. 01712345678).'
+                          : 'Enter at least 6 characters.'}
+                      </p>
+                    )}
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                      Transaction ID (TrxID) *
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                        Transaction ID (TrxID) *
+                      </label>
+                      {trxIdTouched && (
+                        <span className={`text-[10px] font-bold ${isTrxValid ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                          {isTrxValid ? '✓ Valid TrxID' : '✗ Min 6 Chars'}
+                        </span>
+                      )}
+                    </div>
                     <input
                       id="upgrade-trx-id"
                       type="text"
                       value={trxId}
-                      onChange={(e) => setTrxId(e.target.value)}
+                      onChange={(e) => {
+                        setTrxId(e.target.value);
+                        setTrxIdTouched(true);
+                      }}
+                      onBlur={() => setTrxIdTouched(true)}
                       placeholder="e.g. 9K7J3M2N1X"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-xs font-mono font-bold focus:ring-2 focus:ring-teal-500 outline-none uppercase"
+                      className={`w-full px-3.5 py-2.5 rounded-xl border bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-xs font-mono font-bold focus:ring-2 outline-none uppercase transition ${
+                        trxIdTouched && !isTrxValid
+                          ? 'border-rose-500 focus:ring-rose-500'
+                          : 'border-slate-200 dark:border-slate-700 focus:ring-teal-500'
+                      }`}
                       required
                     />
+                    {trxIdTouched && !isTrxValid && (
+                      <p className="text-[11px] text-rose-500 mt-1 font-medium">
+                        Must be at least 6 alphanumeric characters.
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -746,7 +870,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
                   <button
                     id="upgrade-submit-payment-btn"
                     type="submit"
-                    disabled={submitting}
+                    disabled={submitting || (emailTouched && !isEmailValid) || (phoneTouched && !isPhoneValid) || (trxIdTouched && !isTrxValid)}
                     className="w-full py-3.5 px-6 rounded-2xl bg-teal-700 hover:bg-teal-800 text-white font-extrabold text-sm shadow-lg shadow-teal-700/20 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                   >
                     {submitting ? (

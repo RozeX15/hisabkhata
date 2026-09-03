@@ -120,6 +120,16 @@ export const api = {
   createTransaction: (data: any) => request<Transaction>('/transactions', { method: 'POST', body: JSON.stringify(data) }),
   updateTransaction: (id: string, data: any) => request<Transaction>(`/transactions/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteTransaction: (id: string) => request<{ message: string }>(`/transactions/${id}`, { method: 'DELETE' }),
+  clearMonthTransactions: (month: string, type?: 'all' | 'income' | 'expense') =>
+    request<{ success: boolean; message: string; deletedCount: number; month: string }>('/transactions/clear-month', {
+      method: 'POST',
+      body: JSON.stringify({ month, type }),
+    }),
+  resetAllWallets: (targetBalance: number = 0) =>
+    request<{ success: boolean; message: string; wallets: any[] }>('/wallets/reset-all', {
+      method: 'POST',
+      body: JSON.stringify({ targetBalance }),
+    }),
 
   // Categories
   getCategories: () => request<any[]>('/categories'),
@@ -176,6 +186,7 @@ export const api = {
     paymentMethod: string;
     senderNumberOrAccount: string;
     transactionId: string;
+    userEmail?: string;
     amount?: number;
     currency?: string;
     notes?: string;

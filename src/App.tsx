@@ -43,6 +43,7 @@ import { SavingsGoalsView } from './views/SavingsGoalsView';
 import { LoansView } from './views/LoansView';
 import { SmartInsightsView } from './views/SmartInsightsView';
 import { ReportsView } from './views/ReportsView';
+import { NotificationsView } from './views/NotificationsView';
 import { SettingsView } from './views/SettingsView';
 import { AdminView } from './views/AdminView';
 import { LegalViews } from './views/LegalViews';
@@ -568,6 +569,7 @@ const MainAppContent: React.FC = () => {
               onOpenAddBudget={() => setIsBudgetModalOpen(true)}
               onOpenAiAdvisor={() => setIsAiModalOpen(true)}
               onNavigate={(v) => setActiveView(v)}
+              onRefreshData={loadAllData}
             />
           )}
 
@@ -663,6 +665,17 @@ const MainAppContent: React.FC = () => {
               categories={categories}
               currency={currency}
               userName={user.name}
+            />
+          )}
+
+          {activeView === 'notifications' && (
+            <NotificationsView
+              notifications={notifications}
+              onMarkRead={handleMarkNotifRead}
+              onMarkAllRead={handleMarkAllNotifsRead}
+              onDelete={handleDeleteNotif}
+              onClearAll={handleClearAllNotifs}
+              onNavigate={(view) => setActiveView(view)}
             />
           )}
 
