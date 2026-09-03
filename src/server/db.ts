@@ -163,6 +163,20 @@ function getSeedData(): DatabaseSchema {
       createdAt: nowIso,
       updatedAt: nowIso,
     },
+    {
+      id: 'admin-sultan-001',
+      name: 'Sultan (Owner Admin)',
+      email: 'sultanitbangladesh@gmail.com',
+      role: 'admin',
+      preferredLanguage: 'en',
+      preferredCurrency: 'BDT',
+      plan: 'pro',
+      status: 'active',
+      emailVerified: true,
+      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    },
   ];
 
   const passwordHashes: Record<string, string> = {
@@ -170,6 +184,7 @@ function getSeedData(): DatabaseSchema {
     [demoUserId2]: demoPasswordHash,
     [demoAdminId]: adminPasswordHash,
     [demoAdminId2]: adminPasswordHash,
+    'admin-sultan-001': adminPasswordHash,
   };
 
   const wallets: Wallet[] = [
@@ -215,7 +230,50 @@ function getSeedData(): DatabaseSchema {
 
   const transactions: Transaction[] = [];
   const budgets: Budget[] = [];
-  const savingsGoals: SavingsGoal[] = [];
+  const savingsGoals: SavingsGoal[] = [
+    {
+      id: 'goal-seed-01',
+      userId: demoUserId,
+      name: 'Emergency Reserve Fund',
+      targetAmount: 150000,
+      currentAmount: 65000,
+      targetDate: '2026-12-31',
+      deadline: '2026-12-31',
+      icon: 'ShieldCheck',
+      color: '#0F766E',
+      status: 'in_progress',
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    },
+    {
+      id: 'goal-seed-02',
+      userId: demoUserId,
+      name: 'Hardware & Tech Upgrade',
+      targetAmount: 85000,
+      currentAmount: 42000,
+      targetDate: '2026-11-15',
+      deadline: '2026-11-15',
+      icon: 'Laptop',
+      color: '#2563EB',
+      status: 'in_progress',
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    },
+    {
+      id: 'goal-seed-03',
+      userId: 'admin-sultan-001',
+      name: 'Emergency Fund (6 Months)',
+      targetAmount: 300000,
+      currentAmount: 120000,
+      targetDate: '2026-12-31',
+      deadline: '2026-12-31',
+      icon: 'ShieldCheck',
+      color: '#0F766E',
+      status: 'in_progress',
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    },
+  ];
   const goalContributions: GoalContribution[] = [];
   const loans: Loan[] = [];
   const loanPayments: LoanPayment[] = [];

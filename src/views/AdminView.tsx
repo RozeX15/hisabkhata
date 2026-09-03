@@ -11,7 +11,7 @@ import {
   LiveUserActivity,
   EmailLogEntry
 } from '../types';
-import { BKashIcon, NagadIcon, RocketIcon, BankIconBadge, PaymentMethodBadge } from '../components/PaymentIcons';
+import { BKashIcon, NagadIcon, RocketIcon, BankIconBadge, PaymentMethodBadge, BKashFullLogo, NagadFullLogo } from '../components/PaymentIcons';
 import confetti from 'canvas-confetti';
 import {
   ShieldAlert,
@@ -1203,8 +1203,11 @@ export const AdminView: React.FC = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {/* bKash */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-pink-700 dark:text-pink-400">bKash Number</label>
+                <div className="space-y-1.5 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center justify-between pb-1">
+                    <label className="text-xs font-black text-pink-700 dark:text-pink-400">bKash Account</label>
+                    <BKashFullLogo height={24} />
+                  </div>
                   <input
                     type="text"
                     value={configForm.bkashNumber || ''}
@@ -1235,8 +1238,11 @@ export const AdminView: React.FC = () => {
                 </div>
 
                 {/* Nagad */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-orange-700 dark:text-orange-400">Nagad Number</label>
+                <div className="space-y-1.5 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center justify-between pb-1">
+                    <label className="text-xs font-black text-orange-700 dark:text-orange-400">Nagad Account</label>
+                    <NagadFullLogo height={24} />
+                  </div>
                   <input
                     type="text"
                     value={configForm.nagadNumber || ''}

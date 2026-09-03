@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useI18n } from '../lib/i18n';
 import { useAuth } from '../lib/auth';
 import { LanguageSelector } from '../components/LanguageSelector';
+import { AppLogo } from '../components/AppLogo';
 import {
   Wallet,
   Lock,
@@ -12,7 +13,11 @@ import {
   Sparkles,
   Zap,
   Globe,
-  Loader2
+  Loader2,
+  Eye,
+  EyeOff,
+  Crown,
+  KeyRound
 } from 'lucide-react';
 
 interface AuthViewProps {
@@ -27,8 +32,22 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [googleLoading, setGoogleLoading] = useState(false);
+
+  const handleQuickLogin = async (fillEmail: string, fillPass: string) => {
+    setEmail(fillEmail);
+    setPassword(fillPass);
+    setFormError(null);
+    clearError();
+    try {
+      await login(fillEmail, fillPass);
+      onSuccess();
+    } catch (err: any) {
+      setFormError(err.message || 'Login failed');
+    }
+  };
 
   const handleGoogleSignIn = async () => {
     setFormError(null);
@@ -86,18 +105,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
       {/* Top Navbar */}
       <div className="relative z-10 max-w-6xl w-full mx-auto flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-teal-700 to-teal-500 text-white flex items-center justify-center shadow-lg shadow-teal-900/40">
-            <Wallet className="w-5 h-5 text-amber-300" />
-          </div>
-          <div>
-            <h1 className="font-black text-lg tracking-tight text-white flex items-center gap-1.5">
-              <span>HISHAB KHATA</span>
-              <span className="px-1.5 py-0.2 bg-teal-500/20 text-teal-300 text-[10px] font-extrabold rounded-md">
-                PRO
-              </span>
-            </h1>
-            <p className="text-[10px] text-slate-400 font-medium">Smart Global Financial SaaS</p>
-          </div>
+          <AppLogo variant="full" size="md" subtitle="Smart Global Financial SaaS" />
         </div>
 
         <LanguageSelector />
@@ -236,18 +244,28 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
-                Password
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  Password
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="text-xs text-teal-400 hover:text-teal-300 flex items-center gap-1 font-semibold cursor-pointer"
+                >
+                  {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  <span>{showPassword ? 'Hide' : 'Show'}</span>
+                </button>
+              </div>
               <div className="relative">
                 <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
                 <input
                   id="auth-password-input"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-white text-sm font-medium focus:ring-2 focus:ring-teal-500 outline-none"
+                  placeholder="Enter your password"
+                  className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-white text-sm font-medium focus:ring-2 focus:ring-teal-500 outline-none"
                   required
                 />
               </div>
@@ -269,6 +287,51 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
               )}
             </button>
           </form>
+
+          {/* 1-Click Fast Sign-In Presets */}
+          {mode === 'login' && (
+            <div className="mt-5 pt-4 border-t border-slate-700/70">
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 text-center flex items-center justify-center gap-1.5">
+                <KeyRound className="w-3.5 h-3.5 text-teal-400" />
+                <span>Instant 1-Click Access</span>
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleQuickLogin('sultanitbangladesh@gmail.com', 'admin123')}
+                  className="p-2.5 rounded-xl bg-slate-900/90 border border-teal-500/40 hover:border-teal-400 text-left transition flex items-center justify-between cursor-pointer group"
+                >
+                  <div className="flex items-center gap-2">
+                    <Crown className="w-4 h-4 text-amber-400 shrink-0" />
+                    <div>
+                      <span className="text-xs font-bold text-white block group-hover:text-teal-300">Sultan (Admin)</span>
+                      <span className="text-[10px] text-slate-400 font-mono">sultanitbangladesh@...</span>
+                    </div>
+                  </div>
+                  <span className="text-[10px] px-2 py-0.5 rounded-md bg-teal-950 text-teal-300 font-bold border border-teal-800">
+                    Log in
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleQuickLogin('user@hishabkhata.com', 'password123')}
+                  className="p-2.5 rounded-xl bg-slate-900/90 border border-slate-700 hover:border-slate-500 text-left transition flex items-center justify-between cursor-pointer group"
+                >
+                  <div className="flex items-center gap-2">
+                    <UserIcon className="w-4 h-4 text-teal-400 shrink-0" />
+                    <div>
+                      <span className="text-xs font-bold text-white block group-hover:text-teal-300">User Account</span>
+                      <span className="text-[10px] text-slate-400 font-mono">user@hishabkhata...</span>
+                    </div>
+                  </div>
+                  <span className="text-[10px] px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 font-bold border border-slate-700">
+                    Log in
+                  </span>
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Mode toggle helper text */}
           <div className="mt-6 text-center text-xs text-slate-400">

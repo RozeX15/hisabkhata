@@ -5,6 +5,168 @@ import { PaymentMethodType } from '../types';
  * Authentic Official bKash (বিকাশ) Logo
  * Uses official brand color #E2136E and precise geometric origami bird folds.
  */
+/**
+ * Full authentic horizontal bKash (বিকাশ) Logo matching official brand asset
+ * Displays the Bengali wordmark 'বিকাশ' (with pink 'বি' and black/white 'কাশ')
+ * alongside the iconic origami bird in authentic pink facets.
+ */
+export const BKashFullLogo: React.FC<{
+  className?: string;
+  height?: number;
+  inverted?: boolean;
+}> = ({ className = '', height = 36, inverted = false }) => {
+  const width = Math.round(height * 2.8);
+  return (
+    <svg
+      width={width}
+      height={height}
+      viewBox="0 0 280 100"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={`shrink-0 ${className}`}
+    >
+      {/* Bengali Wordmark 'বিকাশ' */}
+      <g transform="translate(10, 8)">
+        {/* 'বি' in signature bKash magenta */}
+        <text
+          x="0"
+          y="68"
+          fill="#E2136E"
+          fontWeight="900"
+          fontSize="68"
+          fontFamily="'Noto Sans Bengali', 'SolaimanLipi', system-ui, sans-serif"
+          letterSpacing="-1"
+        >
+          বি
+        </text>
+        {/* 'কাশ' in dark charcoal or crisp white */}
+        <text
+          x="44"
+          y="68"
+          fill={inverted ? "#FFFFFF" : "#1E293B"}
+          fontWeight="900"
+          fontSize="68"
+          fontFamily="'Noto Sans Bengali', 'SolaimanLipi', system-ui, sans-serif"
+          letterSpacing="-1"
+        >
+          কাশ
+        </text>
+      </g>
+
+      {/* Iconic Origami Bird Symbol on Right */}
+      <g transform="translate(150, 6) scale(0.92)">
+        {/* Main Body Facet */}
+        <path
+          d="M60 20L116 48L64 74L60 20Z"
+          fill="#E2136E"
+        />
+        {/* Upper Wing Facet */}
+        <path
+          d="M60 20L8 28L64 74L60 20Z"
+          fill="#D12053"
+        />
+        {/* Top Fold */}
+        <path
+          d="M8 28L42 2L60 20L8 28Z"
+          fill="#F43F5E"
+        />
+        {/* Tail Lower Facet */}
+        <path
+          d="M64 74L36 102L60 20L64 74Z"
+          fill="#9F1239"
+        />
+        {/* Beak Head Fold */}
+        <path
+          d="M116 48L132 44L118 58L116 48Z"
+          fill="#E11D48"
+        />
+        {/* Facet Definition Highlight Lines */}
+        <path
+          d="M60 20L64 74M60 20L116 48M8 28L60 20"
+          stroke="#FFFFFF"
+          strokeWidth="1.5"
+          strokeOpacity="0.4"
+        />
+      </g>
+    </svg>
+  );
+};
+
+/**
+ * Full authentic horizontal Nagad (নগদ) Logo matching official brand asset
+ * Displays the circular swirling flame symbol on left and bold red 'নগদ' on right.
+ */
+export const NagadFullLogo: React.FC<{
+  className?: string;
+  height?: number;
+}> = ({ className = '', height = 36 }) => {
+  const width = Math.round(height * 2.8);
+  return (
+    <svg
+      width={width}
+      height={height}
+      viewBox="0 0 280 100"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={`shrink-0 ${className}`}
+    >
+      <defs>
+        <linearGradient id="nagadSwirlGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#EA580C" />
+          <stop offset="100%" stopColor="#DC2626" />
+        </linearGradient>
+        <linearGradient id="nagadSwirlGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#F97316" />
+          <stop offset="100%" stopColor="#EA580C" />
+        </linearGradient>
+        <linearGradient id="nagadSwirlGrad3" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#FBBF24" />
+          <stop offset="100%" stopColor="#F97316" />
+        </linearGradient>
+      </defs>
+
+      {/* Circular Dynamic Swirl Symbol on Left */}
+      <g transform="translate(6, 6) scale(0.88)">
+        {/* Outer Red Ring */}
+        <circle cx="50" cy="50" r="46" fill="#DC2626" />
+        
+        {/* Swirling Layer 1 (Dark Orange) */}
+        <path
+          d="M50 4C75.4 4 96 24.6 96 50C96 75.4 75.4 96 50 96C32 96 16.4 85.6 9 70.4C22 75 36.4 72 47 62C61 49 61 27 47 14C40 7.5 30 4 20 4C29.6 4 39.8 4 50 4Z"
+          fill="url(#nagadSwirlGrad1)"
+        />
+        {/* Swirling Layer 2 (Bright Orange Petal) */}
+        <path
+          d="M48 16C62 28 62 50 48 63C38 72 24 75 12 70C22 84 38 92 56 92C78 92 94 76 94 54C94 32 78 16 56 16C53.3 16 50.6 16 48 16Z"
+          fill="url(#nagadSwirlGrad2)"
+        />
+        {/* Swirling Layer 3 (Golden Flare) */}
+        <path
+          d="M42 24C52 34 52 50 40 60C32 67 22 69 13 65C18 73 28 78 38 78C54 78 68 64 68 48C68 34 56 24 42 24Z"
+          fill="url(#nagadSwirlGrad3)"
+        />
+        {/* Inner Crescent Hole */}
+        <circle cx="34" cy="48" r="14" fill="#FFFFFF" />
+      </g>
+
+      {/* Bengali Wordmark 'নগদ' in Bold Red */}
+      <g transform="translate(108, 12)">
+        <text
+          x="0"
+          y="64"
+          fill="#DC2626"
+          fontWeight="900"
+          fontSize="66"
+          fontFamily="'Noto Sans Bengali', 'SolaimanLipi', system-ui, sans-serif"
+          letterSpacing="0"
+        >
+          নগদ
+        </text>
+      </g>
+    </svg>
+  );
+};
+
 export const BKashIcon: React.FC<{ className?: string; size?: number }> = ({
   className = '',
   size = 36,

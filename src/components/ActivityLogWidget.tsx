@@ -37,7 +37,35 @@ export const ActivityLogWidget: React.FC<ActivityLogWidgetProps> = ({
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   useEffect(() => {
-    setLogs(getStoredActionLogs());
+    let existing = getStoredActionLogs();
+    if (existing.length === 0) {
+      // Seed initial confirmation activity logs so user immediately sees how it works
+      const initialSeed: ActionLogItem[] = [
+        {
+          id: `seed_action_1`,
+          type: 'subscription_status',
+          category: 'SUBSCRIPTION',
+          title: 'System Initialized & Secured',
+          message: 'Welcome to Hishab Khata PRO. Multi-currency ledger is ready.',
+          details: 'Wallets synced: bKash Personal, Nagad, and City Bank Account.',
+          status: 'confirmed',
+          timestamp: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
+        },
+        {
+          id: `seed_action_2`,
+          type: 'wallet_add',
+          category: 'WALLET',
+          title: 'Mobile Financial Services Linked',
+          message: 'bKash & Nagad instant transfer channels verified.',
+          details: 'Supports Send Money, Cash In, Cash Out, and Payment.',
+          status: 'confirmed',
+          timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
+        },
+      ];
+      localStorage.setItem('hishab_action_audit_logs_v1', JSON.stringify(initialSeed));
+      existing = initialSeed;
+    }
+    setLogs(existing);
     const unsubscribe = subscribeToLogsUpdates((updatedLogs) => {
       setLogs(updatedLogs);
     });

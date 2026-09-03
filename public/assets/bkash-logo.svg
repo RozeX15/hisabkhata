@@ -1,0 +1,16 @@
+<svg width="280" height="100" viewBox="0 0 280 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Bengali Wordmark 'বিকাশ' -->
+  <g transform="translate(10, 8)">
+    <text x="0" y="68" fill="#E2136E" font-weight="900" font-size="68" font-family="'Noto Sans Bengali', system-ui, sans-serif">বি</text>
+    <text x="44" y="68" fill="#1E293B" font-weight="900" font-size="68" font-family="'Noto Sans Bengali', system-ui, sans-serif">কাশ</text>
+  </g>
+  <!-- Iconic Origami Bird Symbol on Right -->
+  <g transform="translate(150, 6) scale(0.92)">
+    <path d="M60 20L116 48L64 74L60 20Z" fill="#E2136E"/>
+    <path d="M60 20L8 28L64 74L60 20Z" fill="#D12053"/>
+    <path d="M8 28L42 2L60 20L8 28Z" fill="#F43F5E"/>
+    <path d="M64 74L36 102L60 20L64 74Z" fill="#9F1239"/>
+    <path d="M116 48L132 44L118 58L116 48Z" fill="#E11D48"/>
+    <path d="M60 20L64 74M60 20L116 48M8 28L60 20" stroke="#FFFFFF" stroke-width="1.5" stroke-opacity="0.4"/>
+  </g>
+</svg>

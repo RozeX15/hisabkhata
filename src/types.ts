@@ -45,6 +45,7 @@ export interface Transaction {
   amount: number;
   currency: string;
   categoryId: string;
+  category?: string;
   date: string; // ISO date string YYYY-MM-DD
   description: string;
   note?: string;
@@ -72,6 +73,7 @@ export interface Budget {
   id: string;
   userId: string;
   categoryId: string | null; // null for overall monthly budget
+  category?: string;
   amount: number;
   period: BudgetPeriod;
   month: string; // YYYY-MM
@@ -98,6 +100,7 @@ export interface SavingsGoal {
   currentAmount: number;
   currency?: string;
   targetDate: string; // YYYY-MM-DD
+  deadline?: string;
   description?: string;
   color: string;
   icon: string;

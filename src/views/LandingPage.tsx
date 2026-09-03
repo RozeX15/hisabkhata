@@ -2,6 +2,7 @@ import React from 'react';
 import { useI18n } from '../lib/i18n';
 import { LanguageSelector } from '../components/LanguageSelector';
 import { CurrencySelector } from '../components/CurrencySelector';
+import { AppLogo } from '../components/AppLogo';
 import {
   Wallet,
   ArrowRight,
@@ -44,17 +45,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       {/* Top Navigation */}
       <header className="sticky top-0 z-40 w-full border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md px-4 sm:px-8 py-3.5 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-teal-700 to-teal-500 text-white flex items-center justify-center shadow-lg shadow-teal-900/30">
-            <Wallet className="w-5 h-5 text-amber-300" />
-          </div>
-          <div>
-            <span className="font-black text-lg tracking-tight text-white flex items-center gap-1.5">
-              HISHAB KHATA
-              <span className="px-1.5 py-0.2 bg-teal-500/20 text-teal-300 text-[10px] font-extrabold rounded-md">
-                SAAS
-              </span>
-            </span>
-          </div>
+          <AppLogo variant="full" size="md" subtitle="Smart Global Financial SaaS" />
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">

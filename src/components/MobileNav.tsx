@@ -69,7 +69,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({
         type="button"
         onClick={() => onNavigate('savings_goals')}
         className={`flex flex-col items-center py-1 px-3 rounded-lg text-xs font-semibold ${
-          currentView === 'savings_goals'
+          currentView === 'savings_goals' || currentView === 'savings'
             ? 'text-teal-700 dark:text-teal-400'
             : 'text-slate-500 dark:text-slate-400'
         }`}

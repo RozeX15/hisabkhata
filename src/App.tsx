@@ -621,7 +621,7 @@ const MainAppContent: React.FC = () => {
             />
           )}
 
-          {activeView === 'savings' && (
+          {(activeView === 'savings' || activeView === 'savings_goals') && (
             <SavingsGoalsView
               goals={savingsGoals}
               currency={currency}

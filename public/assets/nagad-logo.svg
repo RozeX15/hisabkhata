@@ -1,0 +1,26 @@
+<svg width="280" height="100" viewBox="0 0 280 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="nagadSwirlGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#EA580C"/>
+      <stop offset="100%" stop-color="#DC2626"/>
+    </linearGradient>
+    <linearGradient id="nagadSwirlGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F97316"/>
+      <stop offset="100%" stop-color="#EA580C"/>
+    </linearGradient>
+    <linearGradient id="nagadSwirlGrad3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FBBF24"/>
+      <stop offset="100%" stop-color="#F97316"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(6, 6) scale(0.88)">
+    <circle cx="50" cy="50" r="46" fill="#DC2626"/>
+    <path d="M50 4C75.4 4 96 24.6 96 50C96 75.4 75.4 96 50 96C32 96 16.4 85.6 9 70.4C22 75 36.4 72 47 62C61 49 61 27 47 14C40 7.5 30 4 20 4C29.6 4 39.8 4 50 4Z" fill="url(#nagadSwirlGrad1)"/>
+    <path d="M48 16C62 28 62 50 48 63C38 72 24 75 12 70C22 84 38 92 56 92C78 92 94 76 94 54C94 32 78 16 56 16C53.3 16 50.6 16 48 16Z" fill="url(#nagadSwirlGrad2)"/>
+    <path d="M42 24C52 34 52 50 40 60C32 67 22 69 13 65C18 73 28 78 38 78C54 78 68 64 68 48C68 34 56 24 42 24Z" fill="url(#nagadSwirlGrad3)"/>
+    <circle cx="34" cy="48" r="14" fill="#FFFFFF"/>
+  </g>
+  <g transform="translate(108, 12)">
+    <text x="0" y="64" fill="#DC2626" font-weight="900" font-size="66" font-family="'Noto Sans Bengali', system-ui, sans-serif">নগদ</text>
+  </g>
+</svg>
