@@ -16,7 +16,6 @@ import {
   Loader2,
   Eye,
   EyeOff,
-  Crown,
   KeyRound
 } from 'lucide-react';
 
@@ -107,7 +106,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
       {/* Top Navbar */}
       <div className="relative z-10 max-w-6xl w-full mx-auto flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <AppLogo variant="full" size="md" subtitle="Smart Global Financial SaaS" />
+          <AppLogo variant="full" size="md" subtitle="Smart Global Financial SaaS" isDarkBg={true} />
         </div>
 
         <div className="flex items-center gap-3">
@@ -168,67 +167,6 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
               Sign Up
             </button>
           </div>
-
-          {/* Dedicated SuperAdmin 1-Click Access Card */}
-          {mode === 'login' && (
-            <div className="mb-5 p-3.5 rounded-2xl bg-gradient-to-br from-amber-500/15 via-slate-900/90 to-teal-500/15 border-2 border-amber-500/40 shadow-xl">
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-400/50 flex items-center justify-center text-amber-300">
-                    <Crown className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <span className="text-[11px] font-black text-amber-300 uppercase tracking-wider block">
-                      Owner &amp; SuperAdmin Login
-                    </span>
-                    <span className="text-xs font-bold text-white">
-                      Sultan (Owner Admin)
-                    </span>
-                  </div>
-                </div>
-                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/40">
-                  SuperAdmin
-                </span>
-              </div>
-
-              <div className="text-[11px] text-slate-300 bg-slate-950/70 p-2 rounded-xl border border-slate-700/60 mb-2.5 space-y-0.5 font-mono">
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-400">Email:</span>
-                  <span className="text-teal-300 font-bold">sultanitbangladesh@gmail.com</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-400">Password:</span>
-                  <span className="text-amber-300 font-bold">admin123 <span className="text-slate-500 font-normal">or</span> password123</span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  id="quick-admin-login-direct-btn"
-                  type="button"
-                  onClick={() => handleQuickLogin('sultanitbangladesh@gmail.com', 'admin123')}
-                  disabled={loading}
-                  className="w-full py-2.5 px-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs rounded-xl shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
-                >
-                  <Zap className="w-3.5 h-3.5 fill-current" />
-                  <span>1-Click Admin Sign In</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEmail('sultanitbangladesh@gmail.com');
-                    setPassword('admin123');
-                    setFormError(null);
-                  }}
-                  className="w-full py-2.5 px-3 bg-slate-900 hover:bg-slate-850 text-slate-200 font-bold text-xs rounded-xl border border-slate-700 hover:border-slate-500 transition flex items-center justify-center gap-1 cursor-pointer"
-                >
-                  <KeyRound className="w-3.5 h-3.5 text-teal-400" />
-                  <span>Fill In Fields</span>
-                </button>
-              </div>
-            </div>
-          )}
 
           {(formError || error) && (
             <div className="p-3.5 mb-4 text-xs font-semibold text-red-300 bg-red-950/60 rounded-xl border border-red-900/60 leading-relaxed">
@@ -301,16 +239,16 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
 
             <div>
               <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
-                Email Address
+                {mode === 'login' ? 'Email Address or ID' : 'Email Address'}
               </label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
                 <input
                   id="auth-email-input"
-                  type="email"
+                  type={mode === 'register' ? 'email' : 'text'}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@example.com"
+                  placeholder={mode === 'register' ? 'name@example.com' : 'name@example.com or admin'}
                   className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-white text-sm font-medium focus:ring-2 focus:ring-teal-500 outline-none"
                   required
                 />
@@ -362,48 +300,27 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
             </button>
           </form>
 
-          {/* 1-Click Fast Sign-In Presets */}
+          {/* 1-Click Fast Demo Access (No Super Admin credential exposed) */}
           {mode === 'login' && (
             <div className="mt-5 pt-4 border-t border-slate-700/70">
-              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 text-center flex items-center justify-center gap-1.5">
-                <KeyRound className="w-3.5 h-3.5 text-teal-400" />
-                <span>Instant 1-Click Access</span>
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleQuickLogin('sultanitbangladesh@gmail.com', 'admin123')}
-                  className="p-2.5 rounded-xl bg-slate-900/90 border border-teal-500/40 hover:border-teal-400 text-left transition flex items-center justify-between cursor-pointer group"
-                >
-                  <div className="flex items-center gap-2">
-                    <Crown className="w-4 h-4 text-amber-400 shrink-0" />
-                    <div>
-                      <span className="text-xs font-bold text-white block group-hover:text-teal-300">Sultan (Admin)</span>
-                      <span className="text-[10px] text-slate-400 font-mono">sultanitbangladesh@...</span>
-                    </div>
-                  </div>
-                  <span className="text-[10px] px-2 py-0.5 rounded-md bg-teal-950 text-teal-300 font-bold border border-teal-800">
-                    Log in
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleQuickLogin('user@hishabkhata.com', 'password123')}
-                  className="p-2.5 rounded-xl bg-slate-900/90 border border-slate-700 hover:border-slate-500 text-left transition flex items-center justify-between cursor-pointer group"
-                >
-                  <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => handleQuickLogin('user@hishabkhata.com', 'password123')}
+                className="w-full p-2.5 rounded-xl bg-slate-900/90 border border-slate-700 hover:border-teal-500/50 text-left transition flex items-center justify-between cursor-pointer group"
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-teal-950/80 border border-teal-800/80 flex items-center justify-center">
                     <UserIcon className="w-4 h-4 text-teal-400 shrink-0" />
-                    <div>
-                      <span className="text-xs font-bold text-white block group-hover:text-teal-300">User Account</span>
-                      <span className="text-[10px] text-slate-400 font-mono">user@hishabkhata...</span>
-                    </div>
                   </div>
-                  <span className="text-[10px] px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 font-bold border border-slate-700">
-                    Log in
-                  </span>
-                </button>
-              </div>
+                  <div>
+                    <span className="text-xs font-bold text-white block group-hover:text-teal-300">Explore Demo Account</span>
+                    <span className="text-[10px] text-slate-400">Experience Hishab Khata with sample transactions</span>
+                  </div>
+                </div>
+                <span className="text-[10px] px-2.5 py-1 rounded-md bg-slate-800 group-hover:bg-teal-950 text-slate-300 group-hover:text-teal-300 font-bold border border-slate-700 group-hover:border-teal-800 transition">
+                  Demo
+                </span>
+              </button>
             </div>
           )}
 

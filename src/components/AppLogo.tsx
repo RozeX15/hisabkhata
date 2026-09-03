@@ -5,6 +5,7 @@ interface AppLogoProps {
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
   subtitle?: string;
+  isDarkBg?: boolean;
 }
 
 export const AppLogoMark: React.FC<{ size?: number; className?: string }> = ({
@@ -144,6 +145,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({
   size = 'md',
   className = '',
   subtitle,
+  isDarkBg = false,
 }) => {
   const getSizePx = () => {
     switch (size) {
@@ -174,16 +176,20 @@ export const AppLogo: React.FC<AppLogoProps> = ({
 
       <div className="flex flex-col min-w-0">
         <div className="flex items-center gap-1.5">
-          <span className="font-extrabold text-slate-900 dark:text-white tracking-tight leading-none text-base sm:text-lg">
-            Hishab<span className="text-teal-600 dark:text-teal-400">Khata</span>
+          <span className={`font-extrabold tracking-tight leading-none text-base sm:text-lg ${isDarkBg ? 'text-white' : 'text-slate-900 dark:text-white'}`}>
+            Hishab<span className={isDarkBg ? 'text-teal-400' : 'text-teal-600 dark:text-teal-400'}>Khata</span>
           </span>
-          <span className="px-1.5 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 font-extrabold text-[9px] tracking-wider uppercase border border-amber-300/60 dark:border-amber-700/50">
+          <span className={`px-1.5 py-0.5 rounded-md font-extrabold text-[9px] tracking-wider uppercase border ${
+            isDarkBg
+              ? 'bg-amber-950/70 text-amber-300 border-amber-700/50'
+              : 'bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border-amber-300/60 dark:border-amber-700/50'
+          }`}>
             PRO
           </span>
         </div>
 
         {variant === 'full' && (
-          <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium tracking-wide mt-0.5 truncate">
+          <span className={`text-[11px] font-medium tracking-wide mt-0.5 truncate ${isDarkBg ? 'text-slate-400' : 'text-slate-500 dark:text-slate-400'}`}>
             {subtitle || 'হিসাব খাতা • Smart Personal Finance'}
           </span>
         )}

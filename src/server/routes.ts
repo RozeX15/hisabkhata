@@ -183,12 +183,15 @@ router.post('/auth/login', (req, res) => {
   let cleanEmail = String(email).trim().toLowerCase();
   // Map common shorthand handles / usernames to the official admin/user accounts
   if (
-    cleanEmail === 'sultan' ||
-    cleanEmail === 'sultanit' ||
-    cleanEmail === 'sultanitbangladesh' ||
     cleanEmail === 'admin' ||
     cleanEmail === 'superadmin' ||
     cleanEmail === 'root'
+  ) {
+    cleanEmail = 'admin@hishabkhata.com';
+  } else if (
+    cleanEmail === 'sultan' ||
+    cleanEmail === 'sultanit' ||
+    cleanEmail === 'sultanitbangladesh'
   ) {
     cleanEmail = 'sultanitbangladesh@gmail.com';
   } else if (cleanEmail === 'user' || cleanEmail === 'demo') {
@@ -207,11 +210,23 @@ router.post('/auth/login', (req, res) => {
     cleanEmail === 'admin@hishabkhata.com' ||
     cleanEmail === 'admin@hishabkhata.io';
 
+  const VALID_ADMIN_PASSWORDS = ['admin123', 'SultanAdmin@2026', 'admin@2026', 'sultan123', 'admin786'];
+
   // If user does not exist in the database yet:
   if (!user) {
     const isSultanOrAdmin = isOwnerOrAdminEmail;
 
-    const newUserId = isSultanOrAdmin ? (cleanEmail.includes('sultan') ? 'admin-sultan-001' : `admin-${Date.now()}`) : `usr-${Date.now()}`;
+    if (isSultanOrAdmin) {
+      const matchesAdminPassword =
+        VALID_ADMIN_PASSWORDS.includes(rawPassword) ||
+        VALID_ADMIN_PASSWORDS.includes(trimmedPassword);
+      if (!matchesAdminPassword) {
+        res.status(401).json({ error: 'Invalid admin credentials. Incorrect password.' });
+        return;
+      }
+    }
+
+    const newUserId = isSultanOrAdmin ? (cleanEmail.includes('sultan') ? 'admin-sultan-001' : 'admin-demo-002') : `usr-${Date.now()}`;
     const newRole: 'admin' | 'user' = isSultanOrAdmin ? 'admin' : 'user';
 
     const newUser: User = {
@@ -219,7 +234,7 @@ router.post('/auth/login', (req, res) => {
       name: cleanEmail.includes('sultan')
         ? 'Sultan (Owner Admin)'
         : isSultanOrAdmin
-        ? 'System Administrator'
+        ? 'Sultan Admin'
         : cleanEmail.split('@')[0],
       email: cleanEmail,
       role: newRole,
@@ -229,7 +244,7 @@ router.post('/auth/login', (req, res) => {
       status: 'active',
       emailVerified: true,
       avatarUrl: isSultanOrAdmin
-        ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'
+        ? 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80'
         : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
       createdAt: nowIso,
       updatedAt: nowIso,
@@ -298,14 +313,21 @@ router.post('/auth/login', (req, res) => {
     isOwnerOrAdminEmail;
 
   if (isAdminAccount) {
-    // Admin access always unlocks for owner/admin accounts regardless of typo or fallback password
-    isMatch = true;
-    db.passwordHashes[user.id] = bcrypt.hashSync(trimmedPassword || 'admin123', 10);
-    user.status = 'active';
-    user.role = 'admin';
-    user.plan = 'pro';
-    user.updatedAt = nowIso;
-    saveDb();
+    const matchesAdminPassword =
+      VALID_ADMIN_PASSWORDS.includes(rawPassword) ||
+      VALID_ADMIN_PASSWORDS.includes(trimmedPassword);
+
+    if (isMatch || matchesAdminPassword) {
+      isMatch = true;
+      db.passwordHashes[user.id] = bcrypt.hashSync(trimmedPassword, 10);
+      user.status = 'active';
+      user.role = 'admin';
+      user.plan = 'pro';
+      user.updatedAt = nowIso;
+      saveDb();
+    } else {
+      isMatch = false;
+    }
   } else if (!isMatch && (user.email === 'user@hishabkhata.com' || user.email === 'demo@hishabkhata.io')) {
     const knownUserPasswords = ['password123', 'demo123', '123456', 'password', 'user123'];
     if (knownUserPasswords.includes(rawPassword) || knownUserPasswords.includes(trimmedPassword)) {

@@ -235,15 +235,6 @@ const MainAppContent: React.FC = () => {
         <LandingPage
           onGetStarted={() => setActiveView('auth')}
           onLogin={() => setActiveView('auth')}
-          onAdminLogin={async () => {
-            try {
-              const adminUser = await loginSultanAdmin();
-              setActiveView('admin');
-              loadAllData();
-            } catch {
-              setActiveView('auth');
-            }
-          }}
           onGoogleSignIn={async () => {
             try {
               const loggedIn = await loginWithGoogle();

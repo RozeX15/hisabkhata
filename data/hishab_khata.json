@@ -7,12 +7,12 @@
       "role": "user",
       "preferredLanguage": "en",
       "preferredCurrency": "BDT",
-      "plan": "pro",
+      "plan": "free",
       "status": "active",
       "emailVerified": true,
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "createdAt": "2026-09-03T05:45:48.048Z",
-      "updatedAt": "2026-09-03T05:45:48.048Z"
+      "updatedAt": "2026-09-03T09:06:39.207Z"
     },
     {
       "id": "user-demo-002",
@@ -54,7 +54,7 @@
       "emailVerified": true,
       "avatarUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
       "createdAt": "2026-09-03T05:45:48.048Z",
-      "updatedAt": "2026-09-03T05:45:48.048Z"
+      "updatedAt": "2026-09-03T09:10:54.456Z"
     },
     {
       "id": "usr-1788414678779",
@@ -81,7 +81,7 @@
       "emailVerified": true,
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "createdAt": "2026-09-03T06:43:20.562Z",
-      "updatedAt": "2026-09-03T07:48:36.818Z"
+      "updatedAt": "2026-09-03T09:11:16.470Z"
     },
     {
       "id": "usr-1788421660882",
@@ -102,9 +102,9 @@
     "user-demo-001": "$2b$10$q59acahDCOuBA0grxrY/Zu.rlwdBSbmxXJpnfxf.EC6eQPkVp3qNa",
     "user-demo-002": "$2b$10$s2FFxvLV3NNMoXWiSi/.BeH3vRWdJMEuyXMGC9X6iq4P9MLzicnMK",
     "admin-demo-001": "$2b$10$My2gl8LwIlgzxQLp95.f5.JLHItJJ5MnKBKMNLoYFZdQ4rQRh/9u6",
-    "admin-demo-002": "$2b$10$My2gl8LwIlgzxQLp95.f5.JLHItJJ5MnKBKMNLoYFZdQ4rQRh/9u6",
+    "admin-demo-002": "$2b$10$MPM1QRniK/CsNfU57wnv..hWJmYXzQWizGD.iAcOoUNPatA4.zmaa",
     "usr-1788414678779": "$2b$10$p5O/IMjdcd37RE46W1vCYu221q663Na6de7Q7Yf.UsFSKZ7BkKN9O",
-    "admin-sultan-001": "$2b$10$8j0G7RJdRUH6cPJSkMdREeVdDm0kvg4nHf8uWjrONqbkxqhJMi9he",
+    "admin-sultan-001": "$2b$10$QjC50pF.gdDiyfpyJZzJFO/3zSDIlXW3vWI5vm/13Zjg/heNx0gLe",
     "usr-1788421660882": "$2b$10$kxC3LeTdhMHcqZyy.lDac.wuB.QnMZSMQXPgwNWRKq1HYMGv857lG"
   },
   "wallets": [
@@ -118,7 +118,7 @@
       "color": "#10B981",
       "isDefault": true,
       "createdAt": "2026-09-03T05:45:48.048Z",
-      "updatedAt": "2026-09-03T05:45:48.048Z"
+      "updatedAt": "2026-09-03T07:58:56.136Z"
     },
     {
       "id": "w-bank-01",
@@ -131,7 +131,7 @@
       "isDefault": false,
       "accountNumber": "**** 8842",
       "createdAt": "2026-09-03T05:45:48.048Z",
-      "updatedAt": "2026-09-03T05:45:48.048Z"
+      "updatedAt": "2026-09-03T07:58:56.136Z"
     },
     {
       "id": "w-bkash-01",
@@ -144,7 +144,7 @@
       "isDefault": false,
       "accountNumber": "01712-***456",
       "createdAt": "2026-09-03T05:45:48.048Z",
-      "updatedAt": "2026-09-03T05:45:48.048Z"
+      "updatedAt": "2026-09-03T07:58:56.136Z"
     },
     {
       "id": "w-cash-1788414373137",
@@ -485,6 +485,24 @@
   "loans": [],
   "loanPayments": [],
   "notifications": [
+    {
+      "id": "notif-sc-ver-1788425297345",
+      "userId": "user-regular-001",
+      "type": "announcement",
+      "titleKey": "🎉 SuperChat Verified: ৳500!",
+      "messageKey": "Sultan Admin has verified your SuperChat contribution. Thank you deeply for helping Hishab Khata grow!",
+      "isRead": false,
+      "createdAt": "2026-09-03T08:48:17.345Z"
+    },
+    {
+      "id": "notif-reply-1788425297345",
+      "userId": "user-regular-001",
+      "type": "announcement",
+      "titleKey": "💬 Sultan Admin Replied to Your Suggestion: \"SMS Automatic Transaction Parsing for bKash & Nagad\"",
+      "messageKey": "Great idea! We are actively implementing smart SMS parser regex for all Bangladeshi MFS in the next update. Thank you!",
+      "isRead": false,
+      "createdAt": "2026-09-03T08:48:17.345Z"
+    },
     {
       "id": "notif-1788421335659",
       "userId": "usr-1788414678779",
@@ -2109,6 +2127,26 @@
   },
   "adminLogs": [
     {
+      "id": "log-1788426399208",
+      "adminId": "admin-demo-002",
+      "adminEmail": "admin@hishabkhata.com",
+      "action": "USER_PLAN_CHANGE",
+      "targetType": "USER",
+      "targetId": "user-demo-001",
+      "details": "Changed user user@hishabkhata.com plan to free",
+      "createdAt": "2026-09-03T09:06:39.208Z"
+    },
+    {
+      "id": "log-1788425297345",
+      "adminId": "admin-sultan-001",
+      "adminEmail": "sultanitbangladesh@gmail.com",
+      "action": "UPDATE_SUGGESTION",
+      "targetType": "SUGGESTION",
+      "targetId": "sug-001",
+      "details": "Updated status to planned",
+      "createdAt": "2026-09-03T08:48:17.345Z"
+    },
+    {
       "id": "log-1788421335659",
       "adminId": "admin-sultan-001",
       "adminEmail": "sultanitbangladesh@gmail.com",
@@ -2236,11 +2274,11 @@
       "plan": "pro",
       "role": "admin",
       "isOnline": true,
-      "currentView": "dashboard",
-      "lastActiveAt": "2026-09-03T07:13:53.343Z",
+      "currentView": "admin",
+      "lastActiveAt": "2026-09-03T09:06:39.781Z",
       "deviceType": "desktop",
       "browser": "Chrome",
-      "lastAction": "Switched view to DASHBOARD"
+      "lastAction": "Viewing admin"
     },
     "usr-1788414678779": {
       "userId": "usr-1788414678779",
@@ -2264,7 +2302,7 @@
       "role": "admin",
       "isOnline": true,
       "currentView": "admin",
-      "lastActiveAt": "2026-09-03T07:42:13.965Z",
+      "lastActiveAt": "2026-09-03T08:52:31.187Z",
       "deviceType": "desktop",
       "browser": "Chrome",
       "lastAction": "Viewing admin"
@@ -2274,17 +2312,277 @@
       "userName": "User Account",
       "userEmail": "user@hishabkhata.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-      "plan": "pro",
+      "plan": "free",
       "role": "user",
       "isOnline": true,
       "currentView": "dashboard",
-      "lastActiveAt": "2026-09-03T07:48:24.081Z",
+      "lastActiveAt": "2026-09-03T09:11:01.130Z",
       "deviceType": "desktop",
       "browser": "Chrome",
       "lastAction": "Viewing dashboard"
     }
   },
   "liveActivities": [
+    {
+      "id": "act-1788426379790-82p3",
+      "userId": "admin-demo-002",
+      "userName": "Sultan Admin",
+      "userEmail": "admin@hishabkhata.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to ADMIN",
+      "currentView": "admin",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-03T09:06:19.790Z"
+    },
+    {
+      "id": "act-1788425530864-py0d",
+      "userId": "admin-sultan-001",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to ADMIN",
+      "currentView": "admin",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-03T08:52:10.864Z"
+    },
+    {
+      "id": "act-1788425398350-ee0t",
+      "userId": "user-demo-001",
+      "userName": "User Account",
+      "userEmail": "user@hishabkhata.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to DASHBOARD",
+      "currentView": "dashboard",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-03T08:49:58.350Z"
+    },
+    {
+      "id": "act-1788425397618-ijng",
+      "userId": "user-demo-001",
+      "userName": "User Account",
+      "userEmail": "user@hishabkhata.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to TRANSACTIONS",
+      "currentView": "transactions",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-03T08:49:57.618Z"
+    },
+    {
+      "id": "act-1788425396743-fg6n",
+      "userId": "user-demo-001",
+      "userName": "User Account",
+      "userEmail": "user@hishabkhata.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to WALLETS",
+      "currentView": "wallets",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-03T08:49:56.743Z"
+    },
+    {
+      "id": "act-1788425394982-3b05",
+      "userId": "user-demo-001",
+      "userName": "User Account",
+      "userEmail": "user@hishabkhata.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to BUDGETS",
+      "currentView": "budgets",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-03T08:49:54.982Z"
+    },
+    {
+      "id": "act-1788425393904-p45p",
+      "userId": "user-demo-001",
+      "userName": "User Account",
+      "userEmail": "user@hishabkhata.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to SAVINGS_GOALS",
+      "currentView": "savings_goals",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-03T08:49:53.904Z"
+    },
+    {
+      "id": "act-1788425392833-zdhd",
+      "userId": "user-demo-001",
+      "userName": "User Account",
+      "userEmail": "user@hishabkhata.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to LOANS",
+      "currentView": "loans",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-03T08:49:52.833Z"
+    },
+    {
+      "id": "act-1788425392105-heej",
+      "userId": "user-demo-001",
+      "userName": "User Account",
+      "userEmail": "user@hishabkhata.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to SUGGESTIONS",
+      "currentView": "suggestions",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-03T08:49:52.105Z"
+    },
+    {
+      "id": "act-1788425391395-a0jo",
+      "userId": "user-demo-001",
+      "userName": "User Account",
+      "userEmail": "user@hishabkhata.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to INSIGHTS",
+      "currentView": "insights",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-03T08:49:51.395Z"
+    },
+    {
+      "id": "act-1788425390474-7jx3",
+      "userId": "user-demo-001",
+      "userName": "User Account",
+      "userEmail": "user@hishabkhata.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to SETTINGS",
+      "currentView": "settings",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-03T08:49:50.474Z"
+    },
+    {
+      "id": "act-1788425388417-mb46",
+      "userId": "user-demo-001",
+      "userName": "User Account",
+      "userEmail": "user@hishabkhata.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to NOTIFICATIONS",
+      "currentView": "notifications",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-03T08:49:48.417Z"
+    },
+    {
+      "id": "act-1788425387520-n0n8",
+      "userId": "user-demo-001",
+      "userName": "User Account",
+      "userEmail": "user@hishabkhata.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to REPORTS",
+      "currentView": "reports",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-03T08:49:47.520Z"
+    },
+    {
+      "id": "act-1788425385398-7kf2",
+      "userId": "user-demo-001",
+      "userName": "User Account",
+      "userEmail": "user@hishabkhata.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to INSIGHTS",
+      "currentView": "insights",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-03T08:49:45.398Z"
+    },
+    {
+      "id": "act-1788425327509-aj85",
+      "userId": "user-demo-001",
+      "userName": "User Account",
+      "userEmail": "user@hishabkhata.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to SUGGESTIONS",
+      "currentView": "suggestions",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-03T08:48:47.509Z"
+    },
+    {
+      "id": "act-1788425316035-63e2",
+      "userId": "user-demo-001",
+      "userName": "User Account",
+      "userEmail": "user@hishabkhata.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to DASHBOARD",
+      "currentView": "dashboard",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-03T08:48:36.035Z"
+    },
+    {
+      "id": "act-1788425302473-p4dj",
+      "userId": "admin-sultan-001",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to DASHBOARD",
+      "currentView": "dashboard",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-03T08:48:22.473Z"
+    },
+    {
+      "id": "act-1788422766299-8z6p",
+      "userId": "user-demo-001",
+      "userName": "User Account",
+      "userEmail": "user@hishabkhata.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to SETTINGS",
+      "currentView": "settings",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-03T08:06:06.299Z"
+    },
+    {
+      "id": "act-1788422759784-2rcl",
+      "userId": "user-demo-001",
+      "userName": "User Account",
+      "userEmail": "user@hishabkhata.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to DASHBOARD",
+      "currentView": "dashboard",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-03T08:05:59.784Z"
+    },
+    {
+      "id": "act-1788422340485-pqcx",
+      "userId": "user-demo-001",
+      "userName": "User Account",
+      "userEmail": "user@hishabkhata.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to SETTINGS",
+      "currentView": "settings",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-03T07:59:00.485Z"
+    },
     {
       "id": "act-1788421233971-e9fk",
       "userId": "admin-sultan-001",
@@ -4397,6 +4695,38 @@
         "transactionId": "1234"
       },
       "sentAt": "2026-09-03T06:30:39.285Z"
+    }
+  ],
+  "suggestions": [
+    {
+      "id": "sug-001",
+      "userId": "user-regular-001",
+      "userName": "User Account",
+      "userEmail": "user@hishabkhata.com",
+      "userAvatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80",
+      "category": "feature",
+      "title": "SMS Automatic Transaction Parsing for bKash & Nagad",
+      "description": "It would be amazing if the mobile PWA can auto-read or paste bKash/Nagad cash in & out transaction SMS to record entries automatically with 1 click!",
+      "impact": "high",
+      "status": "planned",
+      "adminReply": "Great idea! We are actively implementing smart SMS parser regex for all Bangladeshi MFS in the next update. Thank you!",
+      "adminRepliedAt": "2026-09-03T08:48:17.345Z",
+      "hasSuperChat": true,
+      "superChatAmount": 500,
+      "superChatCurrency": "BDT",
+      "superChatTier": "gold",
+      "superChatMessage": "Keep up the extraordinary work Sultan bhai! Love this SaaS so much!",
+      "paymentMethod": "bkash",
+      "paymentTrxId": "9K28X1M90P",
+      "senderNumber": "01712-889900",
+      "isSuperChatVerified": true,
+      "upvotes": 14,
+      "upvotedUserIds": [
+        "user-regular-001",
+        "user-farhan-002"
+      ],
+      "createdAt": "2026-09-01T08:46:32.054Z",
+      "updatedAt": "2026-09-03T08:48:17.345Z"
     }
   ]
 }
