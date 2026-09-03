@@ -12,7 +12,8 @@ import {
   PieChart as PieChartIcon,
   TrendingUp,
   TrendingDown,
-  PiggyBank
+  PiggyBank,
+  Crown
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -34,6 +35,8 @@ interface ReportsViewProps {
   categories: Category[];
   currency: string;
   userName: string;
+  userPlan?: string;
+  onOpenUpgrade?: () => void;
 }
 
 export const ReportsView: React.FC<ReportsViewProps> = ({
@@ -43,6 +46,8 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
   categories,
   currency,
   userName,
+  userPlan = 'free',
+  onOpenUpgrade,
 }) => {
   const { t } = useI18n();
   const [reportPeriod, setReportPeriod] = useState<'all' | '30days' | '90days'>('all');
@@ -109,24 +114,62 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
             ))}
           </div>
 
+          {/* Free CSV Export */}
+          <button
+            id="reports-csv-btn"
+            type="button"
+            onClick={() => exportToCSV(filteredTxs)}
+            className="px-3 py-1.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+            title="Free CSV Spreadsheet Export"
+          >
+            <Download className="w-3.5 h-3.5 text-teal-400" />
+            <span>CSV Export</span>
+          </button>
+
+          {/* PDF Statement (PRO) */}
           <button
             id="reports-pdf-btn"
             type="button"
-            onClick={() => exportToPDF(filteredTxs, { totalIncome, totalExpense, netSavings, currency, userName })}
+            onClick={() => {
+              if (userPlan !== 'pro' && onOpenUpgrade) {
+                onOpenUpgrade();
+              } else {
+                exportToPDF(filteredTxs, { totalIncome, totalExpense, netSavings, currency, userName });
+              }
+            }}
             className="px-3.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
           >
             <FileText className="w-4 h-4" />
             <span>PDF Statement</span>
+            {userPlan !== 'pro' && (
+              <span className="ml-0.5 px-1.5 py-0.2 bg-amber-400 text-slate-950 text-[10px] font-black rounded-md flex items-center gap-0.5">
+                <Crown className="w-2.5 h-2.5" />
+                PRO
+              </span>
+            )}
           </button>
 
+          {/* Excel Ledger (PRO) */}
           <button
             id="reports-excel-btn"
             type="button"
-            onClick={() => exportToExcel(filteredTxs, wallets)}
+            onClick={() => {
+              if (userPlan !== 'pro' && onOpenUpgrade) {
+                onOpenUpgrade();
+              } else {
+                exportToExcel(filteredTxs, wallets);
+              }
+            }}
             className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
           >
             <FileSpreadsheet className="w-4 h-4" />
             <span>Excel Ledger</span>
+            {userPlan !== 'pro' && (
+              <span className="ml-0.5 px-1.5 py-0.2 bg-amber-400 text-slate-950 text-[10px] font-black rounded-md flex items-center gap-0.5">
+                <Crown className="w-2.5 h-2.5" />
+                PRO
+              </span>
+            )}
           </button>
         </div>
       </div>

@@ -9,7 +9,8 @@ import {
   Smartphone,
   PiggyBank,
   Check,
-  Loader2
+  Loader2,
+  Crown
 } from 'lucide-react';
 
 interface WalletModalProps {
@@ -18,6 +19,7 @@ interface WalletModalProps {
   onSave: (walletData: any) => Promise<void>;
   wallet?: Wallet | null;
   defaultCurrency: string;
+  onOpenUpgrade?: () => void;
 }
 
 const WALLET_TYPES = [
@@ -49,6 +51,7 @@ export const WalletModal: React.FC<WalletModalProps> = ({
   onSave,
   wallet,
   defaultCurrency,
+  onOpenUpgrade,
 }) => {
   const { t } = useI18n();
   const [name, setName] = useState('');
@@ -125,8 +128,21 @@ export const WalletModal: React.FC<WalletModalProps> = ({
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {error && (
-            <div className="p-3 text-xs font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 rounded-xl border border-red-200 dark:border-red-900/50">
-              {error}
+            <div className="p-3 text-xs font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 rounded-xl border border-red-200 dark:border-red-900/50 space-y-2">
+              <p>{error}</p>
+              {onOpenUpgrade && (error.includes('PRO') || error.includes('limit') || error.includes('Plan')) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    onOpenUpgrade();
+                  }}
+                  className="w-full py-2 px-3 bg-amber-400 hover:bg-amber-300 text-slate-950 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition cursor-pointer shadow-sm"
+                >
+                  <Crown className="w-3.5 h-3.5" />
+                  <span>Upgrade to PRO for Unlimited Wallets</span>
+                </button>
+              )}
             </div>
           )}
 

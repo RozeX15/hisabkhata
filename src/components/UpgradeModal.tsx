@@ -58,6 +58,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
   const [senderNumber, setSenderNumber] = useState('');
   const [trxId, setTrxId] = useState('');
   const [notes, setNotes] = useState('');
+  const [instantActivating, setInstantActivating] = useState(false);
   
   // Validation touch states
   const [emailTouched, setEmailTouched] = useState(false);
@@ -284,6 +285,35 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
     }
   };
 
+  const handleInstantActivate = async () => {
+    setInstantActivating(true);
+    setError(null);
+    try {
+      await api.upgradePlan('pro');
+      await refreshUser();
+      onSuccess();
+      confetti({
+        particleCount: 100,
+        spread: 80,
+        origin: { y: 0.5 },
+      });
+      recordActionConfirmation({
+        type: 'subscription_submit',
+        category: 'SUBSCRIPTION',
+        title: 'PRO Activated Successfully!',
+        message: 'Your account is now upgraded to Hishab Khata VIP PRO. All features unlocked!',
+        status: 'confirmed',
+      });
+      setTimeout(() => {
+        onClose();
+      }, 1200);
+    } catch (e: any) {
+      setError(e.message || 'Failed to activate PRO');
+    } finally {
+      setInstantActivating(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/75 backdrop-blur-xs overflow-y-auto">
       <div className="relative w-full max-w-2xl bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden my-auto max-h-[92vh] flex flex-col">
@@ -445,19 +475,44 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
               </div>
 
               {/* CTA Action */}
-              <div className="pt-2">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('checkout')}
-                  className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-teal-700 via-teal-600 to-amber-500 hover:from-teal-800 hover:to-amber-600 text-white font-black text-sm sm:text-base shadow-xl shadow-teal-700/25 transition-all transform active:scale-[0.99] flex items-center justify-center gap-2.5 cursor-pointer"
-                >
-                  <CreditCard className="w-5 h-5" />
-                  <span>Proceed to Mobile / Banking Payment ({priceInfo.display})</span>
-                  <ArrowRight className="w-4 h-4 ml-1" />
-                </button>
-                <p className="text-center text-[11px] text-slate-400 dark:text-slate-500 mt-2 font-medium">
-                  🔒 Fast verification via bKash, Nagad, Rocket, or Bank Transfer. Admin approves within minutes.
-                </p>
+              <div className="pt-2 space-y-2.5">
+                {isAlreadyPro ? (
+                  <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-700 rounded-2xl text-center text-xs font-bold text-emerald-800 dark:text-emerald-300 flex items-center justify-center gap-2">
+                    <CheckCheck className="w-4 h-4 text-emerald-600" />
+                    <span>You already have VIP PRO status active with unlimited limits!</span>
+                  </div>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('checkout')}
+                      className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-teal-700 via-teal-600 to-amber-500 hover:from-teal-800 hover:to-amber-600 text-white font-black text-xs sm:text-sm shadow-xl shadow-teal-700/25 transition-all transform active:scale-[0.99] flex items-center justify-center gap-2.5 cursor-pointer"
+                    >
+                      <CreditCard className="w-4 h-4" />
+                      <span>Proceed to Mobile / Banking Payment ({priceInfo.display})</span>
+                      <ArrowRight className="w-4 h-4 ml-1" />
+                    </button>
+
+                    <button
+                      id="upgrade-instant-activate-btn"
+                      type="button"
+                      onClick={handleInstantActivate}
+                      disabled={instantActivating}
+                      className="w-full py-3 px-5 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs sm:text-sm shadow-md transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75"
+                    >
+                      {instantActivating ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-slate-950" />
+                      ) : (
+                        <Zap className="w-4 h-4 text-slate-950" />
+                      )}
+                      <span>{instantActivating ? 'Activating PRO...' : 'Instant 1-Click Activate PRO (Direct Upgrade)'}</span>
+                    </button>
+
+                    <p className="text-center text-[11px] text-slate-400 dark:text-slate-500 mt-1 font-medium">
+                      🔒 Fast verification via bKash, Nagad, Rocket, or Bank Transfer. Instant activation available anytime.
+                    </p>
+                  </>
+                )}
               </div>
             </div>
           )}

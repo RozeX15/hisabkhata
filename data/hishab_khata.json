@@ -54,7 +54,7 @@
       "emailVerified": true,
       "avatarUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
       "createdAt": "2026-09-03T05:45:48.048Z",
-      "updatedAt": "2026-09-03T09:10:54.456Z"
+      "updatedAt": "2026-09-03T09:15:27.083Z"
     },
     {
       "id": "usr-1788414678779",
@@ -81,7 +81,7 @@
       "emailVerified": true,
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "createdAt": "2026-09-03T06:43:20.562Z",
-      "updatedAt": "2026-09-03T09:11:16.470Z"
+      "updatedAt": "2026-09-03T09:19:01.936Z"
     },
     {
       "id": "usr-1788421660882",
@@ -102,7 +102,7 @@
     "user-demo-001": "$2b$10$q59acahDCOuBA0grxrY/Zu.rlwdBSbmxXJpnfxf.EC6eQPkVp3qNa",
     "user-demo-002": "$2b$10$s2FFxvLV3NNMoXWiSi/.BeH3vRWdJMEuyXMGC9X6iq4P9MLzicnMK",
     "admin-demo-001": "$2b$10$My2gl8LwIlgzxQLp95.f5.JLHItJJ5MnKBKMNLoYFZdQ4rQRh/9u6",
-    "admin-demo-002": "$2b$10$MPM1QRniK/CsNfU57wnv..hWJmYXzQWizGD.iAcOoUNPatA4.zmaa",
+    "admin-demo-002": "$2b$10$6WoeWfSCy/sStK/Ueti3c.vmvjbBF9nA8S70rcVOwIDshYheaLeCC",
     "usr-1788414678779": "$2b$10$p5O/IMjdcd37RE46W1vCYu221q663Na6de7Q7Yf.UsFSKZ7BkKN9O",
     "admin-sultan-001": "$2b$10$QjC50pF.gdDiyfpyJZzJFO/3zSDIlXW3vWI5vm/13Zjg/heNx0gLe",
     "usr-1788421660882": "$2b$10$kxC3LeTdhMHcqZyy.lDac.wuB.QnMZSMQXPgwNWRKq1HYMGv857lG"
@@ -485,6 +485,42 @@
   "loans": [],
   "loanPayments": [],
   "notifications": [
+    {
+      "id": "notif-adm-1788427096010-admin-sultan-001",
+      "userId": "admin-sultan-001",
+      "type": "system",
+      "titleKey": "🔔 New PRO Upgrade Payment Submitted",
+      "messageKey": "User Account (user@hishabkhata.com) submitted 4999 BDT via BKASH (TrxID: 125634). Please verify and approve.",
+      "isRead": false,
+      "createdAt": "2026-09-03T09:18:16.009Z"
+    },
+    {
+      "id": "notif-adm-1788427096010-admin-demo-002",
+      "userId": "admin-demo-002",
+      "type": "system",
+      "titleKey": "🔔 New PRO Upgrade Payment Submitted",
+      "messageKey": "User Account (user@hishabkhata.com) submitted 4999 BDT via BKASH (TrxID: 125634). Please verify and approve.",
+      "isRead": false,
+      "createdAt": "2026-09-03T09:18:16.009Z"
+    },
+    {
+      "id": "notif-adm-1788427096010-admin-demo-001",
+      "userId": "admin-demo-001",
+      "type": "system",
+      "titleKey": "🔔 New PRO Upgrade Payment Submitted",
+      "messageKey": "User Account (user@hishabkhata.com) submitted 4999 BDT via BKASH (TrxID: 125634). Please verify and approve.",
+      "isRead": false,
+      "createdAt": "2026-09-03T09:18:16.009Z"
+    },
+    {
+      "id": "notif-1788427096010",
+      "userId": "user-demo-001",
+      "type": "system",
+      "titleKey": "Subscription Payment Submitted",
+      "messageKey": "We received your payment request (4999 BDT via BKASH, TrxID: 125634). Admin will verify and activate your PRO subscription shortly.",
+      "isRead": false,
+      "createdAt": "2026-09-03T09:18:16.009Z"
+    },
     {
       "id": "notif-sc-ver-1788425297345",
       "userId": "user-regular-001",
@@ -2208,6 +2244,21 @@
   },
   "subscriptionPayments": [
     {
+      "id": "pay-1788427096010",
+      "userId": "user-demo-001",
+      "userName": "User Account",
+      "userEmail": "user@hishabkhata.com",
+      "plan": "pro",
+      "billingCycle": "yearly",
+      "amount": 4999,
+      "currency": "BDT",
+      "paymentMethod": "bkash",
+      "senderNumberOrAccount": "01811111111",
+      "transactionId": "125634",
+      "status": "pending",
+      "createdAt": "2026-09-03T09:18:16.009Z"
+    },
+    {
       "id": "pay-1788419484958",
       "userId": "usr-1788414678779",
       "userName": "yixinbd@gmail.com",
@@ -2315,14 +2366,40 @@
       "plan": "free",
       "role": "user",
       "isOnline": true,
-      "currentView": "dashboard",
-      "lastActiveAt": "2026-09-03T09:11:01.130Z",
+      "currentView": "notifications",
+      "lastActiveAt": "2026-09-03T09:18:48.728Z",
       "deviceType": "desktop",
       "browser": "Chrome",
-      "lastAction": "Viewing dashboard"
+      "lastAction": "Switched view to NOTIFICATIONS"
     }
   },
   "liveActivities": [
+    {
+      "id": "act-1788427128728-9dd2",
+      "userId": "user-demo-001",
+      "userName": "User Account",
+      "userEmail": "user@hishabkhata.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to NOTIFICATIONS",
+      "currentView": "notifications",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-03T09:18:48.728Z"
+    },
+    {
+      "id": "act-1788427096010-zhiq",
+      "userId": "user-demo-001",
+      "userName": "User Account",
+      "userEmail": "user@hishabkhata.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      "action": "SUBMIT_SUBSCRIPTION",
+      "category": "SUBSCRIPTION",
+      "details": "Applied for PRO (yearly) via BKASH (4999 BDT), TrxID: 125634",
+      "currentView": "upgrade",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-03T09:18:16.010Z"
+    },
     {
       "id": "act-1788426379790-82p3",
       "userId": "admin-demo-002",
@@ -4528,6 +4605,72 @@
     }
   ],
   "emailLogs": [
+    {
+      "id": "eml-admin-1788427096010-0",
+      "to": "sultanitbangladesh@gmail.com",
+      "from": "billing@hishabkhata.io",
+      "subject": "🔔 [PRO Upgrade Alert] New BKASH Payment (4999 BDT) from User Account",
+      "type": "admin_subscription_alert",
+      "preview": "User User Account (user@hishabkhata.com) applied for YEARLY PRO via BKASH. TrxID: 125634.",
+      "htmlContent": "\n      <div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8fafc; padding: 24px; border-radius: 16px; border: 1px solid #e2e8f0;\">\n        <div style=\"background-color: #0f766e; padding: 20px; border-radius: 12px; text-align: center; color: white;\">\n          <h1 style=\"margin: 0; font-size: 20px; font-weight: 800;\">Hishab Khata Admin Alert</h1>\n          <p style=\"margin: 6px 0 0 0; font-size: 13px; opacity: 0.9;\">New Subscription Payment Submission</p>\n        </div>\n        \n        <div style=\"background-color: white; padding: 24px; border-radius: 12px; margin-top: 16px; border: 1px solid #cbd5e1;\">\n          <h2 style=\"font-size: 16px; color: #0f172a; margin-top: 0;\">Payment Verification Required</h2>\n          <table style=\"width: 100%; border-collapse: collapse; font-size: 14px; margin: 16px 0;\">\n            <tr style=\"border-bottom: 1px solid #f1f5f9;\">\n              <td style=\"padding: 8px 0; color: #64748b;\"><strong>User Name:</strong></td>\n              <td style=\"padding: 8px 0; color: #0f172a; text-align: right;\">User Account</td>\n            </tr>\n            <tr style=\"border-bottom: 1px solid #f1f5f9;\">\n              <td style=\"padding: 8px 0; color: #64748b;\"><strong>User Email:</strong></td>\n              <td style=\"padding: 8px 0; color: #0f172a; text-align: right;\">user@hishabkhata.com</td>\n            </tr>\n            <tr style=\"border-bottom: 1px solid #f1f5f9;\">\n              <td style=\"padding: 8px 0; color: #64748b;\"><strong>Plan Tier:</strong></td>\n              <td style=\"padding: 8px 0; color: #0f766e; font-weight: bold; text-align: right;\">PRO (YEARLY)</td>\n            </tr>\n            <tr style=\"border-bottom: 1px solid #f1f5f9;\">\n              <td style=\"padding: 8px 0; color: #64748b;\"><strong>Amount:</strong></td>\n              <td style=\"padding: 8px 0; color: #0f172a; font-weight: bold; text-align: right;\">4999 BDT</td>\n            </tr>\n            <tr style=\"border-bottom: 1px solid #f1f5f9;\">\n              <td style=\"padding: 8px 0; color: #64748b;\"><strong>Payment Method:</strong></td>\n              <td style=\"padding: 8px 0; color: #0f172a; font-weight: bold; text-align: right;\">BKASH</td>\n            </tr>\n            <tr style=\"border-bottom: 1px solid #f1f5f9;\">\n              <td style=\"padding: 8px 0; color: #64748b;\"><strong>Sender Account/Mobile:</strong></td>\n              <td style=\"padding: 8px 0; color: #0f172a; font-family: monospace; font-weight: bold; text-align: right;\">01811111111</td>\n            </tr>\n            <tr style=\"border-bottom: 1px solid #f1f5f9;\">\n              <td style=\"padding: 8px 0; color: #64748b;\"><strong>Transaction ID (TrxID):</strong></td>\n              <td style=\"padding: 8px 0; color: #0f766e; font-family: monospace; font-size: 15px; font-weight: 800; text-align: right;\">125634</td>\n            </tr>\n            \n          </table>\n          \n          <div style=\"margin-top: 20px; text-align: center;\">\n            <p style=\"font-size: 12px; color: #64748b;\">Please open the SuperAdmin Panel -> Subscription Payments tab to verify and approve this transaction.</p>\n          </div>\n        </div>\n      </div>\n    ",
+      "status": "sent",
+      "metadata": {
+        "userName": "User Account",
+        "userEmail": "user@hishabkhata.com",
+        "plan": "PRO",
+        "billingCycle": "yearly",
+        "amount": 4999,
+        "currency": "BDT",
+        "paymentMethod": "bkash",
+        "senderNumberOrAccount": "01811111111",
+        "transactionId": "125634"
+      },
+      "sentAt": "2026-09-03T09:18:16.010Z"
+    },
+    {
+      "id": "eml-admin-1788427096010-1",
+      "to": "admin@hishabkhata.io",
+      "from": "billing@hishabkhata.io",
+      "subject": "🔔 [PRO Upgrade Alert] New BKASH Payment (4999 BDT) from User Account",
+      "type": "admin_subscription_alert",
+      "preview": "User User Account (user@hishabkhata.com) applied for YEARLY PRO via BKASH. TrxID: 125634.",
+      "htmlContent": "\n      <div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8fafc; padding: 24px; border-radius: 16px; border: 1px solid #e2e8f0;\">\n        <div style=\"background-color: #0f766e; padding: 20px; border-radius: 12px; text-align: center; color: white;\">\n          <h1 style=\"margin: 0; font-size: 20px; font-weight: 800;\">Hishab Khata Admin Alert</h1>\n          <p style=\"margin: 6px 0 0 0; font-size: 13px; opacity: 0.9;\">New Subscription Payment Submission</p>\n        </div>\n        \n        <div style=\"background-color: white; padding: 24px; border-radius: 12px; margin-top: 16px; border: 1px solid #cbd5e1;\">\n          <h2 style=\"font-size: 16px; color: #0f172a; margin-top: 0;\">Payment Verification Required</h2>\n          <table style=\"width: 100%; border-collapse: collapse; font-size: 14px; margin: 16px 0;\">\n            <tr style=\"border-bottom: 1px solid #f1f5f9;\">\n              <td style=\"padding: 8px 0; color: #64748b;\"><strong>User Name:</strong></td>\n              <td style=\"padding: 8px 0; color: #0f172a; text-align: right;\">User Account</td>\n            </tr>\n            <tr style=\"border-bottom: 1px solid #f1f5f9;\">\n              <td style=\"padding: 8px 0; color: #64748b;\"><strong>User Email:</strong></td>\n              <td style=\"padding: 8px 0; color: #0f172a; text-align: right;\">user@hishabkhata.com</td>\n            </tr>\n            <tr style=\"border-bottom: 1px solid #f1f5f9;\">\n              <td style=\"padding: 8px 0; color: #64748b;\"><strong>Plan Tier:</strong></td>\n              <td style=\"padding: 8px 0; color: #0f766e; font-weight: bold; text-align: right;\">PRO (YEARLY)</td>\n            </tr>\n            <tr style=\"border-bottom: 1px solid #f1f5f9;\">\n              <td style=\"padding: 8px 0; color: #64748b;\"><strong>Amount:</strong></td>\n              <td style=\"padding: 8px 0; color: #0f172a; font-weight: bold; text-align: right;\">4999 BDT</td>\n            </tr>\n            <tr style=\"border-bottom: 1px solid #f1f5f9;\">\n              <td style=\"padding: 8px 0; color: #64748b;\"><strong>Payment Method:</strong></td>\n              <td style=\"padding: 8px 0; color: #0f172a; font-weight: bold; text-align: right;\">BKASH</td>\n            </tr>\n            <tr style=\"border-bottom: 1px solid #f1f5f9;\">\n              <td style=\"padding: 8px 0; color: #64748b;\"><strong>Sender Account/Mobile:</strong></td>\n              <td style=\"padding: 8px 0; color: #0f172a; font-family: monospace; font-weight: bold; text-align: right;\">01811111111</td>\n            </tr>\n            <tr style=\"border-bottom: 1px solid #f1f5f9;\">\n              <td style=\"padding: 8px 0; color: #64748b;\"><strong>Transaction ID (TrxID):</strong></td>\n              <td style=\"padding: 8px 0; color: #0f766e; font-family: monospace; font-size: 15px; font-weight: 800; text-align: right;\">125634</td>\n            </tr>\n            \n          </table>\n          \n          <div style=\"margin-top: 20px; text-align: center;\">\n            <p style=\"font-size: 12px; color: #64748b;\">Please open the SuperAdmin Panel -> Subscription Payments tab to verify and approve this transaction.</p>\n          </div>\n        </div>\n      </div>\n    ",
+      "status": "sent",
+      "metadata": {
+        "userName": "User Account",
+        "userEmail": "user@hishabkhata.com",
+        "plan": "PRO",
+        "billingCycle": "yearly",
+        "amount": 4999,
+        "currency": "BDT",
+        "paymentMethod": "bkash",
+        "senderNumberOrAccount": "01811111111",
+        "transactionId": "125634"
+      },
+      "sentAt": "2026-09-03T09:18:16.010Z"
+    },
+    {
+      "id": "eml-admin-1788427096010-2",
+      "to": "admin@hishabkhata.com",
+      "from": "billing@hishabkhata.io",
+      "subject": "🔔 [PRO Upgrade Alert] New BKASH Payment (4999 BDT) from User Account",
+      "type": "admin_subscription_alert",
+      "preview": "User User Account (user@hishabkhata.com) applied for YEARLY PRO via BKASH. TrxID: 125634.",
+      "htmlContent": "\n      <div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8fafc; padding: 24px; border-radius: 16px; border: 1px solid #e2e8f0;\">\n        <div style=\"background-color: #0f766e; padding: 20px; border-radius: 12px; text-align: center; color: white;\">\n          <h1 style=\"margin: 0; font-size: 20px; font-weight: 800;\">Hishab Khata Admin Alert</h1>\n          <p style=\"margin: 6px 0 0 0; font-size: 13px; opacity: 0.9;\">New Subscription Payment Submission</p>\n        </div>\n        \n        <div style=\"background-color: white; padding: 24px; border-radius: 12px; margin-top: 16px; border: 1px solid #cbd5e1;\">\n          <h2 style=\"font-size: 16px; color: #0f172a; margin-top: 0;\">Payment Verification Required</h2>\n          <table style=\"width: 100%; border-collapse: collapse; font-size: 14px; margin: 16px 0;\">\n            <tr style=\"border-bottom: 1px solid #f1f5f9;\">\n              <td style=\"padding: 8px 0; color: #64748b;\"><strong>User Name:</strong></td>\n              <td style=\"padding: 8px 0; color: #0f172a; text-align: right;\">User Account</td>\n            </tr>\n            <tr style=\"border-bottom: 1px solid #f1f5f9;\">\n              <td style=\"padding: 8px 0; color: #64748b;\"><strong>User Email:</strong></td>\n              <td style=\"padding: 8px 0; color: #0f172a; text-align: right;\">user@hishabkhata.com</td>\n            </tr>\n            <tr style=\"border-bottom: 1px solid #f1f5f9;\">\n              <td style=\"padding: 8px 0; color: #64748b;\"><strong>Plan Tier:</strong></td>\n              <td style=\"padding: 8px 0; color: #0f766e; font-weight: bold; text-align: right;\">PRO (YEARLY)</td>\n            </tr>\n            <tr style=\"border-bottom: 1px solid #f1f5f9;\">\n              <td style=\"padding: 8px 0; color: #64748b;\"><strong>Amount:</strong></td>\n              <td style=\"padding: 8px 0; color: #0f172a; font-weight: bold; text-align: right;\">4999 BDT</td>\n            </tr>\n            <tr style=\"border-bottom: 1px solid #f1f5f9;\">\n              <td style=\"padding: 8px 0; color: #64748b;\"><strong>Payment Method:</strong></td>\n              <td style=\"padding: 8px 0; color: #0f172a; font-weight: bold; text-align: right;\">BKASH</td>\n            </tr>\n            <tr style=\"border-bottom: 1px solid #f1f5f9;\">\n              <td style=\"padding: 8px 0; color: #64748b;\"><strong>Sender Account/Mobile:</strong></td>\n              <td style=\"padding: 8px 0; color: #0f172a; font-family: monospace; font-weight: bold; text-align: right;\">01811111111</td>\n            </tr>\n            <tr style=\"border-bottom: 1px solid #f1f5f9;\">\n              <td style=\"padding: 8px 0; color: #64748b;\"><strong>Transaction ID (TrxID):</strong></td>\n              <td style=\"padding: 8px 0; color: #0f766e; font-family: monospace; font-size: 15px; font-weight: 800; text-align: right;\">125634</td>\n            </tr>\n            \n          </table>\n          \n          <div style=\"margin-top: 20px; text-align: center;\">\n            <p style=\"font-size: 12px; color: #64748b;\">Please open the SuperAdmin Panel -> Subscription Payments tab to verify and approve this transaction.</p>\n          </div>\n        </div>\n      </div>\n    ",
+      "status": "sent",
+      "metadata": {
+        "userName": "User Account",
+        "userEmail": "user@hishabkhata.com",
+        "plan": "PRO",
+        "billingCycle": "yearly",
+        "amount": 4999,
+        "currency": "BDT",
+        "paymentMethod": "bkash",
+        "senderNumberOrAccount": "01811111111",
+        "transactionId": "125634"
+      },
+      "sentAt": "2026-09-03T09:18:16.010Z"
+    },
     {
       "id": "eml-rej-1788420734197",
       "to": "yixinbd@gmail.com",

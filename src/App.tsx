@@ -27,6 +27,7 @@ import { UpgradeModal } from './components/UpgradeModal';
 import { AiAdvisorModal } from './components/AiAdvisorModal';
 import { NotificationDrawer } from './components/NotificationDrawer';
 import { DownloadAppModal } from './components/DownloadAppModal';
+import { OnboardingTutorialModal } from './components/OnboardingTutorialModal';
 import { LiveNotificationToast } from './components/LiveNotificationToast';
 import { ActionConfirmationPopup } from './components/ActionConfirmationPopup';
 import { recordActionConfirmation } from './lib/actionNotifications';
@@ -97,6 +98,23 @@ const MainAppContent: React.FC = () => {
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [isNotifDrawerOpen, setIsNotifDrawerOpen] = useState(false);
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
+  const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(false);
+
+  // Auto-launch Onboarding Tutorial for new accounts or first-time users
+  useEffect(() => {
+    if (user?.id) {
+      const userTutorialKey = `hk_onboarding_${user.id}`;
+      const hasSeenUser = localStorage.getItem(userTutorialKey);
+      const hasSeenGlobal = localStorage.getItem('hk_onboarding_completed');
+      if (!hasSeenUser && !hasSeenGlobal) {
+        // Automatically display the tutorial
+        const timer = setTimeout(() => {
+          setIsOnboardingModalOpen(true);
+        }, 600);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [user?.id]);
 
   // Sync dark mode class
   useEffect(() => {
@@ -542,6 +560,7 @@ const MainAppContent: React.FC = () => {
         unreadNotifsCount={unreadNotifsCount}
         onOpenUpgrade={() => setIsUpgradeModalOpen(true)}
         onOpenDownloadApp={() => setIsDownloadModalOpen(true)}
+        onOpenTutorial={() => setIsOnboardingModalOpen(true)}
       />
 
       {/* Main App Canvas */}
@@ -558,6 +577,8 @@ const MainAppContent: React.FC = () => {
           isDarkMode={isDarkMode}
           onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
           onOpenDownloadApp={() => setIsDownloadModalOpen(true)}
+          onOpenUpgrade={() => setIsUpgradeModalOpen(true)}
+          onOpenTutorial={() => setIsOnboardingModalOpen(true)}
           activeView={activeView}
           onNavigate={(v) => setActiveView(v)}
         />
@@ -610,6 +631,8 @@ const MainAppContent: React.FC = () => {
             <WalletsView
               wallets={wallets}
               currency={currency}
+              userPlan={user.plan}
+              onOpenUpgrade={() => setIsUpgradeModalOpen(true)}
               onOpenAddWallet={() => {
                 setEditingWallet(null);
                 setIsWalletModalOpen(true);
@@ -678,6 +701,8 @@ const MainAppContent: React.FC = () => {
               categories={categories}
               currency={currency}
               userName={user.name}
+              userPlan={user.plan}
+              onOpenUpgrade={() => setIsUpgradeModalOpen(true)}
             />
           )}
 
@@ -754,6 +779,7 @@ const MainAppContent: React.FC = () => {
         onSave={handleSaveWallet}
         wallet={editingWallet}
         defaultCurrency={currency}
+        onOpenUpgrade={() => setIsUpgradeModalOpen(true)}
       />
 
       <BudgetModal
@@ -800,6 +826,17 @@ const MainAppContent: React.FC = () => {
         isOpen={isUpgradeModalOpen}
         onClose={() => setIsUpgradeModalOpen(false)}
         onSuccess={loadAllData}
+      />
+
+      {/* New User Interactive Guided Tutorial */}
+      <OnboardingTutorialModal
+        isOpen={isOnboardingModalOpen}
+        onClose={() => setIsOnboardingModalOpen(false)}
+        onOpenUpgrade={() => {
+          setIsOnboardingModalOpen(false);
+          setIsUpgradeModalOpen(true);
+        }}
+        userId={user?.id}
       />
 
       <AiAdvisorModal

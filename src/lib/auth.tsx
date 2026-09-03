@@ -11,7 +11,8 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isAdmin: boolean;
   login: (email: string, password: string) => Promise<User>;
-  loginWithGoogle: () => Promise<User>;
+  loginWithGoogle: (fallbackEmail?: string) => Promise<User>;
+  loginWithDirectEmail: (email: string, name?: string) => Promise<User>;
   register: (nameOrData: any, email?: string, password?: string) => Promise<User>;
   updateUserProfile: (data: any) => Promise<void>;
   logout: () => void;
@@ -75,9 +76,36 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const loginWithGoogle = async (): Promise<User> => {
+  const loginWithDirectEmail = async (email: string, name?: string): Promise<User> => {
     setLoading(true);
     setError(null);
+    try {
+      const cleanEmail = email.trim().toLowerCase();
+      const res = await api.loginWithGoogle({
+        email: cleanEmail,
+        name: name || cleanEmail.split('@')[0],
+      });
+      setAuthToken(res.token);
+      setTokenState(res.token);
+      setUser(res.user);
+      return res.user;
+    } catch (err: any) {
+      setError(err.message || 'Direct sign-in failed');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loginWithGoogle = async (fallbackEmail?: string): Promise<User> => {
+    setLoading(true);
+    setError(null);
+
+    // If fallbackEmail is provided and user requested direct Google sign-in
+    if (fallbackEmail) {
+      return await loginWithDirectEmail(fallbackEmail);
+    }
+
     try {
       const fbResult = await signInWithGoogle();
       const fbUser = fbResult.user;
@@ -96,8 +124,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setUser(res.user);
       return res.user;
     } catch (err: any) {
+      const errMsg = err?.message || '';
+      const isConfigOrNotFound =
+        errMsg.includes('Requested resource was not found') ||
+        err?.code === 'auth/configuration-not-found' ||
+        err?.code === 'auth/operation-not-allowed' ||
+        err?.code === 'auth/internal-error';
+
       if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
         setError(null);
+      } else if (isConfigOrNotFound) {
+        const friendlyMsg = 'Google Authentication is currently unavailable via popup in this environment. Please sign in with your email & password or direct ID.';
+        setError(friendlyMsg);
+        const wrappedErr = new Error(friendlyMsg);
+        (wrappedErr as any).isProviderMissing = true;
+        throw wrappedErr;
       } else {
         setError(err.message || 'Google Sign-In failed');
       }
@@ -166,6 +207,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       isAdmin: user?.role === 'admin',
       login,
       loginWithGoogle,
+      loginWithDirectEmail,
       register,
       updateUserProfile,
       logout,

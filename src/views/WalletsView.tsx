@@ -12,7 +12,9 @@ import {
   ArrowLeftRight,
   Edit2,
   Trash2,
-  Star
+  Star,
+  Crown,
+  Zap
 } from 'lucide-react';
 
 interface WalletsViewProps {
@@ -22,6 +24,8 @@ interface WalletsViewProps {
   onEditWallet: (w: Wallet) => void;
   onDeleteWallet: (id: string) => Promise<void>;
   onOpenTransfer: () => void;
+  userPlan?: string;
+  onOpenUpgrade?: () => void;
 }
 
 export const WalletsView: React.FC<WalletsViewProps> = ({
@@ -31,6 +35,8 @@ export const WalletsView: React.FC<WalletsViewProps> = ({
   onEditWallet,
   onDeleteWallet,
   onOpenTransfer,
+  userPlan = 'free',
+  onOpenUpgrade,
 }) => {
   const { t } = useI18n();
   const totalBalance = wallets.reduce((s, w) => s + w.balance, 0);
@@ -72,14 +78,55 @@ export const WalletsView: React.FC<WalletsViewProps> = ({
           <button
             id="add-wallet-btn"
             type="button"
-            onClick={onOpenAddWallet}
+            onClick={() => {
+              if (userPlan !== 'pro' && wallets.length >= 3 && onOpenUpgrade) {
+                onOpenUpgrade();
+              } else {
+                onOpenAddWallet();
+              }
+            }}
             className="px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold rounded-xl shadow-md shadow-teal-700/20 transition flex items-center gap-1.5 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>{t('add_wallet')}</span>
+            {userPlan !== 'pro' && wallets.length >= 3 && (
+              <span className="ml-1 px-1.5 py-0.2 bg-amber-400 text-slate-950 text-[10px] font-black rounded-md flex items-center gap-0.5">
+                <Crown className="w-2.5 h-2.5" />
+                PRO
+              </span>
+            )}
           </button>
         </div>
       </div>
+
+      {/* Free Plan Wallet Limit Info Banner */}
+      {userPlan !== 'pro' && wallets.length >= 3 && (
+        <div className="p-4 bg-gradient-to-r from-amber-500/10 via-amber-400/5 to-transparent border border-amber-500/30 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
+              <Crown className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-xs font-black text-slate-900 dark:text-white">
+                Free Plan Limit Reached: 3 of 3 Wallets Connected
+              </p>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                You can manage and edit all your current 3 wallets freely. Upgrade to VIP PRO for unlimited bank accounts, cards, and MFS wallets!
+              </p>
+            </div>
+          </div>
+          {onOpenUpgrade && (
+            <button
+              type="button"
+              onClick={onOpenUpgrade}
+              className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs transition flex items-center gap-1 cursor-pointer shrink-0 shadow-xs"
+            >
+              <Zap className="w-3.5 h-3.5 fill-slate-950" />
+              <span>Unlock Unlimited Wallets</span>
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Wallets Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

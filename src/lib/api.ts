@@ -72,7 +72,7 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
       } else if (response.status === 403) {
         errorMsg = 'Access forbidden or account deactivated.';
       } else if (response.status === 404) {
-        errorMsg = 'Requested resource was not found.';
+        errorMsg = 'Service endpoint not reachable or resource not found. Please try again.';
       } else if (response.status >= 500) {
         errorMsg = 'Server error occurred. Please try again shortly.';
       } else {

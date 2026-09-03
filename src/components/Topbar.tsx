@@ -18,7 +18,8 @@ import {
   LayoutDashboard,
   User as UserIcon,
   ChevronDown,
-  Settings
+  Settings,
+  HelpCircle
 } from 'lucide-react';
 
 interface TopbarProps {
@@ -31,6 +32,7 @@ interface TopbarProps {
   onOpenAiAdvisor: () => void;
   onOpenUpgrade?: () => void;
   onOpenDownloadApp?: () => void;
+  onOpenTutorial?: () => void;
   theme?: 'light' | 'dark';
   isDarkMode?: boolean;
   onToggleTheme?: () => void;
@@ -51,6 +53,7 @@ export const Topbar: React.FC<TopbarProps> = ({
   onOpenAiAdvisor,
   onOpenUpgrade = () => {},
   onOpenDownloadApp,
+  onOpenTutorial,
   theme,
   isDarkMode,
   onToggleTheme,
@@ -258,6 +261,19 @@ export const Topbar: React.FC<TopbarProps> = ({
           )}
         </button>
 
+        {/* Tutorial / Help Guide */}
+        {onOpenTutorial && (
+          <button
+            id="topbar-tutorial-btn"
+            type="button"
+            onClick={onOpenTutorial}
+            className="p-1.5 sm:p-2 text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 rounded-lg hover:bg-teal-50 dark:hover:bg-teal-950/40 transition cursor-pointer"
+            title="App Tutorial & User Guide / অ্যাপ গাইড"
+          >
+            <HelpCircle className="w-4 h-4 sm:w-5 sm:h-5" />
+          </button>
+        )}
+
         {/* User Profile Avatar & Dropdown Menu */}
         {user && (
           <div className="relative" ref={profileMenuRef}>
@@ -345,6 +361,21 @@ export const Topbar: React.FC<TopbarProps> = ({
                     >
                       <Settings className="w-4 h-4 text-slate-400 shrink-0" />
                       <span>{t('nav_settings')}</span>
+                    </button>
+                  )}
+
+                  {onOpenTutorial && (
+                    <button
+                      id="topbar-menu-tutorial-btn"
+                      type="button"
+                      onClick={() => {
+                        setIsProfileOpen(false);
+                        onOpenTutorial();
+                      }}
+                      className="w-full flex items-center gap-2 px-2.5 py-2 rounded-xl text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/40 font-bold transition cursor-pointer"
+                    >
+                      <HelpCircle className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+                      <span>App Guide & Tutorial (টিউটোরিয়াল)</span>
                     </button>
                   )}
                 </div>

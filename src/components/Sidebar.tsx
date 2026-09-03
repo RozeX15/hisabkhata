@@ -18,7 +18,8 @@ import {
   Zap,
   ChevronRight,
   Download,
-  MessageSquareHeart
+  MessageSquareHeart,
+  HelpCircle
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -28,6 +29,7 @@ interface SidebarProps {
   unreadNotifsCount?: number;
   onOpenUpgrade: () => void;
   onOpenDownloadApp?: () => void;
+  onOpenTutorial?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -37,6 +39,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   unreadNotifsCount = 0,
   onOpenUpgrade,
   onOpenDownloadApp,
+  onOpenTutorial,
 }) => {
   const currentView = propActive || propCurrent || 'dashboard';
   const { t } = useI18n();
@@ -175,6 +178,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <ChevronRight className="w-3.5 h-3.5" />
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Tutorial / Help Link */}
+      {onOpenTutorial && (
+        <div className="px-3 pb-2">
+          <button
+            id="sidebar-tutorial-btn"
+            type="button"
+            onClick={onOpenTutorial}
+            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/30 transition cursor-pointer"
+          >
+            <div className="flex items-center gap-2">
+              <HelpCircle className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+              <span>User Guide / গাইড</span>
+            </div>
+            <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-teal-100 dark:bg-teal-950/60 text-teal-800 dark:text-teal-200 font-bold">
+              টিউটোরিয়াল
+            </span>
+          </button>
         </div>
       )}
 
