@@ -28,6 +28,8 @@ import { AiAdvisorModal } from './components/AiAdvisorModal';
 import { NotificationDrawer } from './components/NotificationDrawer';
 import { DownloadAppModal } from './components/DownloadAppModal';
 import { LiveNotificationToast } from './components/LiveNotificationToast';
+import { ActionConfirmationPopup } from './components/ActionConfirmationPopup';
+import { recordActionConfirmation } from './lib/actionNotifications';
 import { usePresenceTracker } from './lib/usePresenceTracker';
 
 // Views
@@ -258,15 +260,46 @@ const MainAppContent: React.FC = () => {
   const handleSaveTransaction = async (data: any) => {
     if (editingTx) {
       await api.updateTransaction(editingTx.id, data);
+      recordActionConfirmation({
+        type: 'transaction_update',
+        category: 'TRANSACTION',
+        title: 'Transaction Updated',
+        message: `Successfully modified "${data.description || 'Transaction'}"`,
+        details: `Category: ${data.category || 'General'} • Date: ${data.date}`,
+        amount: data.amount,
+        currency: data.currency || currency,
+        status: 'updated',
+      });
     } else {
       await api.createTransaction(data);
+      recordActionConfirmation({
+        type: 'transaction_add',
+        category: 'TRANSACTION',
+        title: data.type === 'income' ? 'Income Added!' : data.type === 'transfer' ? 'Transfer Recorded!' : 'Expense Recorded!',
+        message: `Successfully logged "${data.description || 'Transaction'}"`,
+        details: `Type: ${data.type?.toUpperCase()} • Date: ${data.date}`,
+        amount: data.amount,
+        currency: data.currency || currency,
+        status: 'confirmed',
+      });
     }
     await loadAllData();
   };
 
   const handleDeleteTransaction = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this transaction? Wallet balances will be recalculated.')) {
+      const target = transactions.find(t => t.id === id);
       await api.deleteTransaction(id);
+      recordActionConfirmation({
+        type: 'transaction_delete',
+        category: 'TRANSACTION',
+        title: 'Transaction Deleted',
+        message: `Removed "${target?.description || 'Transaction'}"`,
+        details: 'Wallet balances and budget metrics have been automatically recalculated.',
+        amount: target?.amount,
+        currency: target?.currency || currency,
+        status: 'deleted',
+      });
       await loadAllData();
     }
   };
@@ -275,15 +308,46 @@ const MainAppContent: React.FC = () => {
   const handleSaveWallet = async (data: any) => {
     if (editingWallet) {
       await api.updateWallet(editingWallet.id, data);
+      recordActionConfirmation({
+        type: 'wallet_update',
+        category: 'WALLET',
+        title: 'Wallet Updated',
+        message: `Updated wallet "${data.name}"`,
+        details: `Type: ${data.type?.toUpperCase()} • Balance: ${data.balance}`,
+        amount: data.balance,
+        currency: data.currency || currency,
+        status: 'updated',
+      });
     } else {
       await api.createWallet(data);
+      recordActionConfirmation({
+        type: 'wallet_add',
+        category: 'WALLET',
+        title: 'New Wallet Created!',
+        message: `Successfully linked wallet "${data.name}"`,
+        details: `Type: ${data.type?.toUpperCase()} • Starting Balance: ${data.balance}`,
+        amount: data.balance,
+        currency: data.currency || currency,
+        status: 'confirmed',
+      });
     }
     await loadAllData();
   };
 
   const handleDeleteWallet = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this wallet?')) {
+      const target = wallets.find(w => w.id === id);
       await api.deleteWallet(id);
+      recordActionConfirmation({
+        type: 'wallet_delete',
+        category: 'WALLET',
+        title: 'Wallet Removed',
+        message: `Deleted wallet "${target?.name || 'Account'}"`,
+        details: 'Associated accounts and ledger relations adjusted.',
+        amount: target?.balance,
+        currency: target?.currency || currency,
+        status: 'deleted',
+      });
       await loadAllData();
     }
   };
@@ -291,12 +355,29 @@ const MainAppContent: React.FC = () => {
   // Handlers for Budgets
   const handleSaveBudget = async (data: any) => {
     await api.createBudget(data);
+    recordActionConfirmation({
+      type: 'budget_add',
+      category: 'BUDGET',
+      title: 'Budget Limit Set!',
+      message: `Monthly limit established for category.`,
+      details: `Month: ${data.month} • Cap: ${data.amount} ${currency}`,
+      amount: data.amount,
+      currency: currency,
+      status: 'confirmed',
+    });
     await loadAllData();
   };
 
   const handleDeleteBudget = async (id: string) => {
     if (window.confirm('Delete this budget limit?')) {
       await api.deleteBudget(id);
+      recordActionConfirmation({
+        type: 'budget_delete',
+        category: 'BUDGET',
+        title: 'Budget Limit Deleted',
+        message: 'Category budget restriction removed.',
+        status: 'deleted',
+      });
       await loadAllData();
     }
   };
@@ -304,17 +385,46 @@ const MainAppContent: React.FC = () => {
   // Handlers for Savings Goals
   const handleSaveSavingsGoal = async (data: any) => {
     await api.createSavingsGoal(data);
+    recordActionConfirmation({
+      type: 'goal_add',
+      category: 'SAVINGS',
+      title: 'Savings Goal Created!',
+      message: `Goal established for "${data.name}"`,
+      details: `Target: ${data.targetAmount} ${data.currency || currency}`,
+      amount: data.targetAmount,
+      currency: data.currency || currency,
+      status: 'confirmed',
+    });
     await loadAllData();
   };
 
   const handleContributeSavingsGoal = async (goalId: string, amount: number, walletId: string) => {
     await api.contributeSavingsGoal(goalId, amount, walletId);
+    const targetGoal = savingsGoals.find(g => g.id === goalId);
+    recordActionConfirmation({
+      type: 'goal_contribute',
+      category: 'SAVINGS',
+      title: 'Savings Deposit Saved!',
+      message: `Added funds towards "${targetGoal?.name || 'Goal'}"`,
+      details: `Deposited: ${amount} ${currency}`,
+      amount,
+      currency,
+      status: 'confirmed',
+    });
     await loadAllData();
   };
 
   const handleDeleteSavingsGoal = async (id: string) => {
     if (window.confirm('Delete this savings goal?')) {
+      const targetGoal = savingsGoals.find(g => g.id === id);
       await api.deleteSavingsGoal(id);
+      recordActionConfirmation({
+        type: 'goal_delete',
+        category: 'SAVINGS',
+        title: 'Savings Goal Deleted',
+        message: `Removed savings milestone "${targetGoal?.name || 'Goal'}"`,
+        status: 'deleted',
+      });
       await loadAllData();
     }
   };
@@ -322,17 +432,46 @@ const MainAppContent: React.FC = () => {
   // Handlers for Loans
   const handleSaveLoan = async (data: any) => {
     await api.createLoan(data);
+    recordActionConfirmation({
+      type: 'loan_add',
+      category: 'LOAN',
+      title: 'Loan Entry Recorded!',
+      message: `${data.type === 'borrowed' ? 'Borrowed loan' : 'Lent funds'} with ${data.personName}`,
+      details: `Principal: ${data.amount} ${data.currency || currency}`,
+      amount: data.amount,
+      currency: data.currency || currency,
+      status: 'confirmed',
+    });
     await loadAllData();
   };
 
   const handleRecordLoanPayment = async (loanId: string, amount: number, walletId: string, note?: string) => {
     await api.recordLoanPayment(loanId, amount, walletId, note);
+    const targetLoan = loans.find(l => l.id === loanId);
+    recordActionConfirmation({
+      type: 'loan_payment',
+      category: 'LOAN',
+      title: 'Loan Repayment Saved!',
+      message: `Payment of ${amount} ${currency} recorded for ${targetLoan?.personName || 'Loan'}`,
+      details: note || 'Ledger and wallet balance updated.',
+      amount,
+      currency,
+      status: 'confirmed',
+    });
     await loadAllData();
   };
 
   const handleDeleteLoan = async (id: string) => {
     if (window.confirm('Delete this loan entry?')) {
+      const targetLoan = loans.find(l => l.id === id);
       await api.deleteLoan(id);
+      recordActionConfirmation({
+        type: 'loan_delete',
+        category: 'LOAN',
+        title: 'Loan Record Deleted',
+        message: `Removed loan with "${targetLoan?.personName || 'Record'}"`,
+        status: 'deleted',
+      });
       await loadAllData();
     }
   };
@@ -410,7 +549,7 @@ const MainAppContent: React.FC = () => {
         />
 
         {/* Dynamic View Switcher */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+        <main className="flex-1 p-3 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto pb-24 lg:pb-8 transition-all">
           {activeView === 'dashboard' && (
             <DashboardView
               summary={summary}
@@ -656,6 +795,19 @@ const MainAppContent: React.FC = () => {
           }
           setLiveToastNotification(null);
           setIsNotifDrawerOpen(true);
+        }}
+      />
+
+      {/* Confirmation Notification Pop-up on current window */}
+      <ActionConfirmationPopup
+        onViewDashboardLog={() => {
+          setActiveView('dashboard');
+          setTimeout(() => {
+            const widget = document.getElementById('dashboard-activity-log-widget');
+            if (widget) {
+              widget.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+          }, 120);
         }}
       />
     </div>

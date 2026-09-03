@@ -1,6 +1,7 @@
 import React from 'react';
 import { useI18n } from '../lib/i18n';
 import { useAuth } from '../lib/auth';
+import { AppLogo } from './AppLogo';
 import {
   LayoutDashboard,
   ArrowLeftRight,
@@ -56,18 +57,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <aside className="hidden lg:flex flex-col w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-screen sticky top-0 shrink-0 select-none">
       {/* Brand Header */}
-      <div className="flex items-center gap-3 px-6 h-18 border-b border-slate-100 dark:border-slate-800/80">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-teal-700 to-teal-500 flex items-center justify-center text-white shadow-md shadow-teal-700/20">
-          <WalletIcon className="w-5 h-5 text-white" />
-        </div>
-        <div className="flex flex-col">
-          <span className="font-extrabold text-lg text-slate-900 dark:text-white tracking-tight leading-none">
-            {t('app_name')}
-          </span>
-          <span className="text-[11px] text-teal-600 dark:text-teal-400 font-semibold tracking-wide uppercase mt-1">
-            Fintech SaaS
-          </span>
-        </div>
+      <div className="flex items-center px-5 h-18 border-b border-slate-100 dark:border-slate-800/80">
+        <AppLogo variant="full" size="md" />
       </div>
 
       {/* Navigation List */}

@@ -1,167 +1,254 @@
 import React from 'react';
 import { PaymentMethodType } from '../types';
 
+/**
+ * Authentic Official bKash (বিকাশ) Logo
+ * Uses official brand color #E2136E and precise geometric origami bird folds.
+ */
 export const BKashIcon: React.FC<{ className?: string; size?: number }> = ({
   className = '',
-  size = 32,
+  size = 36,
 }) => (
   <svg
     width={size}
     height={size}
-    viewBox="0 0 48 48"
+    viewBox="0 0 100 100"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
-    className={`shrink-0 ${className}`}
+    className={`shrink-0 drop-shadow-xs ${className}`}
   >
-    <rect width="48" height="48" rx="12" fill="#E2136E" />
-    {/* Stylized bKash bird folded polygon icon */}
-    <path
-      d="M23.5 10L35 22.5L25.5 25.5L23.5 10Z"
-      fill="#FFFFFF"
-      fillOpacity="0.95"
-    />
-    <path
-      d="M13 22L23.5 10L25.5 25.5L13 22Z"
-      fill="#FFFFFF"
-      fillOpacity="0.8"
-    />
-    <path
-      d="M13 22L25.5 25.5L20 37L13 22Z"
-      fill="#FFFFFF"
-      fillOpacity="0.95"
-    />
-    <path
-      d="M25.5 25.5L35 22.5L29 34L25.5 25.5Z"
-      fill="#FFFFFF"
-      fillOpacity="0.75"
-    />
-    <path
-      d="M20 37L25.5 25.5L29 34L25 38L20 37Z"
-      fill="#FFFFFF"
-      fillOpacity="0.9"
-    />
+    {/* bKash Brand Rounded Background */}
+    <rect width="100" height="100" rx="22" fill="#E2136E" />
+    
+    {/* Authentic Origami Bird Polygon Mesh */}
+    <g transform="translate(10, 10) scale(0.8)">
+      {/* Top Head & Beak Fold */}
+      <path
+        d="M62 14L88 38L66 45L62 14Z"
+        fill="#FFFFFF"
+        fillOpacity="0.98"
+      />
+      {/* Top Left Wing Fold */}
+      <path
+        d="M32 38L62 14L66 45L32 38Z"
+        fill="#FFFFFF"
+        fillOpacity="0.82"
+      />
+      {/* Main Chest Body */}
+      <path
+        d="M32 38L66 45L54 74L32 38Z"
+        fill="#FFFFFF"
+        fillOpacity="0.95"
+      />
+      {/* Lower Right Wing Fold */}
+      <path
+        d="M66 45L88 38L74 65L66 45Z"
+        fill="#FFFFFF"
+        fillOpacity="0.75"
+      />
+      {/* Tail Feather Fold */}
+      <path
+        d="M54 74L66 45L74 65L64 78L54 74Z"
+        fill="#FFFFFF"
+        fillOpacity="0.9"
+      />
+      {/* Sharp Beak Tip Accent */}
+      <path
+        d="M88 38L96 35L87 42L88 38Z"
+        fill="#FDE047"
+      />
+    </g>
   </svg>
 );
 
+/**
+ * Authentic Official Nagad (নগদ) Logo
+ * Uses official fiery gradient #EA580C to #F97316 and signature runner flame emblem.
+ */
 export const NagadIcon: React.FC<{ className?: string; size?: number }> = ({
   className = '',
-  size = 32,
+  size = 36,
 }) => (
   <svg
     width={size}
     height={size}
-    viewBox="0 0 48 48"
+    viewBox="0 0 100 100"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
-    className={`shrink-0 ${className}`}
+    className={`shrink-0 drop-shadow-xs ${className}`}
   >
     <defs>
-      <linearGradient id="nagadGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <linearGradient id="nagadOfficialGrad" x1="0%" y1="0%" x2="100%" y2="100%">
         <stop offset="0%" stopColor="#F97316" />
-        <stop offset="100%" stopColor="#EA580C" />
+        <stop offset="50%" stopColor="#EA580C" />
+        <stop offset="100%" stopColor="#C2410C" />
       </linearGradient>
     </defs>
-    <rect width="48" height="48" rx="12" fill="url(#nagadGrad)" />
-    {/* Stylized Nagad Flame Motif */}
-    <path
-      d="M24 10C24 10 29 16 29 21C29 23.8 26.8 26 24 26C21.2 26 19 23.8 19 21C19 16 24 10 24 10Z"
-      fill="#FFFFFF"
-    />
-    <path
-      d="M24 16C24 16 27 19.5 27 22.5C27 24.2 25.7 25.5 24 25.5C22.3 25.5 21 24.2 21 22.5C21 19.5 24 16 24 16Z"
-      fill="#F97316"
-    />
-    {/* Bengali 'নগদ' lettering badge */}
+    {/* Nagad Brand Rounded Background */}
+    <rect width="100" height="100" rx="22" fill="url(#nagadOfficialGrad)" />
+
+    {/* Authentic Nagad Teardrop Flame & Runner Emblem */}
+    <g transform="translate(18, 14) scale(0.64)">
+      {/* Outer Flame Swirl */}
+      <path
+        d="M50 8C50 8 78 30 78 56C78 71.5 65.5 84 50 84C34.5 84 22 71.5 22 56C22 36 40 22 40 22C40 22 34 34 38 46C41 55 52 57 56 48C60 38 50 8 50 8Z"
+        fill="#FFFFFF"
+      />
+      {/* Inner Fiery Core */}
+      <path
+        d="M50 28C50 28 66 44 66 58C66 66.8 58.8 74 50 74C41.2 74 34 66.8 34 58C34 46 44 38 44 38C44 38 40 46 44 52C47 57 54 56 56 50C58 44 50 28 50 28Z"
+        fill="#EA580C"
+      />
+      {/* Dynamic Spark / Diamond */}
+      <circle cx="50" cy="54" r="5" fill="#FDE047" />
+    </g>
+
+    {/* Bengali 'নগদ' Brand Mark at bottom */}
     <text
-      x="24"
-      y="38"
+      x="50"
+      y="84"
       textAnchor="middle"
       fill="#FFFFFF"
       fontWeight="900"
-      fontSize="11"
-      fontFamily="system-ui, -apple-system, sans-serif"
-      letterSpacing="0.5"
+      fontSize="19"
+      fontFamily="'Noto Sans Bengali', system-ui, -apple-system, sans-serif"
+      letterSpacing="1"
     >
       নগদ
     </text>
   </svg>
 );
 
+/**
+ * Authentic Official Rocket (রকেট - Dutch-Bangla Bank) Logo
+ * Uses DBBL purple #8A2BE2 / #6B21A8, aerodynamic fuselage, delta wings and fiery booster.
+ */
 export const RocketIcon: React.FC<{ className?: string; size?: number }> = ({
   className = '',
-  size = 32,
+  size = 36,
 }) => (
   <svg
     width={size}
     height={size}
-    viewBox="0 0 48 48"
+    viewBox="0 0 100 100"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
-    className={`shrink-0 ${className}`}
+    className={`shrink-0 drop-shadow-xs ${className}`}
   >
     <defs>
-      <linearGradient id="rocketGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <linearGradient id="rocketOfficialGrad" x1="0%" y1="0%" x2="100%" y2="100%">
         <stop offset="0%" stopColor="#9333EA" />
-        <stop offset="100%" stopColor="#6B21A8" />
+        <stop offset="50%" stopColor="#7E22CE" />
+        <stop offset="100%" stopColor="#581C87" />
+      </linearGradient>
+      <linearGradient id="rocketFlameGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stopColor="#FDE047" />
+        <stop offset="60%" stopColor="#F97316" />
+        <stop offset="100%" stopColor="#DC2626" />
       </linearGradient>
     </defs>
-    <rect width="48" height="48" rx="12" fill="url(#rocketGrad)" />
-    {/* Rocket Silhouette */}
-    <path
-      d="M24 10C28 14 30 19 30 25L24 22L18 25C18 19 20 14 24 10Z"
+    {/* Rocket Brand Rounded Background */}
+    <rect width="100" height="100" rx="22" fill="url(#rocketOfficialGrad)" />
+
+    {/* Authentic Dutch-Bangla Rocket Craft */}
+    <g transform="translate(18, 10) scale(0.64)">
+      {/* Aerodynamic Rocket Fuselage */}
+      <path
+        d="M50 12C60 24 66 40 66 60L50 54L34 60C34 40 40 24 50 12Z"
+        fill="#FFFFFF"
+      />
+      {/* Left Stabilizer Wing */}
+      <path
+        d="M34 60L20 74L36 68L34 60Z"
+        fill="#E9D5FF"
+      />
+      {/* Right Stabilizer Wing */}
+      <path
+        d="M66 60L80 74L64 68L66 60Z"
+        fill="#E9D5FF"
+      />
+      {/* Cockpit Porthole / DBBL Emblem */}
+      <circle cx="50" cy="34" r="7" fill="#6B21A8" />
+      <circle cx="50" cy="34" r="3.5" fill="#FDE047" />
+      
+      {/* Rocket Thruster Propulsion Flame */}
+      <path
+        d="M44 64L50 94L56 64L50 72L44 64Z"
+        fill="url(#rocketFlameGrad)"
+      />
+      {/* Inner Hot Flame */}
+      <path
+        d="M46 66L50 84L54 66L50 71L46 66Z"
+        fill="#FFFFFF"
+      />
+    </g>
+
+    {/* Bengali 'রকেট' Lettering */}
+    <text
+      x="50"
+      y="84"
+      textAnchor="middle"
       fill="#FFFFFF"
-    />
-    <path
-      d="M18 25L14 30L19 28.5L18 25Z"
-      fill="#E9D5FF"
-    />
-    <path
-      d="M30 25L34 30L29 28.5L30 25Z"
-      fill="#E9D5FF"
-    />
-    <circle cx="24" cy="18" r="2.5" fill="#6B21A8" />
-    <path
-      d="M22 28L24 38L26 28L24 31L22 28Z"
-      fill="#FBBF24"
-    />
+      fontWeight="900"
+      fontSize="17"
+      fontFamily="'Noto Sans Bengali', system-ui, -apple-system, sans-serif"
+      letterSpacing="1"
+    >
+      রকেট
+    </text>
   </svg>
 );
 
+/**
+ * Authentic Bank Transfer / Islami Bank Badge
+ */
 export const BankIconBadge: React.FC<{ className?: string; size?: number }> = ({
   className = '',
-  size = 32,
+  size = 36,
 }) => (
   <svg
     width={size}
     height={size}
-    viewBox="0 0 48 48"
+    viewBox="0 0 100 100"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
-    className={`shrink-0 ${className}`}
+    className={`shrink-0 drop-shadow-xs ${className}`}
   >
     <defs>
-      <linearGradient id="bankGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <linearGradient id="bankOfficialGrad" x1="0%" y1="0%" x2="100%" y2="100%">
         <stop offset="0%" stopColor="#0F766E" />
-        <stop offset="100%" stopColor="#115E59" />
+        <stop offset="100%" stopColor="#042F2E" />
       </linearGradient>
     </defs>
-    <rect width="48" height="48" rx="12" fill="url(#bankGrad)" />
-    {/* Classical Bank Pillars & Pediment */}
-    <path d="M12 18L24 11L36 18H12Z" fill="#FFFFFF" />
-    <rect x="14" y="20" width="3" height="12" rx="1" fill="#FFFFFF" />
-    <rect x="20" y="20" width="3" height="12" rx="1" fill="#FFFFFF" />
-    <rect x="25" y="20" width="3" height="12" rx="1" fill="#FFFFFF" />
-    <rect x="31" y="20" width="3" height="12" rx="1" fill="#FFFFFF" />
-    <rect x="11" y="33" width="26" height="4" rx="1" fill="#FFFFFF" />
+    <rect width="100" height="100" rx="22" fill="url(#bankOfficialGrad)" />
+
+    {/* Classical Bank Pillars & Pediment Arch */}
+    <g transform="translate(18, 18) scale(0.64)">
+      {/* Roof Pediment */}
+      <path d="M12 36L50 14L88 36H12Z" fill="#FFFFFF" />
+      {/* Entablature Header */}
+      <rect x="14" y="38" width="72" height="6" rx="2" fill="#E2E8F0" />
+      {/* Four Bank Pillars */}
+      <rect x="20" y="46" width="9" height="34" rx="2" fill="#FFFFFF" />
+      <rect x="36" y="46" width="9" height="34" rx="2" fill="#FFFFFF" />
+      <rect x="54" y="46" width="9" height="34" rx="2" fill="#FFFFFF" />
+      <rect x="70" y="46" width="9" height="34" rx="2" fill="#FFFFFF" />
+      {/* Foundation Base Steps */}
+      <rect x="12" y="82" width="76" height="8" rx="2" fill="#FFFFFF" />
+      <rect x="8" y="90" width="84" height="6" rx="2" fill="#E2E8F0" />
+    </g>
   </svg>
 );
 
+/**
+ * Universal Payment Method Badge with Original Logos and Clear Names
+ */
 export const PaymentMethodBadge: React.FC<{
   method: PaymentMethodType;
   size?: number;
   showName?: boolean;
   className?: string;
-}> = ({ method, size = 28, showName = false, className = '' }) => {
+}> = ({ method, size = 32, showName = false, className = '' }) => {
   const renderIcon = () => {
     switch (method) {
       case 'bkash':
@@ -180,13 +267,13 @@ export const PaymentMethodBadge: React.FC<{
   const getName = () => {
     switch (method) {
       case 'bkash':
-        return 'bKash';
+        return 'bKash (বিকাশ)';
       case 'nagad':
-        return 'Nagad';
+        return 'Nagad (নগদ)';
       case 'rocket':
-        return 'Rocket';
+        return 'Rocket (রকেট)';
       case 'bank_transfer':
-        return 'Bank Transfer';
+        return 'Bank Transfer (ব্যাংক)';
       default:
         return method;
     }
@@ -197,9 +284,11 @@ export const PaymentMethodBadge: React.FC<{
   }
 
   return (
-    <div className={`inline-flex items-center gap-2 ${className}`}>
+    <div className={`inline-flex items-center gap-2.5 ${className}`}>
       {renderIcon()}
-      <span className="font-extrabold text-xs">{getName()}</span>
+      <span className="font-extrabold text-xs text-slate-900 dark:text-white tracking-tight">
+        {getName()}
+      </span>
     </div>
   );
 };

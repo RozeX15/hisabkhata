@@ -3,6 +3,7 @@ import { useI18n } from '../lib/i18n';
 import { useAuth } from '../lib/auth';
 import { LanguageSelector } from './LanguageSelector';
 import { CurrencySelector } from './CurrencySelector';
+import { AppLogoMark } from './AppLogo';
 import {
   Bell,
   Plus,
@@ -62,9 +63,9 @@ export const Topbar: React.FC<TopbarProps> = ({
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between px-4 lg:px-8 py-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800">
       {/* View Title */}
-      <div className="flex items-center gap-3">
-        <div className="lg:hidden w-8 h-8 rounded-lg bg-teal-700 flex items-center justify-center text-white font-bold">
-          <WalletIcon className="w-4 h-4" />
+      <div className="flex items-center gap-2.5 sm:gap-3">
+        <div className="lg:hidden shrink-0">
+          <AppLogoMark size={34} />
         </div>
         <div>
           <h1 className="text-base sm:text-xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-none">

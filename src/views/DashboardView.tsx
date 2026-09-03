@@ -40,6 +40,7 @@ import {
   Cell,
   Legend
 } from 'recharts';
+import { ActivityLogWidget } from '../components/ActivityLogWidget';
 
 interface DashboardViewProps {
   summary: DashboardSummary | null;
@@ -712,6 +713,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           )}
         </div>
       </div>
+
+      {/* 7. Live Action Confirmation & Activity Audit Log Widget */}
+      <ActivityLogWidget onNavigate={onNavigate} currency={currency} />
     </div>
   );
 };
