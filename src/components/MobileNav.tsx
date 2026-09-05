@@ -19,7 +19,8 @@ import {
   Bell,
   ChevronRight,
   User as UserIcon,
-  Crown
+  Crown,
+  Download
 } from 'lucide-react';
 
 interface MobileNavProps {
@@ -28,6 +29,7 @@ interface MobileNavProps {
   onNavigate: (view: string) => void;
   onOpenAddTransaction: () => void;
   isAdmin?: boolean;
+  onOpenDownloadApp?: () => void;
 }
 
 export const MobileNav: React.FC<MobileNavProps> = ({
@@ -36,6 +38,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({
   onNavigate,
   onOpenAddTransaction,
   isAdmin: propIsAdmin,
+  onOpenDownloadApp,
 }) => {
   const currentView = propActive || propCurrent || 'dashboard';
   const { t } = useI18n();
@@ -307,6 +310,25 @@ export const MobileNav: React.FC<MobileNavProps> = ({
                 </div>
                 <ChevronRight className="w-4 h-4 text-slate-400" />
               </button>
+              {onOpenDownloadApp && (
+                <button
+                  id="mobile-drawer-download-app-btn"
+                  type="button"
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    onOpenDownloadApp();
+                  }}
+                  className="w-full flex items-center justify-between p-2.5 rounded-xl bg-teal-50 dark:bg-teal-950/40 text-teal-800 dark:text-teal-200 border border-teal-200 dark:border-teal-800 font-bold cursor-pointer"
+                >
+                  <div className="flex items-center gap-3">
+                    <Download className="w-4.5 h-4.5 text-teal-600 dark:text-teal-400 animate-bounce" />
+                    <span>Install App (1-Tap / ডাউনলোড)</span>
+                  </div>
+                  <span className="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full bg-teal-700 text-white">
+                    App
+                  </span>
+                </button>
+              )}
             </div>
 
             {/* Bottom Logout Button */}

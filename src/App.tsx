@@ -31,8 +31,11 @@ import { DownloadAppModal } from './components/DownloadAppModal';
 import { OnboardingTutorialModal } from './components/OnboardingTutorialModal';
 import { LiveNotificationToast } from './components/LiveNotificationToast';
 import { ActionConfirmationPopup } from './components/ActionConfirmationPopup';
+import { AppFooter } from './components/AppFooter';
+import { usePWAInstall } from './lib/usePWAInstall';
 import { recordActionConfirmation } from './lib/actionNotifications';
 import { usePresenceTracker } from './lib/usePresenceTracker';
+import { Download, Sparkles, X } from 'lucide-react';
 
 // Views
 import { LandingPage } from './views/LandingPage';
@@ -109,6 +112,22 @@ const MainAppContent: React.FC = () => {
   const [isNotifDrawerOpen, setIsNotifDrawerOpen] = useState(false);
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
   const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(false);
+
+  // PWA One-Tap Install integration
+  const { isInstallable, isInstalled, install } = usePWAInstall();
+  const [installBannerDismissed, setInstallBannerDismissed] = useState(() => {
+    return safeStorage.getItem('hk_install_banner_dismissed') === 'true';
+  });
+
+  const handleOpenDownloadApp = useCallback(async () => {
+    // If native 1-tap browser prompt is ready, trigger it directly!
+    if (isInstallable) {
+      const accepted = await install();
+      if (accepted) return;
+    }
+    // Otherwise open the download modal with platform guides and launcher download
+    setIsDownloadModalOpen(true);
+  }, [isInstallable, install]);
 
   // Auto-launch Onboarding Tutorial for new accounts or first-time users
   useEffect(() => {
@@ -304,7 +323,7 @@ const MainAppContent: React.FC = () => {
             setLegalType(type);
             setActiveView('legal');
           }}
-          onOpenDownloadApp={() => setIsDownloadModalOpen(true)}
+          onOpenDownloadApp={handleOpenDownloadApp}
         />
         <DownloadAppModal
           isOpen={isDownloadModalOpen}
@@ -588,7 +607,7 @@ const MainAppContent: React.FC = () => {
         onNavigate={(v) => setActiveView(v)}
         unreadNotifsCount={unreadNotifsCount}
         onOpenUpgrade={() => setIsUpgradeModalOpen(true)}
-        onOpenDownloadApp={() => setIsDownloadModalOpen(true)}
+        onOpenDownloadApp={handleOpenDownloadApp}
         onOpenTutorial={() => setIsOnboardingModalOpen(true)}
       />
 
@@ -605,12 +624,49 @@ const MainAppContent: React.FC = () => {
           unreadNotificationsCount={unreadNotifsCount}
           isDarkMode={isDarkMode}
           onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
-          onOpenDownloadApp={() => setIsDownloadModalOpen(true)}
+          onOpenDownloadApp={handleOpenDownloadApp}
           onOpenUpgrade={() => setIsUpgradeModalOpen(true)}
           onOpenTutorial={() => setIsOnboardingModalOpen(true)}
           activeView={activeView}
           onNavigate={(v) => setActiveView(v)}
         />
+
+        {/* Quick One-Tap Install Banner when not in standalone mode */}
+        {!isInstalled && !installBannerDismissed && (
+          <div className="bg-gradient-to-r from-teal-900 via-teal-800 to-slate-900 text-white px-3 sm:px-6 py-2 flex items-center justify-between gap-2 border-b border-teal-700/60 shadow-xs text-xs shrink-0">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-7 h-7 rounded-lg bg-teal-500/20 text-teal-300 flex items-center justify-center shrink-0">
+                <Download className="w-4 h-4 animate-bounce" />
+              </div>
+              <p className="truncate font-medium text-slate-100">
+                <span className="font-bold text-amber-300">ইনস্টল করুন:</span> হোম স্ক্রিনে ১-ট্যাপে সরাসরি হিসাব খাতা অ্যাপ যোগ করুন
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                id="quick-install-banner-btn"
+                type="button"
+                onClick={handleOpenDownloadApp}
+                className="px-3 py-1 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs rounded-lg transition cursor-pointer shadow-xs flex items-center gap-1.5"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Install Now</span>
+              </button>
+              <button
+                id="dismiss-install-banner-btn"
+                type="button"
+                onClick={() => {
+                  setInstallBannerDismissed(true);
+                  safeStorage.setItem('hk_install_banner_dismissed', 'true');
+                }}
+                className="p-1 text-teal-300 hover:text-white rounded-md transition cursor-pointer"
+                title="Dismiss"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Dynamic View Switcher */}
         <main className="flex-1 p-3 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto pb-24 lg:pb-8 transition-all">
@@ -752,7 +808,7 @@ const MainAppContent: React.FC = () => {
               onDataReset={handleResetData}
               isDarkMode={isDarkMode}
               onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
-              onOpenDownloadApp={() => setIsDownloadModalOpen(true)}
+              onOpenDownloadApp={handleOpenDownloadApp}
               onNavigate={(v) => setActiveView(v)}
             />
           )}
@@ -769,6 +825,20 @@ const MainAppContent: React.FC = () => {
           {activeView === 'admin' && user.role === 'admin' && (
             <AdminView onNavigate={(v) => setActiveView(v)} />
           )}
+
+          {/* Unified App Footer for both user and admin view */}
+          <AppFooter
+            activeView={activeView}
+            isAdminView={activeView === 'admin'}
+            onNavigate={(v) => setActiveView(v)}
+            onViewLegal={(type) => {
+              setLegalType(type);
+              setActiveView('legal');
+            }}
+            onOpenDownloadApp={handleOpenDownloadApp}
+            userEmail={user?.email}
+            userRole={user?.role}
+          />
         </main>
 
         {/* Mobile Bottom Navigation */}
@@ -781,6 +851,7 @@ const MainAppContent: React.FC = () => {
             setTxModalInitialType('expense');
             setIsTxModalOpen(true);
           }}
+          onOpenDownloadApp={handleOpenDownloadApp}
         />
       </div>
 

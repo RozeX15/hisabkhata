@@ -126,12 +126,12 @@ export const Topbar: React.FC<TopbarProps> = ({
             id="topbar-download-app-btn"
             type="button"
             onClick={onOpenDownloadApp}
-            className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 transition cursor-pointer"
-            title="Download & Install App"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-teal-50 hover:bg-teal-100 dark:bg-teal-950/60 dark:hover:bg-teal-900/60 text-teal-800 dark:text-teal-200 text-xs font-bold rounded-lg border border-teal-200/80 dark:border-teal-800/80 transition cursor-pointer shadow-2xs"
+            title="Download & Install App (1-Tap)"
           >
-            <Download className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
-            <span className="hidden md:inline">Download App</span>
-            <span className="md:hidden">App</span>
+            <Download className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0 animate-bounce" />
+            <span className="hidden md:inline">Install App</span>
+            <span className="md:hidden text-[11px]">Install</span>
           </button>
         )}
 
@@ -404,6 +404,21 @@ export const Topbar: React.FC<TopbarProps> = ({
                     >
                       <HelpCircle className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
                       <span>App Guide & Tutorial (টিউটোরিয়াল)</span>
+                    </button>
+                  )}
+
+                  {onOpenDownloadApp && (
+                    <button
+                      id="topbar-menu-download-app-btn"
+                      type="button"
+                      onClick={() => {
+                        setIsProfileOpen(false);
+                        onOpenDownloadApp();
+                      }}
+                      className="w-full flex items-center gap-2 px-2.5 py-2 rounded-xl text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/40 font-bold transition cursor-pointer"
+                    >
+                      <Download className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+                      <span>Install App (1-Tap / ডাউনলোড)</span>
                     </button>
                   )}
                 </div>

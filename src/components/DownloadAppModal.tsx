@@ -8,12 +8,12 @@ import {
   X,
   Share2,
   PlusSquare,
-  Sparkles,
   Zap,
-  Globe,
   WifiOff,
   ShieldCheck,
-  ArrowRight
+  ExternalLink,
+  FileCode2,
+  Sparkles
 } from 'lucide-react';
 
 interface DownloadAppModalProps {
@@ -22,23 +22,71 @@ interface DownloadAppModalProps {
 }
 
 export const DownloadAppModal: React.FC<DownloadAppModalProps> = ({ isOpen, onClose }) => {
-  const { isInstallable, isInstalled, isIOS, isAndroid, isDesktop, install } = usePWAInstall();
+  const { isInstallable, isInstalled, isIOS, isAndroid, isDesktop, isInIframe, install, openInAppWindow } = usePWAInstall();
   const [activePlatform, setActivePlatform] = useState<'android' | 'ios' | 'desktop'>(() => {
     if (isIOS) return 'ios';
     if (isAndroid) return 'android';
     return 'android';
   });
   const [installSuccess, setInstallSuccess] = useState(false);
+  const [isInstalling, setIsInstalling] = useState(false);
 
   if (!isOpen) return null;
 
   const handleNativeInstall = async () => {
-    if (isInstallable) {
-      const accepted = await install();
-      if (accepted) {
-        setInstallSuccess(true);
+    setIsInstalling(true);
+    try {
+      if (isInstallable) {
+        const accepted = await install();
+        if (accepted) {
+          setInstallSuccess(true);
+        }
+      } else if (isInIframe) {
+        openInAppWindow();
       }
+    } finally {
+      setIsInstalling(false);
     }
+  };
+
+  const handleDownloadLauncher = () => {
+    const appUrl = window.location.origin;
+    const htmlContent = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Hishab Khata App</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="${appUrl}/manifest.json">
+<link rel="icon" href="${appUrl}/icon.svg">
+<meta http-equiv="refresh" content="0; url=${appUrl}">
+<style>
+body { font-family: system-ui, -apple-system, sans-serif; background: #042F2E; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; text-align: center; }
+.card { background: rgba(255,255,255,0.08); padding: 32px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.15); max-width: 360px; }
+h2 { margin: 0 0 8px; font-size: 22px; }
+p { margin: 0 0 20px; color: #94A3B8; font-size: 13px; }
+a { display: inline-block; background: #0D9488; color: #fff; font-weight: bold; text-decoration: none; padding: 12px 24px; border-radius: 12px; font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h2>Hishab Khata App</h2>
+  <p>Redirecting to your smart finance app...</p>
+  <a href="${appUrl}">Launch App Now</a>
+</div>
+<script>window.location.href = "${appUrl}";</script>
+</body>
+</html>`;
+
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'HishabKhata-App.html';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -48,6 +96,7 @@ export const DownloadAppModal: React.FC<DownloadAppModalProps> = ({ isOpen, onCl
         {/* Header with App Banner */}
         <div className="relative p-6 bg-gradient-to-br from-teal-800 via-teal-700 to-slate-900 text-white">
           <button
+            id="download-app-close-btn"
             onClick={onClose}
             className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition cursor-pointer"
             aria-label="Close"
@@ -61,8 +110,8 @@ export const DownloadAppModal: React.FC<DownloadAppModalProps> = ({ isOpen, onCl
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-[11px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-400 text-slate-950">
-                  Mobile & Desktop App
+                <span className="text-[11px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 flex items-center gap-1">
+                  <Sparkles className="w-3 h-3" /> One-Tap Install
                 </span>
                 <span className="text-xs text-teal-200">v2.4.1</span>
               </div>
@@ -70,58 +119,93 @@ export const DownloadAppModal: React.FC<DownloadAppModalProps> = ({ isOpen, onCl
                 Install Hishab Khata App
               </h2>
               <p className="text-xs text-teal-100/90 mt-0.5">
-                Fast, secure offline-ready personal finance app on your device
+                Fast, 1-tap installation on Android, iPhone & Desktop
               </p>
             </div>
           </div>
         </div>
 
         {/* Modal Body */}
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-5">
           
-          {/* Quick Features List */}
-          <div className="grid grid-cols-3 gap-2.5 text-center">
-            <div className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
-              <Zap className="w-4 h-4 text-amber-500 mx-auto mb-1" />
-              <div className="text-[11px] font-bold text-slate-900 dark:text-white">Instant Launch</div>
-              <div className="text-[10px] text-slate-500 dark:text-slate-400">No App Store wait</div>
+          {/* Status: Already Installed */}
+          {isInstalled && (
+            <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 flex items-center gap-3">
+              <CheckCircle2 className="w-6 h-6 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <div>
+                <h4 className="font-extrabold text-sm text-emerald-900 dark:text-emerald-200">
+                  App Already Installed!
+                </h4>
+                <p className="text-xs text-emerald-700 dark:text-emerald-300">
+                  Hishab Khata is running in standalone app mode on this device.
+                </p>
+              </div>
             </div>
-            <div className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
-              <WifiOff className="w-4 h-4 text-teal-500 mx-auto mb-1" />
-              <div className="text-[11px] font-bold text-slate-900 dark:text-white">Offline Ready</div>
-              <div className="text-[10px] text-slate-500 dark:text-slate-400">Works without net</div>
-            </div>
-            <div className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
-              <ShieldCheck className="w-4 h-4 text-emerald-500 mx-auto mb-1" />
-              <div className="text-[11px] font-bold text-slate-900 dark:text-white">100% Secure</div>
-              <div className="text-[10px] text-slate-500 dark:text-slate-400">Encrypted data</div>
-            </div>
-          </div>
+          )}
 
-          {/* 1-Click Browser Install Button (if browser supports beforeinstallprompt) */}
-          {isInstallable && !isInstalled && !installSuccess && (
-            <div className="p-4 rounded-2xl bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800/60">
+          {/* Primary One-Tap Install Action */}
+          {!isInstalled && !installSuccess && (
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-teal-50 to-emerald-50 dark:from-teal-950/50 dark:to-emerald-950/50 border border-teal-200/80 dark:border-teal-800/80 shadow-xs space-y-3">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center shrink-0">
+                  <div className="w-11 h-11 rounded-2xl bg-teal-700 text-white flex items-center justify-center shrink-0 shadow-md shadow-teal-700/30">
                     <Download className="w-5 h-5 animate-bounce" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-teal-900 dark:text-teal-200">
-                      1-Click Direct Install Ready
+                    <h4 className="text-sm font-black text-slate-900 dark:text-white">
+                      Instant One-Tap Install
                     </h4>
-                    <p className="text-[11px] text-teal-700 dark:text-teal-300">
-                      Your browser supports instant 1-tap installation!
+                    <p className="text-xs text-slate-600 dark:text-slate-300">
+                      Add to home screen / app menu directly
                     </p>
                   </div>
                 </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-2 pt-1">
+                {isInstallable ? (
+                  <button
+                    id="pwa-one-tap-install-btn"
+                    onClick={handleNativeInstall}
+                    disabled={isInstalling}
+                    className="flex-1 py-3 px-4 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-black text-xs shadow-md shadow-teal-700/30 transition cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>{isInstalling ? 'Installing...' : 'Install App Now (1-Tap)'}</span>
+                  </button>
+                ) : isInIframe ? (
+                  <button
+                    id="pwa-open-install-btn"
+                    onClick={openInAppWindow}
+                    className="flex-1 py-3 px-4 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-black text-xs shadow-md shadow-teal-700/30 transition cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    <span>Open in Window to Install</span>
+                  </button>
+                ) : isIOS ? (
+                  <div className="w-full py-2.5 px-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 text-blue-900 dark:text-blue-200 text-xs font-semibold flex items-center gap-2">
+                    <Share2 className="w-4 h-4 text-blue-600 shrink-0" />
+                    <span>Tap <strong>Share</strong> in Safari &gt; tap <strong>Add to Home Screen</strong></span>
+                  </div>
+                ) : (
+                  <button
+                    id="pwa-direct-install-btn"
+                    onClick={handleNativeInstall}
+                    className="flex-1 py-3 px-4 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-black text-xs shadow-md shadow-teal-700/30 transition cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Install App (1-Tap)</span>
+                  </button>
+                )}
+
                 <button
-                  id="pwa-direct-install-btn"
-                  onClick={handleNativeInstall}
-                  className="px-4 py-2 rounded-xl bg-teal-700 hover:bg-teal-600 text-white font-extrabold text-xs shadow-md shadow-teal-700/30 transition cursor-pointer flex items-center gap-1.5 shrink-0"
+                  id="pwa-download-launcher-btn"
+                  onClick={handleDownloadLauncher}
+                  className="py-3 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1.5 shrink-0 border border-slate-200 dark:border-slate-700"
+                  title="Download instant offline launcher file (.html)"
                 >
-                  <Download className="w-4 h-4" />
-                  <span>Install Now</span>
+                  <FileCode2 className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+                  <span>Download Shortcut</span>
                 </button>
               </div>
             </div>
@@ -134,10 +218,29 @@ export const DownloadAppModal: React.FC<DownloadAppModalProps> = ({ isOpen, onCl
                 Installation Triggered!
               </h4>
               <p className="text-xs text-emerald-700 dark:text-emerald-300 mt-1">
-                The app is now added to your home screen / app menu.
+                The app is now added to your home screen / app menu. You can launch it anytime.
               </p>
             </div>
           )}
+
+          {/* Quick Features List */}
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <div className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
+              <Zap className="w-4 h-4 text-amber-500 mx-auto mb-1" />
+              <div className="text-[11px] font-bold text-slate-900 dark:text-white">Instant Launch</div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400">No Play Store wait</div>
+            </div>
+            <div className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
+              <WifiOff className="w-4 h-4 text-teal-500 mx-auto mb-1" />
+              <div className="text-[11px] font-bold text-slate-900 dark:text-white">Offline Ready</div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400">Works without net</div>
+            </div>
+            <div className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
+              <ShieldCheck className="w-4 h-4 text-emerald-500 mx-auto mb-1" />
+              <div className="text-[11px] font-bold text-slate-900 dark:text-white">100% Secure</div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400">Encrypted data</div>
+            </div>
+          </div>
 
           {/* Platform Tab Switcher */}
           <div>
@@ -183,22 +286,22 @@ export const DownloadAppModal: React.FC<DownloadAppModalProps> = ({ isOpen, onCl
             </div>
 
             {/* Platform Guides */}
-            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 text-xs space-y-3">
+            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 text-xs space-y-2.5">
               {activePlatform === 'android' && (
                 <>
                   <div className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-emerald-500" />
                     Android (Chrome / Samsung Internet / Edge):
                   </div>
-                  <ol className="list-decimal list-inside space-y-2 text-slate-600 dark:text-slate-300">
+                  <ol className="list-decimal list-inside space-y-1.5 text-slate-600 dark:text-slate-300">
                     <li>
-                      ব্রাউজারের উপরের ডান কোণায় <strong>৩টি ডট (Menu ⋮)</strong> আইকনে ট্যাপ করুন।
+                      উপরের <strong>"Install App Now (1-Tap)"</strong> বাটনে চাপ দিন।
                     </li>
                     <li>
-                      মেনু থেকে <strong>"Install app"</strong> অথবা <strong>"Add to Home screen"</strong> নির্বাচন করুন।
+                      অথবা ব্রাউজারের <strong>Menu (⋮)</strong> থেকে <strong>"Install app"</strong> বা <strong>"Add to Home screen"</strong> সিলেক্ট করুন।
                     </li>
                     <li>
-                      কনফার্মেশন ডায়ালগে <strong>"Install"</strong> বাটনে ক্লিক করলেই আপনার ফোনে অ্যাপ যুক্ত হয়ে যাবে।
+                      কনফার্ম করলেই ফোনের হোম স্ক্রিনে অ্যাপ আইকন চলে আসবে।
                     </li>
                   </ol>
                 </>
@@ -210,23 +313,23 @@ export const DownloadAppModal: React.FC<DownloadAppModalProps> = ({ isOpen, onCl
                     <span className="w-2 h-2 rounded-full bg-blue-500" />
                     iPhone / iPad (Safari Browser):
                   </div>
-                  <ol className="list-decimal list-inside space-y-2 text-slate-600 dark:text-slate-300">
+                  <ol className="list-decimal list-inside space-y-1.5 text-slate-600 dark:text-slate-300">
                     <li className="flex items-center gap-1.5 flex-wrap">
-                      <span>Safari ব্রাউজারের নিচে থাকা</span>
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-200 dark:bg-slate-700 font-bold text-[11px]">
+                      <span>Safari ব্রাউজারের নিচে</span>
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-slate-200 dark:bg-slate-700 font-bold text-[11px]">
                         <Share2 className="w-3 h-3 text-blue-500" /> Share
                       </span>
-                      <span>বাটনে ট্যাপ করুন।</span>
+                      <span>আইকনে চাপ দিন।</span>
                     </li>
                     <li className="flex items-center gap-1.5 flex-wrap">
-                      <span>একটু নিচে স্ক্রল করে</span>
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-200 dark:bg-slate-700 font-bold text-[11px]">
+                      <span>নিচে স্ক্রল করে</span>
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-slate-200 dark:bg-slate-700 font-bold text-[11px]">
                         <PlusSquare className="w-3 h-3 text-emerald-500" /> Add to Home Screen
                       </span>
-                      <span>অপশনটিতে চাপ দিন।</span>
+                      <span>চাপ দিন।</span>
                     </li>
                     <li>
-                      উপরের ডান পাশের <strong>"Add"</strong> বাটনে ট্যাপ করলেই হোম স্ক্রিনে অ্যাপ আইকন চলে আসবে।
+                      উপরের ডান পাশের <strong>"Add"</strong> চাপলেই হোম স্ক্রিনে অ্যাপ যুক্ত হয়ে যাবে।
                     </li>
                   </ol>
                 </>
@@ -236,17 +339,17 @@ export const DownloadAppModal: React.FC<DownloadAppModalProps> = ({ isOpen, onCl
                 <>
                   <div className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-purple-500" />
-                    Windows, Mac & Linux (Chrome / Edge / Brave):
+                    Windows, Mac & Linux (Chrome / Edge):
                   </div>
-                  <ol className="list-decimal list-inside space-y-2 text-slate-600 dark:text-slate-300">
+                  <ol className="list-decimal list-inside space-y-1.5 text-slate-600 dark:text-slate-300">
                     <li>
-                      ব্রাউজারের URL অ্যাড্রেস বারের ডানপাশে থাকা <strong>Install Icon (⊕ বা 📥)</strong> এ ক্লিক করুন।
+                      ব্রাউজারের অ্যাড্রেস বারের ডানপাশে <strong>Install Icon (⊕ বা 📥)</strong> এ ক্লিক করুন।
                     </li>
                     <li>
-                      অথবা ব্রাউজার মেনু (⋮) &gt; <strong>Save and Share &gt; Install Hishab Khata</strong> নির্বাচন করুন।
+                      অথবা <strong>"Install App Now"</strong> বাটনে ক্লিক করে কনফার্ম করুন।
                     </li>
                     <li>
-                      এখন এটি আপনার ডেস্কটপে স্বতন্ত্র সফটওয়্যার উইন্ডো হিসেবে দ্রুত ওপেন হবে।
+                      অ্যাপটি আপনার কম্পিউটারে আলাদা ডেস্কটপ উইন্ডোতে চালু হবে।
                     </li>
                   </ol>
                 </>
@@ -257,11 +360,12 @@ export const DownloadAppModal: React.FC<DownloadAppModalProps> = ({ isOpen, onCl
           {/* Action Button */}
           <div className="flex gap-3">
             <button
+              id="download-modal-done-btn"
               type="button"
               onClick={onClose}
               className="w-full py-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-extrabold text-xs transition cursor-pointer"
             >
-              Got it, Close
+              Close
             </button>
           </div>
         </div>
