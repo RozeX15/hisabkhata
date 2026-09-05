@@ -68,5 +68,18 @@ service cloud.firestore {
     match /app_accounts/{accountId} {
       allow read, write: if true;
     }
+
+    // User presence tracking (Live users monitoring in Admin panel across Vercel, Netlify, and Localhost)
+    match /userPresences/{presenceId} {
+      allow read, write: if true;
+    }
+    match /user_presences/{presenceId} {
+      allow read, write: if true;
+    }
+
+    // Live activities telemetry
+    match /liveActivities/{activityId} {
+      allow read, write: if true;
+    }
   }
 }

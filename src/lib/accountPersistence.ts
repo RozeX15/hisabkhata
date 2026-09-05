@@ -1,7 +1,7 @@
-import { doc, getDoc, setDoc, deleteDoc, collection, query, where, getDocs, onSnapshot, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, deleteDoc, collection, query, where, getDocs, onSnapshot, updateDoc, orderBy, limit } from 'firebase/firestore';
 import { firestore } from './firebase';
 import { safeStorage } from './storage';
-import { User } from '../types';
+import { User, UserPresence, LiveUserActivity } from '../types';
 import { api } from './api';
 import bcrypt from 'bcryptjs';
 
@@ -564,5 +564,120 @@ export async function updateUserRoleOrPlanInFirestore(
     });
   } catch (err) {
     console.warn('Error updating user in Firestore:', err);
+  }
+}
+
+export async function recordUserPresenceInFirestore(presence: UserPresence): Promise<void> {
+  try {
+    if (!firestore || !presence.userId) return;
+    const nowIso = new Date().toISOString();
+    const docRef = doc(firestore, 'user_presences', presence.userId);
+    await setDoc(
+      docRef,
+      {
+        userId: presence.userId,
+        userName: presence.userName || 'User',
+        userEmail: presence.userEmail || '',
+        avatarUrl: presence.avatarUrl || '',
+        plan: presence.plan || 'free',
+        role: presence.role || 'user',
+        isOnline: true,
+        currentView: presence.currentView || 'dashboard',
+        lastActiveAt: nowIso,
+        updatedAt: nowIso,
+        deviceType: presence.deviceType || 'desktop',
+        browser: presence.browser || 'Web App',
+        lastAction: presence.lastAction || `Active in ${presence.currentView || 'dashboard'}`,
+      },
+      { merge: true }
+    );
+  } catch (err) {
+    console.warn('Failed to record presence in Firestore:', err);
+  }
+}
+
+export async function fetchAllPresencesFromFirestore(): Promise<UserPresence[]> {
+  try {
+    if (!firestore) return [];
+    const presencesRef = collection(firestore, 'user_presences');
+    const snapshot = await getDocs(presencesRef);
+    const list: UserPresence[] = [];
+    const nowMs = Date.now();
+    snapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      if (data && data.userId) {
+        const lastActiveMs = new Date(data.lastActiveAt || data.updatedAt || 0).getTime();
+        // Online if active within last 90 seconds
+        const isOnline = (nowMs - lastActiveMs) < 90000;
+        list.push({
+          userId: data.userId,
+          userName: data.userName || 'User',
+          userEmail: data.userEmail || '',
+          avatarUrl: data.avatarUrl || '',
+          plan: data.plan || 'free',
+          role: data.role || 'user',
+          isOnline,
+          currentView: data.currentView || 'dashboard',
+          lastActiveAt: data.lastActiveAt || data.updatedAt || new Date().toISOString(),
+          deviceType: data.deviceType || 'desktop',
+          browser: data.browser || 'Web App',
+          lastAction: data.lastAction || 'Active',
+        });
+      }
+    });
+    return list;
+  } catch (err) {
+    console.warn('Failed to fetch presences from Firestore:', err);
+    return [];
+  }
+}
+
+export function subscribeToFirestorePresences(
+  callback: (presences: UserPresence[]) => void
+): () => void {
+  try {
+    if (!firestore) return () => {};
+    const presencesRef = collection(firestore, 'user_presences');
+    return onSnapshot(
+      presencesRef,
+      (snapshot) => {
+        const list: UserPresence[] = [];
+        const nowMs = Date.now();
+        snapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          if (data && data.userId) {
+            const lastActiveMs = new Date(data.lastActiveAt || data.updatedAt || 0).getTime();
+            const isOnline = (nowMs - lastActiveMs) < 90000;
+            list.push({
+              userId: data.userId,
+              userName: data.userName || 'User',
+              userEmail: data.userEmail || '',
+              avatarUrl: data.avatarUrl,
+              plan: data.plan || 'free',
+              role: data.role || 'user',
+              isOnline,
+              currentView: data.currentView || 'dashboard',
+              lastActiveAt: data.lastActiveAt || data.updatedAt || new Date().toISOString(),
+              deviceType: data.deviceType || 'desktop',
+              browser: data.browser || 'Web App',
+              lastAction: data.lastAction || 'Active',
+            });
+          }
+        });
+        // Sort: online users first, then by last active timestamp descending
+        list.sort((a, b) => {
+          if (a.isOnline === b.isOnline) {
+            return new Date(b.lastActiveAt).getTime() - new Date(a.lastActiveAt).getTime();
+          }
+          return a.isOnline ? -1 : 1;
+        });
+        callback(list);
+      },
+      (err) => {
+        console.warn('Firestore presence subscription warning:', err);
+      }
+    );
+  } catch {
+    return () => {};
   }
 }

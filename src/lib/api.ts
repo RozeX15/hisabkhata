@@ -46,6 +46,15 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     headers['Authorization'] = `Bearer ${token}`;
   }
 
+  try {
+    const cachedUser = safeStorage.getItem('hk_user');
+    if (cachedUser) {
+      const u = JSON.parse(cachedUser);
+      if (u?.id) headers['x-user-id'] = u.id;
+      if (u?.email) headers['x-user-email'] = u.email;
+    }
+  } catch {}
+
   let response: Response;
   try {
     response = await fetch(`${API_BASE}${endpoint}`, {

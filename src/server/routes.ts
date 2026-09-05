@@ -2225,17 +2225,62 @@ router.get('/admin/presences', adminOnly, (req: AuthRequest, res) => {
   }
 
   const nowMs = Date.now();
-  const presenceList = Object.values(db.userPresences).map(p => {
+  const currentAdmin = req.user;
+
+  // Always mark requesting admin active
+  if (currentAdmin) {
+    db.userPresences[currentAdmin.id] = {
+      userId: currentAdmin.id,
+      userName: currentAdmin.name,
+      userEmail: currentAdmin.email,
+      avatarUrl: currentAdmin.avatarUrl,
+      plan: currentAdmin.plan,
+      role: currentAdmin.role,
+      isOnline: true,
+      currentView: 'Admin Control Center',
+      lastActiveAt: new Date().toISOString(),
+      deviceType: 'desktop',
+      browser: 'Admin Console',
+      lastAction: 'Monitoring System Telemetry',
+    };
+  }
+
+  const presenceMap = new Map<string, UserPresence>();
+
+  // Process live heartbeats
+  for (const p of Object.values(db.userPresences)) {
     const lastActiveMs = new Date(p.lastActiveAt).getTime();
-    // User is considered online if active within last 45 seconds
-    const isActuallyOnline = (nowMs - lastActiveMs) < 45000;
-    return {
+    const diffMs = nowMs - lastActiveMs;
+    const isActuallyOnline = diffMs < 90000; // 90 seconds
+    presenceMap.set(p.userId, {
       ...p,
       isOnline: isActuallyOnline,
-    };
-  });
+    });
+  }
 
-  // Sort: online first, then by last active timestamp
+  // Ensure all registered users are also populated so admin sees full telemetry
+  for (const u of db.users) {
+    if (!presenceMap.has(u.id)) {
+      presenceMap.set(u.id, {
+        userId: u.id,
+        userName: u.name,
+        userEmail: u.email,
+        avatarUrl: u.avatarUrl,
+        plan: u.plan || 'free',
+        role: u.role || 'user',
+        isOnline: false,
+        currentView: 'offline',
+        lastActiveAt: u.updatedAt || u.createdAt || new Date().toISOString(),
+        deviceType: 'desktop',
+        browser: 'Web App',
+        lastAction: 'Registered User',
+      });
+    }
+  }
+
+  const presenceList = Array.from(presenceMap.values());
+
+  // Sort: online first, then by last active timestamp descending
   presenceList.sort((a, b) => {
     if (a.isOnline === b.isOnline) {
       return new Date(b.lastActiveAt).getTime() - new Date(a.lastActiveAt).getTime();

@@ -64,6 +64,7 @@ import {
 import {
   fetchAllUsersFromFirestore,
   subscribeToFirestoreUsers,
+  subscribeToFirestorePresences,
   updateUserRoleOrPlanInFirestore,
   seedDefaultUsersToFirestore,
   deleteUserFromFirestore,
@@ -112,6 +113,11 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
   const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
   const [paymentFilter, setPaymentFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
 
+  // Presence Radar Filters & State
+  const [presenceSearch, setPresenceSearch] = useState('');
+  const [presenceFilter, setPresenceFilter] = useState<'all' | 'online' | 'away' | 'offline'>('all');
+  const [presenceRefreshing, setPresenceRefreshing] = useState(false);
+
   // Direct Message Modal / Form
   const [msgModalOpen, setMsgModalOpen] = useState(false);
   const [targetUser, setTargetUser] = useState<{ id: string; name: string; email: string } | null>(null);
@@ -145,35 +151,38 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
   const fetchAllAdminData = async () => {
     try {
       const [statsRes, firestoreUsers, presencesRes, paymentsRes, configRes, activitiesRes, emailsRes, sugRes] = await Promise.all([
-        api.getAdminStats(),
-        fetchAllUsersFromFirestore().catch(() => api.getAdminUsers()),
-        api.getAdminPresences(),
-        api.getAdminSubscriptionPayments(),
-        api.getSubscriptionConfig(),
-        api.getLiveActivities(),
-        api.getEmailLogs(),
+        api.getAdminStats().catch(() => null),
+        fetchAllUsersFromFirestore().catch(() => api.getAdminUsers().catch(() => [])),
+        api.getAdminPresences().catch(() => []),
+        api.getAdminSubscriptionPayments().catch(() => []),
+        api.getSubscriptionConfig().catch(() => null),
+        api.getLiveActivities().catch(() => []),
+        api.getEmailLogs().catch(() => []),
         api.getAdminSuggestions().catch(() => ({ suggestions: [], stats: null })),
       ]);
 
-      setStats((statsRes as any).stats || statsRes);
+      if (statsRes) setStats((statsRes as any).stats || statsRes);
       if (Array.isArray(firestoreUsers)) {
         setUsers(firestoreUsers);
       } else if ((firestoreUsers as any)?.users) {
         setUsers((firestoreUsers as any).users);
       }
-      setPresences(presencesRes || []);
-      setPayments(paymentsRes || []);
-      setPaymentConfig(configRes);
-      setConfigForm(configRes || {});
-      setLiveActivities(activitiesRes || []);
-      setEmailLogs(emailsRes || []);
-      setAdminSuggestions(sugRes?.suggestions || []);
-      setSuggestionStats(sugRes?.stats || null);
+      if (Array.isArray(presencesRes)) setPresences(presencesRes);
+      if (Array.isArray(paymentsRes)) setPayments(paymentsRes);
+      if (configRes) {
+        setPaymentConfig(configRes);
+        setConfigForm(configRes || {});
+      }
+      if (Array.isArray(activitiesRes)) setLiveActivities(activitiesRes);
+      if (Array.isArray(emailsRes)) setEmailLogs(emailsRes);
+      if (sugRes?.suggestions) setAdminSuggestions(sugRes.suggestions);
+      if (sugRes?.stats) setSuggestionStats(sugRes.stats);
     } catch (err: any) {
       console.error('Failed to load admin suite data', err);
     } finally {
       setLoading(false);
       setRefreshing(false);
+      setPresenceRefreshing(false);
     }
   };
 
@@ -187,9 +196,30 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
       }
     });
 
+    // Live real-time stream directly from Firebase Firestore user_presences collection
+    const unsubscribePresences = subscribeToFirestorePresences((freshPresences) => {
+      if (freshPresences && freshPresences.length > 0) {
+        setPresences((prev) => {
+          const map = new Map<string, UserPresence>();
+          prev.forEach((p) => map.set(p.userId, p));
+          freshPresences.forEach((p) => map.set(p.userId, p));
+          return Array.from(map.values()).sort((a, b) => (a.isOnline === b.isOnline ? 0 : a.isOnline ? -1 : 1));
+        });
+      }
+    });
+
     // Auto refresh presence & activities every 10 seconds
     const interval = setInterval(() => {
-      api.getAdminPresences().then(res => setPresences(res || [])).catch(() => {});
+      api.getAdminPresences().then(res => {
+        if (Array.isArray(res)) {
+          setPresences((prev) => {
+            const map = new Map<string, UserPresence>();
+            prev.forEach((p) => map.set(p.userId, p));
+            res.forEach((p) => map.set(p.userId, p));
+            return Array.from(map.values()).sort((a, b) => (a.isOnline === b.isOnline ? 0 : a.isOnline ? -1 : 1));
+          });
+        }
+      }).catch(() => {});
       api.getAdminSubscriptionPayments().then(res => setPayments(res || [])).catch(() => {});
       api.getLiveActivities().then(res => setLiveActivities(res || [])).catch(() => {});
       api.getEmailLogs().then(res => setEmailLogs(res || [])).catch(() => {});
@@ -202,8 +232,21 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
     return () => {
       clearInterval(interval);
       unsubscribeUsers();
+      unsubscribePresences();
     };
   }, []);
+
+  const handleRefreshPresences = async () => {
+    setPresenceRefreshing(true);
+    try {
+      const res = await api.getAdminPresences().catch(() => []);
+      if (Array.isArray(res)) {
+        setPresences(res);
+      }
+    } finally {
+      setPresenceRefreshing(false);
+    }
+  };
 
   const handleManualRefresh = () => {
     setRefreshing(true);
@@ -475,6 +518,102 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
       }
     }
   };
+
+  const unifiedPresences = useMemo(() => {
+    const map = new Map<string, UserPresence>();
+
+    // 1. Add all presences from radar
+    for (const p of presences) {
+      if (p && p.userId) {
+        map.set(p.userId, p);
+      }
+    }
+
+    // 2. Ensure every registered user from users list is represented
+    for (const u of users) {
+      if (u && u.id && !map.has(u.id)) {
+        const isCurrentAdmin = user && (user.id === u.id || user.email === u.email);
+        map.set(u.id, {
+          userId: u.id,
+          userName: u.name || 'User',
+          userEmail: u.email || 'No email',
+          avatarUrl: u.avatarUrl,
+          plan: u.plan || 'free',
+          role: u.role || 'user',
+          isOnline: Boolean(isCurrentAdmin),
+          currentView: isCurrentAdmin ? 'Admin Control Center' : 'offline',
+          lastActiveAt: u.updatedAt || u.createdAt || new Date().toISOString(),
+          deviceType: 'desktop',
+          browser: 'Web App',
+          lastAction: isCurrentAdmin ? 'Active in Admin Panel' : 'Registered Account',
+        });
+      }
+    }
+
+    // Always ensure current admin is present and online
+    if (user && user.id) {
+      const existing = map.get(user.id);
+      map.set(user.id, {
+        userId: user.id,
+        userName: user.name || 'Sultan (Owner Admin)',
+        userEmail: user.email || 'sultanitbangladesh@gmail.com',
+        avatarUrl: user.avatarUrl,
+        plan: user.plan || 'pro',
+        role: user.role || 'admin',
+        isOnline: true,
+        currentView: 'Admin Control Center',
+        lastActiveAt: new Date().toISOString(),
+        deviceType: existing?.deviceType || 'desktop',
+        browser: existing?.browser || 'Admin Console',
+        lastAction: 'Monitoring System Telemetry',
+      });
+    }
+
+    const list = Array.from(map.values());
+    const nowMs = Date.now();
+
+    // Re-evaluate online/away
+    const evaluated = list.map((p) => {
+      const lastMs = new Date(p.lastActiveAt).getTime();
+      const diffMs = nowMs - lastMs;
+      const isOnline = p.isOnline || diffMs < 90000;
+      const statusGroup: 'online' | 'away' | 'offline' = isOnline
+        ? 'online'
+        : (diffMs < 600000 ? 'away' : 'offline');
+      return {
+        ...p,
+        isOnline,
+        statusGroup,
+      };
+    });
+
+    // Filter by search and filter status
+    return evaluated.filter((p) => {
+      const q = presenceSearch.toLowerCase().trim();
+      const matchSearch =
+        !q ||
+        (p.userName || '').toLowerCase().includes(q) ||
+        (p.userEmail || '').toLowerCase().includes(q) ||
+        (p.currentView || '').toLowerCase().includes(q) ||
+        (p.browser || '').toLowerCase().includes(q);
+
+      if (!matchSearch) return false;
+      if (presenceFilter === 'all') return true;
+      if (presenceFilter === 'online') return p.isOnline;
+      if (presenceFilter === 'away') return !p.isOnline && p.statusGroup === 'away';
+      if (presenceFilter === 'offline') return !p.isOnline && p.statusGroup === 'offline';
+      return true;
+    }).sort((a, b) => {
+      if (a.isOnline === b.isOnline) {
+        return new Date(b.lastActiveAt).getTime() - new Date(a.lastActiveAt).getTime();
+      }
+      return a.isOnline ? -1 : 1;
+    });
+  }, [presences, users, user, presenceSearch, presenceFilter]);
+
+  const liveOnlineCount = useMemo(() => {
+    return unifiedPresences.filter(p => p.isOnline).length;
+  }, [unifiedPresences]);
 
   const onlineCount = presences.filter(p => p.isOnline).length;
   const pendingPaymentsCount = payments.filter(p => p.status === 'pending').length;
@@ -871,116 +1010,244 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
         <div className="space-y-4">
           <div className="p-5 rounded-3xl bg-white dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h3 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+              <div className="flex items-center gap-2">
                 <Radio className="w-5 h-5 text-emerald-500 animate-pulse" />
-                <span>Live Active Sessions & User Presence</span>
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Real-time tracking of which users are currently logged in, what view/task they are performing, and device telemetry.
+                <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
+                  Live Active Sessions & User Presence Radar
+                </h3>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
+                  Real-Time Synced
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                Live monitoring of all active visitors, current views, live device types, and system telemetry across web & mobile.
               </p>
             </div>
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-              <span>{onlineCount} Online</span>
-              <span className="text-slate-300 dark:text-slate-700">|</span>
-              <span className="w-2.5 h-2.5 rounded-full bg-slate-300 dark:bg-slate-600" />
-              <span>{presences.length - onlineCount} Away</span>
+
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-500 bg-slate-50 dark:bg-slate-900/60 px-3 py-1.5 rounded-2xl border border-slate-200/60 dark:border-slate-700/60">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-emerald-700 dark:text-emerald-400 font-extrabold">{liveOnlineCount} Online</span>
+                <span className="text-slate-300 dark:text-slate-700">|</span>
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+                <span>{unifiedPresences.filter(p => p.statusGroup === 'away').length} Away</span>
+                <span className="text-slate-300 dark:text-slate-700">|</span>
+                <span className="w-2.5 h-2.5 rounded-full bg-slate-400" />
+                <span>{unifiedPresences.filter(p => p.statusGroup === 'offline').length} Offline</span>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleRefreshPresences}
+                disabled={presenceRefreshing}
+                className="px-3.5 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs flex items-center gap-1.5 transition shadow-xs cursor-pointer disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${presenceRefreshing ? 'animate-spin' : ''}`} />
+                <span>Refresh Radar</span>
+              </button>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {presences.map((p) => (
-              <div
-                key={p.userId}
-                className={`p-5 rounded-3xl border transition shadow-xs flex flex-col justify-between ${
-                  p.isOnline
-                    ? 'bg-gradient-to-br from-emerald-50/70 via-white to-teal-50/50 dark:from-emerald-950/30 dark:via-slate-800 dark:to-slate-800/90 border-emerald-300 dark:border-emerald-800'
-                    : 'bg-white dark:bg-slate-800/90 border-slate-200/80 dark:border-slate-700/80 opacity-80'
+          {/* Search & Filter Bar */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3.5 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 shadow-xs">
+            <div className="relative w-full sm:w-80">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+              <input
+                type="text"
+                value={presenceSearch}
+                onChange={(e) => setPresenceSearch(e.target.value)}
+                placeholder="Search user name, email, view, browser..."
+                className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-teal-500"
+              />
+            </div>
+
+            <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto">
+              <button
+                type="button"
+                onClick={() => setPresenceFilter('all')}
+                className={`px-3 py-1 rounded-xl text-xs font-bold transition cursor-pointer shrink-0 ${
+                  presenceFilter === 'all'
+                    ? 'bg-teal-700 text-white shadow-xs'
+                    : 'bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
                 }`}
               >
-                <div className="space-y-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2.5">
-                      <div className="relative">
-                        <div className="w-10 h-10 rounded-2xl bg-teal-700 text-white font-black text-sm flex items-center justify-center">
-                          {p.userName.slice(0, 2).toUpperCase()}
-                        </div>
-                        <span
-                          className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-white dark:border-slate-800 ${
-                            p.isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'
-                          }`}
-                        />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <h4 className="font-extrabold text-sm text-slate-900 dark:text-white leading-tight">
-                            {p.userName}
-                          </h4>
-                          {p.plan === 'pro' && (
-                            <span className="px-1.5 py-0.2 bg-amber-400/20 text-amber-600 dark:text-amber-400 text-[10px] font-black rounded-full">
-                              PRO
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-[11px] text-slate-400 leading-tight">{p.userEmail}</p>
-                      </div>
-                    </div>
-
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                        p.isOnline
-                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
-                          : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400'
-                      }`}
-                    >
-                      {p.isOnline ? '● Online' : 'Away'}
-                    </span>
-                  </div>
-
-                  {/* Activity Badge */}
-                  <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/70 border border-slate-100 dark:border-slate-700/60 space-y-1.5">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-slate-400 font-medium">Current View:</span>
-                      <span className="font-bold text-teal-700 dark:text-teal-300 capitalize">
-                        {p.currentView.replace('-', ' ')}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-slate-400 font-medium">Device & Browser:</span>
-                      <span className="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-1">
-                        <Laptop className="w-3 h-3 text-slate-400" />
-                        <span>{p.deviceType} / {p.browser}</span>
-                      </span>
-                    </div>
-
-                    {p.lastAction && (
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400 italic truncate pt-0.5">
-                        "{p.lastAction}"
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Footer Action */}
-                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between">
-                  <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                    <Clock className="w-3 h-3" />
-                    <span>{new Date(p.lastActiveAt).toLocaleTimeString()}</span>
-                  </span>
-
-                  <button
-                    type="button"
-                    onClick={() => handleOpenDirectMessage({ id: p.userId, name: p.userName, email: p.userEmail })}
-                    className="px-3 py-1.5 rounded-xl bg-teal-50 hover:bg-teal-100 dark:bg-teal-950/50 dark:hover:bg-teal-900/60 text-teal-700 dark:text-teal-300 font-bold text-xs transition flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <MessageSquare className="w-3.5 h-3.5" />
-                    <span>Message User</span>
-                  </button>
-                </div>
-              </div>
-            ))}
+                All Users ({unifiedPresences.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setPresenceFilter('online')}
+                className={`px-3 py-1 rounded-xl text-xs font-bold transition cursor-pointer shrink-0 flex items-center gap-1.5 ${
+                  presenceFilter === 'online'
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100'
+                }`}
+              >
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span>Online Only ({liveOnlineCount})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPresenceFilter('away')}
+                className={`px-3 py-1 rounded-xl text-xs font-bold transition cursor-pointer shrink-0 ${
+                  presenceFilter === 'away'
+                    ? 'bg-amber-600 text-white shadow-xs'
+                    : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 hover:bg-amber-100'
+                }`}
+              >
+                Away / Idle
+              </button>
+              <button
+                type="button"
+                onClick={() => setPresenceFilter('offline')}
+                className={`px-3 py-1 rounded-xl text-xs font-bold transition cursor-pointer shrink-0 ${
+                  presenceFilter === 'offline'
+                    ? 'bg-slate-700 text-white shadow-xs'
+                    : 'bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
+                }`}
+              >
+                Offline
+              </button>
+            </div>
           </div>
+
+          {/* User Presence Cards Grid */}
+          {unifiedPresences.length === 0 ? (
+            <div className="py-16 text-center rounded-3xl bg-white dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 p-6 space-y-3">
+              <Radio className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto animate-pulse" />
+              <p className="text-sm font-bold text-slate-800 dark:text-white">No Users Matching Current Filter</p>
+              <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                Try clearing your search query or switching to "All Users" to see everyone registered on Hishab Khata.
+              </p>
+              <button
+                type="button"
+                onClick={() => { setPresenceSearch(''); setPresenceFilter('all'); }}
+                className="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold transition cursor-pointer"
+              >
+                Reset Search Filters
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {unifiedPresences.map((p) => {
+                const isOnline = p.isOnline;
+                const isAway = !isOnline && p.statusGroup === 'away';
+                const isCurrentAdmin = user && (user.id === p.userId || user.email === p.userEmail);
+
+                return (
+                  <div
+                    key={p.userId}
+                    className={`p-5 rounded-3xl border transition shadow-xs flex flex-col justify-between ${
+                      isOnline
+                        ? 'bg-gradient-to-br from-emerald-50/80 via-white to-teal-50/50 dark:from-emerald-950/30 dark:via-slate-800 dark:to-slate-800/90 border-emerald-400/80 dark:border-emerald-700/70 shadow-sm'
+                        : isAway
+                        ? 'bg-gradient-to-br from-amber-50/50 via-white to-slate-50 dark:from-amber-950/20 dark:via-slate-800 dark:to-slate-800/90 border-amber-300/70 dark:border-amber-700/60'
+                        : 'bg-white dark:bg-slate-800/90 border-slate-200/80 dark:border-slate-700/80 opacity-80 hover:opacity-100'
+                    }`}
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2.5">
+                          <div className="relative">
+                            <div className="w-10 h-10 rounded-2xl bg-teal-700 text-white font-black text-sm flex items-center justify-center shadow-xs">
+                              {(p.userName || 'U').slice(0, 2).toUpperCase()}
+                            </div>
+                            <span
+                              className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-white dark:border-slate-800 ${
+                                isOnline
+                                  ? 'bg-emerald-500 animate-pulse shadow-xs shadow-emerald-500/50'
+                                  : isAway
+                                  ? 'bg-amber-400'
+                                  : 'bg-slate-400'
+                              }`}
+                            />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <h4 className="font-extrabold text-sm text-slate-900 dark:text-white leading-tight">
+                                {p.userName || 'Unknown User'}
+                              </h4>
+                              {isCurrentAdmin && (
+                                <span className="px-1.5 py-0.2 bg-purple-500/20 text-purple-600 dark:text-purple-300 text-[10px] font-black rounded-full">
+                                  YOU
+                                </span>
+                              )}
+                              {p.plan === 'pro' && (
+                                <span className="px-1.5 py-0.2 bg-amber-400/20 text-amber-600 dark:text-amber-400 text-[10px] font-black rounded-full flex items-center gap-0.5">
+                                  <Crown className="w-2.5 h-2.5" />
+                                  <span>PRO</span>
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[11px] text-slate-400 leading-tight truncate max-w-[180px]">{p.userEmail}</p>
+                          </div>
+                        </div>
+
+                        <span
+                          className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1 ${
+                            isOnline
+                              ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300'
+                              : isAway
+                              ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300'
+                              : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400'
+                          }`}
+                        >
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              isOnline ? 'bg-emerald-500 animate-ping' : isAway ? 'bg-amber-500' : 'bg-slate-400'
+                            }`}
+                          />
+                          <span>{isOnline ? 'Live Now' : isAway ? 'Away' : 'Offline'}</span>
+                        </span>
+                      </div>
+
+                      {/* Activity Badge */}
+                      <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/70 border border-slate-100 dark:border-slate-700/60 space-y-1.5">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-slate-400 font-medium">Current View:</span>
+                          <span className="font-bold text-teal-700 dark:text-teal-300 capitalize truncate max-w-[150px]">
+                            {p.currentView.replace('-', ' ')}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-slate-400 font-medium">Device & Browser:</span>
+                          <span className="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                            <Laptop className="w-3 h-3 text-slate-400" />
+                            <span>{p.deviceType} / {p.browser}</span>
+                          </span>
+                        </div>
+
+                        {p.lastAction && (
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400 italic truncate pt-0.5 border-t border-slate-100 dark:border-slate-800">
+                            "{p.lastAction}"
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Footer Action */}
+                    <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between">
+                      <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        <span>{new Date(p.lastActiveAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+                      </span>
+
+                      {!isCurrentAdmin && (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenDirectMessage({ id: p.userId, name: p.userName, email: p.userEmail })}
+                          className="px-3 py-1.5 rounded-xl bg-teal-50 hover:bg-teal-100 dark:bg-teal-950/50 dark:hover:bg-teal-900/60 text-teal-700 dark:text-teal-300 font-bold text-xs transition flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <MessageSquare className="w-3.5 h-3.5" />
+                          <span>Message User</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
