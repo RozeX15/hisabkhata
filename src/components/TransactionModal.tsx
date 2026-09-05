@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useI18n } from '../lib/i18n';
 import { Transaction, Wallet, Category } from '../types';
+import { DEFAULT_CATEGORIES } from '../constants/categories';
 import {
   X,
   ArrowDownLeft,
@@ -63,11 +64,20 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
     }
   ];
 
+  const availableCategories: Category[] = (categories && categories.length > 0)
+    ? categories
+    : DEFAULT_CATEGORIES;
+
+  const targetCategoryType = type === 'transfer' ? 'income' : type;
+  const filteredCategories = availableCategories.filter(c => c.type === targetCategoryType).length > 0
+    ? availableCategories.filter(c => c.type === targetCategoryType)
+    : DEFAULT_CATEGORIES.filter(c => c.type === targetCategoryType);
+
   useEffect(() => {
     if (transaction) {
       setType(transaction.type);
       setAmount(String(transaction.amount));
-      setWalletId(transaction.walletId || availableWallets[0]?.id);
+      setWalletId(transaction.walletId || availableWallets[0]?.id || '');
       setToWalletId(transaction.toWalletId || '');
       setCategoryId(transaction.categoryId || '');
       setDate(transaction.date);
@@ -81,8 +91,8 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
       setWalletId(defaultW ? defaultW.id : availableWallets[0]?.id || '');
       const otherW = availableWallets.find(w => w.id !== defaultW?.id);
       setToWalletId(otherW ? otherW.id : '');
-      const firstCat = categories.find(c => c.type === (initialType === 'transfer' ? 'income' : initialType));
-      setCategoryId(firstCat ? firstCat.id : '');
+      const defaultCats = availableCategories.filter(c => c.type === (initialType === 'transfer' ? 'income' : initialType));
+      setCategoryId(defaultCats[0]?.id || (initialType === 'income' ? 'cat-sal' : 'cat-foo'));
       setDate(new Date().toISOString().split('T')[0]);
       setDescription('');
       setNote('');
@@ -91,9 +101,17 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
     setError(null);
   }, [transaction, isOpen, initialType, wallets, categories]);
 
-  if (!isOpen) return null;
+  // When type changes, ensure valid category is selected
+  useEffect(() => {
+    if (!transaction) {
+      const match = filteredCategories.find(c => c.id === categoryId);
+      if (!match && filteredCategories.length > 0) {
+        setCategoryId(filteredCategories[0].id);
+      }
+    }
+  }, [type, filteredCategories, categoryId, transaction]);
 
-  const filteredCategories = categories.filter(c => c.type === (type === 'transfer' ? 'income' : type));
+  if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,6 +130,10 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
       return;
     }
 
+    const effectiveCategoryId = type === 'transfer'
+      ? 'cat-oin'
+      : (categoryId || filteredCategories[0]?.id || (type === 'income' ? 'cat-sal' : 'cat-foo'));
+
     setLoading(true);
     try {
       await onSave({
@@ -119,7 +141,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         amount: numAmount,
         walletId: effectiveWalletId,
         toWalletId: type === 'transfer' ? toWalletId : null,
-        categoryId: type === 'transfer' ? 'cat-oin' : (categoryId || filteredCategories[0]?.id || 'cat-oex'),
+        categoryId: effectiveCategoryId,
         date,
         description: description.trim() || (type === 'income' ? t('income') : type === 'expense' ? t('expense') : t('transfer')),
         note: note.trim(),

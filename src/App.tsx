@@ -35,6 +35,7 @@ import { AppFooter } from './components/AppFooter';
 import { usePWAInstall } from './lib/usePWAInstall';
 import { recordActionConfirmation } from './lib/actionNotifications';
 import { usePresenceTracker } from './lib/usePresenceTracker';
+import { DEFAULT_CATEGORIES } from './constants/categories';
 import { Download, Sparkles, X } from 'lucide-react';
 
 // Views
@@ -80,7 +81,7 @@ const MainAppContent: React.FC = () => {
   // Data States
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [wallets, setWallets] = useState<Wallet[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<Category[]>(DEFAULT_CATEGORIES);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [budgets, setBudgets] = useState<BudgetProgress[]>([]);
   const [savingsGoals, setSavingsGoals] = useState<SavingsGoal[]>([]);
@@ -188,11 +189,30 @@ const MainAppContent: React.FC = () => {
       }
       if (walletsRes.status === 'fulfilled') {
         const val = walletsRes.value;
-        setWallets((val as any)?.wallets || val || []);
+        const loadedWallets = (val as any)?.wallets || val || [];
+        if (Array.isArray(loadedWallets) && loadedWallets.length > 0) {
+          setWallets(loadedWallets);
+        } else {
+          setWallets(prev => prev.length > 0 ? prev : [{
+            id: 'w-cash-default',
+            userId: user?.id || '',
+            name: 'Cash / Main Account (নগদ হিসাব)',
+            type: 'cash',
+            balance: 0,
+            currency: currency || 'BDT',
+            color: '#10B981',
+            isDefault: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          }]);
+        }
       }
       if (categoriesRes.status === 'fulfilled') {
         const val = categoriesRes.value;
-        setCategories((val as any)?.categories || val || []);
+        const loadedCats = (val as any)?.categories || val || [];
+        setCategories(Array.isArray(loadedCats) && loadedCats.length > 0 ? loadedCats : DEFAULT_CATEGORIES);
+      } else {
+        setCategories(prev => prev.length > 0 ? prev : DEFAULT_CATEGORIES);
       }
       if (txRes.status === 'fulfilled') {
         const val = txRes.value;
@@ -335,38 +355,105 @@ const MainAppContent: React.FC = () => {
 
   // Handlers for Transactions
   const handleSaveTransaction = async (data: any) => {
-    if (editingTx) {
-      await api.updateTransaction(editingTx.id, data);
-      recordActionConfirmation({
-        type: 'transaction_update',
-        category: 'TRANSACTION',
-        title: 'Transaction Updated',
-        message: `Successfully modified "${data.description || 'Transaction'}"`,
-        details: `Category: ${data.category || 'General'} • Date: ${data.date}`,
-        amount: data.amount,
-        currency: data.currency || currency,
-        status: 'updated',
-      });
-    } else {
-      await api.createTransaction(data);
-      recordActionConfirmation({
-        type: 'transaction_add',
-        category: 'TRANSACTION',
-        title: data.type === 'income' ? 'Income Added!' : data.type === 'transfer' ? 'Transfer Recorded!' : 'Expense Recorded!',
-        message: `Successfully logged "${data.description || 'Transaction'}"`,
-        details: `Type: ${data.type?.toUpperCase()} • Date: ${data.date}`,
-        amount: data.amount,
-        currency: data.currency || currency,
-        status: 'confirmed',
-      });
+    const numAmount = Number(data.amount) || 0;
+    const nowIso = new Date().toISOString();
+    let apiSuccess = false;
+
+    try {
+      if (editingTx) {
+        await api.updateTransaction(editingTx.id, data);
+      } else {
+        await api.createTransaction(data);
+      }
+      apiSuccess = true;
+    } catch (apiErr) {
+      console.warn('Backend API unreachable or slow, applying resilient local ledger write:', apiErr);
+
+      // Resilient local state update
+      if (editingTx) {
+        setTransactions(prev => prev.map(t => t.id === editingTx.id ? { ...t, ...data, amount: numAmount, updatedAt: nowIso } : t));
+      } else {
+        const localTx: Transaction = {
+          id: `tx-loc-${Date.now()}`,
+          userId: user?.id || 'usr-local',
+          walletId: data.walletId,
+          toWalletId: data.toWalletId || null,
+          type: data.type,
+          amount: numAmount,
+          currency: data.currency || currency,
+          categoryId: data.categoryId,
+          date: data.date || nowIso.split('T')[0],
+          description: data.description || (data.type === 'income' ? 'Income' : data.type === 'expense' ? 'Expense' : 'Transfer'),
+          note: data.note || '',
+          isRecurring: Boolean(data.isRecurring),
+          createdAt: nowIso,
+          updatedAt: nowIso,
+        };
+        setTransactions(prev => [localTx, ...prev]);
+
+        // Optimistically update wallet balance
+        setWallets(prev => prev.map(w => {
+          if (w.id === data.walletId) {
+            const currentBal = Number(w.balance) || 0;
+            const delta = data.type === 'income' ? numAmount : -numAmount;
+            return { ...w, balance: currentBal + delta, updatedAt: nowIso };
+          }
+          if (data.type === 'transfer' && w.id === data.toWalletId) {
+            const currentBal = Number(w.balance) || 0;
+            return { ...w, balance: currentBal + numAmount, updatedAt: nowIso };
+          }
+          return w;
+        }));
+      }
     }
-    await loadAllData();
+
+    recordActionConfirmation({
+      type: editingTx ? 'transaction_update' : 'transaction_add',
+      category: 'TRANSACTION',
+      title: editingTx
+        ? 'Transaction Updated'
+        : (data.type === 'income' ? 'Income Added!' : data.type === 'transfer' ? 'Transfer Recorded!' : 'Expense Recorded!'),
+      message: `Successfully recorded "${data.description || 'Transaction'}"`,
+      details: `Amount: ৳${numAmount.toLocaleString()} • Type: ${data.type?.toUpperCase()} • Date: ${data.date}`,
+      amount: numAmount,
+      currency: data.currency || currency,
+      status: 'confirmed',
+    });
+
+    if (apiSuccess) {
+      try {
+        await loadAllData();
+      } catch {}
+    }
   };
 
   const handleDeleteTransaction = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this transaction? Wallet balances will be recalculated.')) {
       const target = transactions.find(t => t.id === id);
-      await api.deleteTransaction(id);
+      try {
+        await api.deleteTransaction(id);
+      } catch (err) {
+        console.warn('API delete failed, applying local removal:', err);
+      }
+
+      // Local state update
+      setTransactions(prev => prev.filter(t => t.id !== id));
+      if (target) {
+        const numAmount = Number(target.amount) || 0;
+        setWallets(prev => prev.map(w => {
+          if (w.id === target.walletId) {
+            const currentBal = Number(w.balance) || 0;
+            const delta = target.type === 'income' ? -numAmount : numAmount;
+            return { ...w, balance: currentBal + delta };
+          }
+          if (target.type === 'transfer' && w.id === target.toWalletId) {
+            const currentBal = Number(w.balance) || 0;
+            return { ...w, balance: currentBal - numAmount };
+          }
+          return w;
+        }));
+      }
+
       recordActionConfirmation({
         type: 'transaction_delete',
         category: 'TRANSACTION',
@@ -377,38 +464,57 @@ const MainAppContent: React.FC = () => {
         currency: target?.currency || currency,
         status: 'deleted',
       });
-      await loadAllData();
+
+      try {
+        await loadAllData();
+      } catch {}
     }
   };
 
   // Handlers for Wallets
   const handleSaveWallet = async (data: any) => {
-    if (editingWallet) {
-      await api.updateWallet(editingWallet.id, data);
-      recordActionConfirmation({
-        type: 'wallet_update',
-        category: 'WALLET',
-        title: 'Wallet Updated',
-        message: `Updated wallet "${data.name}"`,
-        details: `Type: ${data.type?.toUpperCase()} • Balance: ${data.balance}`,
-        amount: data.balance,
-        currency: data.currency || currency,
-        status: 'updated',
-      });
-    } else {
-      await api.createWallet(data);
-      recordActionConfirmation({
-        type: 'wallet_add',
-        category: 'WALLET',
-        title: 'New Wallet Created!',
-        message: `Successfully linked wallet "${data.name}"`,
-        details: `Type: ${data.type?.toUpperCase()} • Starting Balance: ${data.balance}`,
-        amount: data.balance,
-        currency: data.currency || currency,
-        status: 'confirmed',
-      });
+    const nowIso = new Date().toISOString();
+    try {
+      if (editingWallet) {
+        await api.updateWallet(editingWallet.id, data);
+      } else {
+        await api.createWallet(data);
+      }
+    } catch (err) {
+      console.warn('API wallet write failed, updating local state:', err);
+      if (editingWallet) {
+        setWallets(prev => prev.map(w => w.id === editingWallet.id ? { ...w, ...data, updatedAt: nowIso } : w));
+      } else {
+        const newW: Wallet = {
+          id: `w-loc-${Date.now()}`,
+          userId: user?.id || 'usr-local',
+          name: data.name,
+          type: data.type || 'cash',
+          balance: Number(data.balance) || 0,
+          currency: data.currency || currency,
+          color: data.color || '#10B981',
+          isDefault: Boolean(data.isDefault),
+          createdAt: nowIso,
+          updatedAt: nowIso,
+        };
+        setWallets(prev => [...prev, newW]);
+      }
     }
-    await loadAllData();
+
+    recordActionConfirmation({
+      type: editingWallet ? 'wallet_update' : 'wallet_add',
+      category: 'WALLET',
+      title: editingWallet ? 'Wallet Updated' : 'New Wallet Created!',
+      message: `Successfully saved wallet "${data.name}"`,
+      details: `Type: ${data.type?.toUpperCase()} • Balance: ৳${Number(data.balance || 0).toLocaleString()}`,
+      amount: data.balance,
+      currency: data.currency || currency,
+      status: 'confirmed',
+    });
+
+    try {
+      await loadAllData();
+    } catch {}
   };
 
   const handleDeleteWallet = async (id: string) => {

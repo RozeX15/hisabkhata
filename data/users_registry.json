@@ -12,7 +12,7 @@
       "emailVerified": true,
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "createdAt": "2026-09-03T06:43:20.562Z",
-      "updatedAt": "2026-09-05T08:28:42.179Z"
+      "updatedAt": "2026-09-05T09:13:44.175Z"
     },
     {
       "id": "usr-1788594159081",
@@ -26,11 +26,25 @@
       "emailVerified": true,
       "createdAt": "2026-09-05T07:42:39.081Z",
       "updatedAt": "2026-09-05T07:42:39.081Z"
+    },
+    {
+      "id": "usr-1788599633823",
+      "name": "Test User",
+      "email": "testuser@gmail.com",
+      "role": "user",
+      "preferredLanguage": "en",
+      "preferredCurrency": "BDT",
+      "plan": "free",
+      "status": "active",
+      "emailVerified": true,
+      "createdAt": "2026-09-05T09:13:53.823Z",
+      "updatedAt": "2026-09-05T09:13:53.823Z"
     }
   ],
   "passwordHashes": {
-    "admin-sultan-001": "$2b$10$7ry.3IYiJDByQepwy0TAWOK7vgxjpRYGtA399rc9j5I8mo63rDK7W",
-    "usr-1788594159081": "$2b$10$W5FlHuSN8XKNNCu13fllseSEFYCfXRFVTjmYB.C41m4bx7NjvuMlu"
+    "admin-sultan-001": "$2b$10$0249qjUByPC5HrBpuuxRbOVAUgDHlbSEQ8tyZabWj31KM7nvaHceC",
+    "usr-1788594159081": "$2b$10$W5FlHuSN8XKNNCu13fllseSEFYCfXRFVTjmYB.C41m4bx7NjvuMlu",
+    "usr-1788599633823": "$2b$10$Encq1V3DZ.zt6Oc2ph0VC.lf54LdSDWBrL1rK9rTWZYsNCRJ4j/XO"
   },
-  "updatedAt": "2026-09-05T08:28:42.367Z"
+  "updatedAt": "2026-09-05T09:20:12.881Z"
 }

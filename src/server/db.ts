@@ -348,6 +348,18 @@ export function getDb(): DatabaseSchema {
   if (!inMemoryDb.emailLogs) inMemoryDb.emailLogs = [];
   if (!inMemoryDb.suggestions) inMemoryDb.suggestions = [];
 
+  if (!inMemoryDb.systemLimits) {
+    inMemoryDb.systemLimits = {
+      freeMaxWallets: 5,
+      freeMaxTransactionsPerMonth: 500,
+      freeMaxSavingsGoals: 10,
+      freeAllowPdfExport: true,
+      freeAllowExcelExport: true,
+      proMonthlyPriceUSD: 4.99,
+      proYearlyPriceUSD: 49.99,
+    };
+  }
+
   if (!inMemoryDb.adminPaymentConfig) {
     inMemoryDb.adminPaymentConfig = {
       bkashNumber: '01711-234567',

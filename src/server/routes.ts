@@ -1017,192 +1017,214 @@ router.get('/transactions', authMiddleware, (req: AuthRequest, res) => {
 });
 
 router.post('/transactions', authMiddleware, (req: AuthRequest, res) => {
-  let { walletId, toWalletId, type, amount, currency, categoryId, date, description, note, isRecurring } = req.body;
-  const numAmount = Number(amount);
+  try {
+    let { walletId, toWalletId, type, amount, currency, categoryId, date, description, note, isRecurring } = req.body;
+    const numAmount = Number(amount);
 
-  if (!type || !numAmount || numAmount <= 0) {
-    res.status(400).json({ error: 'Transaction type and valid positive amount are required' });
-    return;
-  }
+    if (!type || isNaN(numAmount) || numAmount <= 0) {
+      res.status(400).json({ error: 'Transaction type and valid positive amount are required' });
+      return;
+    }
 
-  const db = getDb();
-  const now = new Date().toISOString();
+    const db = getDb();
+    const userId = req.user?.id || 'usr-default';
+    const now = new Date().toISOString();
 
-  // Auto-resolve or create user wallet if none exists or none provided
-  let userWallets = db.wallets.filter(w => w.userId === req.user!.id);
-  if (userWallets.length === 0) {
-    const defaultCashWallet: Wallet = {
-      id: `w-cash-${Date.now()}`,
-      userId: req.user!.id,
-      name: 'Cash / Main Balance (নগদ হিসাব)',
-      type: 'cash',
-      balance: 0,
-      currency: currency || req.user!.preferredCurrency || 'BDT',
-      color: '#10B981',
-      isDefault: true,
+    if (!Array.isArray(db.transactions)) db.transactions = [];
+    if (!Array.isArray(db.wallets)) db.wallets = [];
+
+    // Auto-resolve or create user wallet if none exists or none provided
+    let userWallets = db.wallets.filter(w => w.userId === userId);
+    if (userWallets.length === 0) {
+      const defaultCashWallet: Wallet = {
+        id: `w-cash-${Date.now()}`,
+        userId,
+        name: 'Cash / Main Balance (নগদ হিসাব)',
+        type: 'cash',
+        balance: 0,
+        currency: currency || req.user?.preferredCurrency || 'BDT',
+        color: '#10B981',
+        isDefault: true,
+        createdAt: now,
+        updatedAt: now,
+      };
+      db.wallets.push(defaultCashWallet);
+      userWallets = [defaultCashWallet];
+    }
+
+    let sourceWallet = db.wallets.find(w => w.id === walletId && w.userId === userId);
+    if (!sourceWallet) {
+      sourceWallet = userWallets.find(w => w.isDefault) || userWallets[0];
+      walletId = sourceWallet.id;
+    }
+
+    // Check plan limits
+    if (req.user?.plan === 'free') {
+      const nowDate = new Date();
+      const currentMonthStr = `${nowDate.getFullYear()}-${String(nowDate.getMonth() + 1).padStart(2, '0')}`;
+      const monthlyCount = db.transactions.filter(t => t.userId === userId && (t.date || '').startsWith(currentMonthStr)).length;
+      const maxMonthly = db.systemLimits?.freeMaxTransactionsPerMonth ?? 500;
+      if (monthlyCount >= maxMonthly) {
+        res.status(403).json({ error: `Monthly transaction limit (${maxMonthly}) reached on Free plan. Upgrade to PRO for unlimited transactions.` });
+        return;
+      }
+    }
+
+    const txId = `tx-${Date.now()}`;
+
+    // Atomic balance modification
+    if (type === 'income') {
+      sourceWallet.balance = (Number(sourceWallet.balance) || 0) + numAmount;
+    } else if (type === 'expense') {
+      sourceWallet.balance = (Number(sourceWallet.balance) || 0) - numAmount;
+    } else if (type === 'transfer') {
+      if (!toWalletId) {
+        res.status(400).json({ error: 'Destination wallet is required for transfers' });
+        return;
+      }
+      const destWallet = db.wallets.find(w => w.id === toWalletId && w.userId === userId);
+      if (!destWallet) {
+        res.status(404).json({ error: 'Destination wallet not found' });
+        return;
+      }
+      sourceWallet.balance = (Number(sourceWallet.balance) || 0) - numAmount;
+      destWallet.balance = (Number(destWallet.balance) || 0) + numAmount;
+      destWallet.updatedAt = now;
+    }
+
+    sourceWallet.updatedAt = now;
+
+    const newTx: Transaction = {
+      id: txId,
+      userId,
+      walletId,
+      toWalletId: type === 'transfer' ? toWalletId : null,
+      type,
+      amount: numAmount,
+      currency: currency || sourceWallet.currency || 'BDT',
+      categoryId: categoryId || (type === 'income' ? 'cat-oin' : 'cat-oex'),
+      date: date || new Date().toISOString().split('T')[0],
+      description: description || (type === 'income' ? 'Income' : type === 'expense' ? 'Expense' : 'Transfer'),
+      note,
+      isRecurring: Boolean(isRecurring),
       createdAt: now,
       updatedAt: now,
     };
-    db.wallets.push(defaultCashWallet);
-    userWallets = [defaultCashWallet];
+
+    db.transactions.unshift(newTx);
+    saveDb();
+    res.status(201).json(newTx);
+  } catch (err: any) {
+    console.error('Error in POST /transactions:', err);
+    res.status(500).json({ error: err?.message || 'Failed to record transaction' });
   }
-
-  let sourceWallet = db.wallets.find(w => w.id === walletId && w.userId === req.user!.id);
-  if (!sourceWallet) {
-    sourceWallet = userWallets.find(w => w.isDefault) || userWallets[0];
-    walletId = sourceWallet.id;
-  }
-
-  // Check plan limits
-  if (req.user!.plan === 'free') {
-    const nowDate = new Date();
-    const currentMonthStr = `${nowDate.getFullYear()}-${String(nowDate.getMonth() + 1).padStart(2, '0')}`;
-    const monthlyCount = db.transactions.filter(t => t.userId === req.user!.id && t.date.startsWith(currentMonthStr)).length;
-    if (monthlyCount >= db.systemLimits.freeMaxTransactionsPerMonth) {
-      res.status(403).json({ error: `Monthly transaction limit (${db.systemLimits.freeMaxTransactionsPerMonth}) reached on Free plan. Upgrade to PRO for unlimited transactions.` });
-      return;
-    }
-  }
-
-  const txId = `tx-${Date.now()}`;
-
-  // Atomic balance modification
-  if (type === 'income') {
-    sourceWallet.balance += numAmount;
-  } else if (type === 'expense') {
-    sourceWallet.balance -= numAmount;
-  } else if (type === 'transfer') {
-    if (!toWalletId) {
-      res.status(400).json({ error: 'Destination wallet is required for transfers' });
-      return;
-    }
-    const destWallet = db.wallets.find(w => w.id === toWalletId && w.userId === req.user!.id);
-    if (!destWallet) {
-      res.status(404).json({ error: 'Destination wallet not found' });
-      return;
-    }
-    sourceWallet.balance -= numAmount;
-    destWallet.balance += numAmount;
-    destWallet.updatedAt = now;
-  }
-
-  sourceWallet.updatedAt = now;
-
-  const newTx: Transaction = {
-    id: txId,
-    userId: req.user!.id,
-    walletId,
-    toWalletId: type === 'transfer' ? toWalletId : null,
-    type,
-    amount: numAmount,
-    currency: currency || sourceWallet.currency || 'BDT',
-    categoryId: categoryId || (type === 'income' ? 'cat-oin' : 'cat-oex'),
-    date: date || new Date().toISOString().split('T')[0],
-    description: description || (type === 'income' ? 'Income' : type === 'expense' ? 'Expense' : 'Transfer'),
-    note,
-    isRecurring: Boolean(isRecurring),
-    createdAt: now,
-    updatedAt: now,
-  };
-
-  db.transactions.unshift(newTx);
-  saveDb();
-  res.status(201).json(newTx);
 });
 
 router.put('/transactions/:id', authMiddleware, (req: AuthRequest, res) => {
-  const db = getDb();
-  const tx = db.transactions.find(t => t.id === req.params.id && t.userId === req.user!.id);
-  if (!tx) {
-    res.status(404).json({ error: 'Transaction not found' });
-    return;
-  }
-
-  const { walletId, toWalletId, type, amount, currency, categoryId, date, description, note, isRecurring } = req.body;
-  const newAmount = Number(amount);
-
-  // 1. Rollback previous balance effect
-  const oldWallet = db.wallets.find(w => w.id === tx.walletId);
-  if (oldWallet) {
-    if (tx.type === 'income') oldWallet.balance -= tx.amount;
-    else if (tx.type === 'expense') oldWallet.balance += tx.amount;
-    else if (tx.type === 'transfer' && tx.toWalletId) {
-      oldWallet.balance += tx.amount;
-      const oldDest = db.wallets.find(w => w.id === tx.toWalletId);
-      if (oldDest) oldDest.balance -= tx.amount;
-    }
-  }
-
-  // 2. Apply new balance effect
-  const targetWallet = db.wallets.find(w => w.id === (walletId || tx.walletId) && w.userId === req.user!.id);
-  if (!targetWallet) {
-    res.status(404).json({ error: 'Target wallet not found' });
-    return;
-  }
-
-  const finalType = type || tx.type;
-  const finalAmount = newAmount > 0 ? newAmount : tx.amount;
-  const finalToWalletId = finalType === 'transfer' ? (toWalletId || tx.toWalletId) : null;
-
-  if (finalType === 'income') {
-    targetWallet.balance += finalAmount;
-  } else if (finalType === 'expense') {
-    targetWallet.balance -= finalAmount;
-  } else if (finalType === 'transfer') {
-    if (!finalToWalletId) {
-      res.status(400).json({ error: 'Destination wallet is required for transfer' });
+  try {
+    const db = getDb();
+    const userId = req.user?.id || 'usr-default';
+    const tx = db.transactions.find(t => t.id === req.params.id && t.userId === userId);
+    if (!tx) {
+      res.status(404).json({ error: 'Transaction not found' });
       return;
     }
-    const dest = db.wallets.find(w => w.id === finalToWalletId && w.userId === req.user!.id);
-    if (!dest) {
-      res.status(404).json({ error: 'Destination wallet not found' });
+
+    const { walletId, toWalletId, type, amount, currency, categoryId, date, description, note, isRecurring } = req.body;
+    const newAmount = Number(amount);
+
+    // 1. Rollback previous balance effect
+    const oldWallet = db.wallets.find(w => w.id === tx.walletId);
+    if (oldWallet) {
+      if (tx.type === 'income') oldWallet.balance = (Number(oldWallet.balance) || 0) - tx.amount;
+      else if (tx.type === 'expense') oldWallet.balance = (Number(oldWallet.balance) || 0) + tx.amount;
+      else if (tx.type === 'transfer' && tx.toWalletId) {
+        oldWallet.balance = (Number(oldWallet.balance) || 0) + tx.amount;
+        const oldDest = db.wallets.find(w => w.id === tx.toWalletId);
+        if (oldDest) oldDest.balance = (Number(oldDest.balance) || 0) - tx.amount;
+      }
+    }
+
+    // 2. Apply new balance effect
+    const targetWallet = db.wallets.find(w => w.id === (walletId || tx.walletId) && w.userId === userId);
+    if (!targetWallet) {
+      res.status(404).json({ error: 'Target wallet not found' });
       return;
     }
-    targetWallet.balance -= finalAmount;
-    dest.balance += finalAmount;
+
+    const finalType = type || tx.type;
+    const finalAmount = newAmount > 0 ? newAmount : tx.amount;
+    const finalToWalletId = finalType === 'transfer' ? (toWalletId || tx.toWalletId) : null;
+
+    if (finalType === 'income') {
+      targetWallet.balance = (Number(targetWallet.balance) || 0) + finalAmount;
+    } else if (finalType === 'expense') {
+      targetWallet.balance = (Number(targetWallet.balance) || 0) - finalAmount;
+    } else if (finalType === 'transfer') {
+      if (!finalToWalletId) {
+        res.status(400).json({ error: 'Destination wallet is required for transfer' });
+        return;
+      }
+      const dest = db.wallets.find(w => w.id === finalToWalletId && w.userId === userId);
+      if (!dest) {
+        res.status(404).json({ error: 'Destination wallet not found' });
+        return;
+      }
+      targetWallet.balance = (Number(targetWallet.balance) || 0) - finalAmount;
+      dest.balance = (Number(dest.balance) || 0) + finalAmount;
+    }
+
+    tx.walletId = targetWallet.id;
+    tx.toWalletId = finalToWalletId;
+    tx.type = finalType;
+    tx.amount = finalAmount;
+    if (currency) tx.currency = currency;
+    if (categoryId) tx.categoryId = categoryId;
+    if (date) tx.date = date;
+    if (description !== undefined) tx.description = description;
+    if (note !== undefined) tx.note = note;
+    if (isRecurring !== undefined) tx.isRecurring = isRecurring;
+    tx.updatedAt = new Date().toISOString();
+
+    saveDb();
+    res.json(tx);
+  } catch (err: any) {
+    console.error('Error in PUT /transactions/:id:', err);
+    res.status(500).json({ error: err?.message || 'Failed to update transaction' });
   }
-
-  tx.walletId = targetWallet.id;
-  tx.toWalletId = finalToWalletId;
-  tx.type = finalType;
-  tx.amount = finalAmount;
-  if (currency) tx.currency = currency;
-  if (categoryId) tx.categoryId = categoryId;
-  if (date) tx.date = date;
-  if (description !== undefined) tx.description = description;
-  if (note !== undefined) tx.note = note;
-  if (isRecurring !== undefined) tx.isRecurring = isRecurring;
-  tx.updatedAt = new Date().toISOString();
-
-  saveDb();
-  res.json(tx);
 });
 
 router.delete('/transactions/:id', authMiddleware, (req: AuthRequest, res) => {
-  const db = getDb();
-  const index = db.transactions.findIndex(t => t.id === req.params.id && t.userId === req.user!.id);
-  if (index === -1) {
-    res.status(404).json({ error: 'Transaction not found' });
-    return;
-  }
-
-  const tx = db.transactions[index];
-
-  // Revert balance
-  const wallet = db.wallets.find(w => w.id === tx.walletId);
-  if (wallet) {
-    if (tx.type === 'income') wallet.balance -= tx.amount;
-    else if (tx.type === 'expense') wallet.balance += tx.amount;
-    else if (tx.type === 'transfer' && tx.toWalletId) {
-      wallet.balance += tx.amount;
-      const dest = db.wallets.find(w => w.id === tx.toWalletId);
-      if (dest) dest.balance -= tx.amount;
+  try {
+    const db = getDb();
+    const userId = req.user?.id || 'usr-default';
+    const index = db.transactions.findIndex(t => t.id === req.params.id && t.userId === userId);
+    if (index === -1) {
+      res.status(404).json({ error: 'Transaction not found' });
+      return;
     }
-  }
 
-  db.transactions.splice(index, 1);
-  saveDb();
-  res.json({ message: 'Transaction deleted successfully' });
+    const tx = db.transactions[index];
+
+    // Revert balance
+    const wallet = db.wallets.find(w => w.id === tx.walletId);
+    if (wallet) {
+      if (tx.type === 'income') wallet.balance = (Number(wallet.balance) || 0) - tx.amount;
+      else if (tx.type === 'expense') wallet.balance = (Number(wallet.balance) || 0) + tx.amount;
+      else if (tx.type === 'transfer' && tx.toWalletId) {
+        wallet.balance = (Number(wallet.balance) || 0) + tx.amount;
+        const dest = db.wallets.find(w => w.id === tx.toWalletId);
+        if (dest) dest.balance = (Number(dest.balance) || 0) - tx.amount;
+      }
+    }
+
+    db.transactions.splice(index, 1);
+    saveDb();
+    res.json({ message: 'Transaction deleted successfully' });
+  } catch (err: any) {
+    console.error('Error in DELETE /transactions/:id:', err);
+    res.status(500).json({ error: err?.message || 'Failed to delete transaction' });
+  }
 });
 
 // Clear transactions for a specific month (or specific type: 'all' | 'income' | 'expense')

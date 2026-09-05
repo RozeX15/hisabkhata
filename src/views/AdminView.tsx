@@ -65,6 +65,7 @@ import {
   fetchAllUsersFromFirestore,
   subscribeToFirestoreUsers,
   subscribeToFirestorePresences,
+  fetchAllPresencesFromFirestore,
   updateUserRoleOrPlanInFirestore,
   seedDefaultUsersToFirestore,
   deleteUserFromFirestore,
@@ -150,10 +151,11 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
 
   const fetchAllAdminData = async () => {
     try {
-      const [statsRes, firestoreUsers, presencesRes, paymentsRes, configRes, activitiesRes, emailsRes, sugRes] = await Promise.all([
+      const [statsRes, firestoreUsers, presencesRes, firestorePresences, paymentsRes, configRes, activitiesRes, emailsRes, sugRes] = await Promise.all([
         api.getAdminStats().catch(() => null),
         fetchAllUsersFromFirestore().catch(() => api.getAdminUsers().catch(() => [])),
         api.getAdminPresences().catch(() => []),
+        fetchAllPresencesFromFirestore().catch(() => []),
         api.getAdminSubscriptionPayments().catch(() => []),
         api.getSubscriptionConfig().catch(() => null),
         api.getLiveActivities().catch(() => []),
@@ -167,7 +169,23 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
       } else if ((firestoreUsers as any)?.users) {
         setUsers((firestoreUsers as any).users);
       }
-      if (Array.isArray(presencesRes)) setPresences(presencesRes);
+      
+      const presenceMap = new Map<string, UserPresence>();
+      if (Array.isArray(presencesRes)) {
+        presencesRes.forEach((p) => { if (p?.userId) presenceMap.set(p.userId, p); });
+      }
+      if (Array.isArray(firestorePresences)) {
+        firestorePresences.forEach((p) => {
+          if (p?.userId) {
+            const prev = presenceMap.get(p.userId);
+            if (!prev || new Date(p.lastActiveAt || 0).getTime() >= new Date(prev.lastActiveAt || 0).getTime()) {
+              presenceMap.set(p.userId, p);
+            }
+          }
+        });
+      }
+      setPresences(Array.from(presenceMap.values()));
+
       if (Array.isArray(paymentsRes)) setPayments(paymentsRes);
       if (configRes) {
         setPaymentConfig(configRes);
@@ -239,10 +257,25 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
   const handleRefreshPresences = async () => {
     setPresenceRefreshing(true);
     try {
-      const res = await api.getAdminPresences().catch(() => []);
+      const [res, firestoreRes] = await Promise.all([
+        api.getAdminPresences().catch(() => []),
+        fetchAllPresencesFromFirestore().catch(() => []),
+      ]);
+      const presenceMap = new Map<string, UserPresence>();
       if (Array.isArray(res)) {
-        setPresences(res);
+        res.forEach((p) => { if (p?.userId) presenceMap.set(p.userId, p); });
       }
+      if (Array.isArray(firestoreRes)) {
+        firestoreRes.forEach((p) => {
+          if (p?.userId) {
+            const prev = presenceMap.get(p.userId);
+            if (!prev || new Date(p.lastActiveAt || 0).getTime() >= new Date(prev.lastActiveAt || 0).getTime()) {
+              presenceMap.set(p.userId, p);
+            }
+          }
+        });
+      }
+      setPresences(Array.from(presenceMap.values()));
     } finally {
       setPresenceRefreshing(false);
     }
@@ -845,8 +878,10 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
                 Live Real-Time Sync
               </span>
             </div>
-            <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5 font-medium">
-              Firestore Project: <span className="font-mono font-bold text-slate-900 dark:text-slate-100">pelagic-nebula-7jk7s</span> | Database ID: <span className="font-mono font-bold text-slate-900 dark:text-slate-100">{firebaseConfigData.firestoreDatabaseId || 'ai-studio-hishabkhata-fbe26cc2-dd75-4f5c-950d-f8c94bf7952a'}</span>
+            <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5 font-medium flex items-center gap-2 flex-wrap">
+              <span>Firestore Project: <span className="font-mono font-bold text-slate-900 dark:text-slate-100">pelagic-nebula-7jk7s</span></span>
+              <span>•</span>
+              <span>Production Domain: <a href="https://hishabkhata-olive.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-teal-600 dark:text-teal-400 font-mono font-bold hover:underline">hishabkhata-olive.vercel.app</a></span>
             </p>
           </div>
         </div>

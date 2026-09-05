@@ -43,5 +43,14 @@ app.get('/health', (req: Request, res: Response) => {
 app.use('/api', apiRouter);
 app.use('/', apiRouter);
 
+// Global fallback error handler to prevent opaque Vercel 500 crashes
+app.use((err: any, req: Request, res: Response, next: any) => {
+  console.error('Unhandled error in Vercel API function:', err);
+  res.status(500).json({
+    error: err?.message || 'Server error occurred. Please try again.',
+    success: false
+  });
+});
+
 // Export default handler for Vercel Serverless Function
 export default app;

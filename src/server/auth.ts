@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { getDb } from './db';
+import { getDb, saveDb } from './db';
 import { User } from '../types';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'hishab-khata-production-secure-jwt-token-2026-global';
@@ -61,7 +61,26 @@ export function authMiddleware(req: AuthRequest, res: Response, next: NextFuncti
   if (token && token.startsWith('hk_client_')) {
     const targetId = (req.headers['x-user-id'] as string) || '';
     const targetEmail = (req.headers['x-user-email'] as string) || '';
-    let clientUser = db.users.find(u => (targetId && u.id === targetId) || (targetEmail && u.email === targetEmail));
+    let clientUser = db.users.find(u => (targetId && u.id === targetId) || (targetEmail && u.email?.toLowerCase() === targetEmail.toLowerCase()));
+    if (!clientUser && (targetId || targetEmail)) {
+      const nowIso = new Date().toISOString();
+      const isOwner = targetEmail.toLowerCase() === 'sultanitbangladesh@gmail.com';
+      clientUser = {
+        id: targetId || `usr-${Date.now()}`,
+        name: targetEmail ? targetEmail.split('@')[0] : 'User',
+        email: targetEmail || `${targetId}@hishabkhata.app`,
+        role: isOwner ? 'admin' : 'user',
+        plan: isOwner ? 'pro' : 'free',
+        status: 'active',
+        preferredCurrency: 'BDT',
+        preferredLanguage: 'en',
+        emailVerified: true,
+        createdAt: nowIso,
+        updatedAt: nowIso,
+      };
+      db.users.push(clientUser);
+      saveDb();
+    }
     if (clientUser) {
       req.user = clientUser;
       next();
@@ -70,12 +89,28 @@ export function authMiddleware(req: AuthRequest, res: Response, next: NextFuncti
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as { id: string; email: string; role: string };
-    const user = db.users.find(u => u.id === decoded.id);
+    const decoded = jwt.verify(token, JWT_SECRET) as { id: string; email: string; role: string; plan?: string };
+    let user = db.users.find(u => u.id === decoded.id || (decoded.email && u.email?.toLowerCase() === decoded.email.toLowerCase()));
 
     if (!user) {
-      res.status(401).json({ error: 'Unauthorized: User not found' });
-      return;
+      const nowIso = new Date().toISOString();
+      const userEmail = decoded.email || (req.headers['x-user-email'] as string) || `${decoded.id}@hishabkhata.app`;
+      const isOwner = userEmail.toLowerCase() === 'sultanitbangladesh@gmail.com';
+      user = {
+        id: decoded.id || (req.headers['x-user-id'] as string) || `usr-${Date.now()}`,
+        name: userEmail.split('@')[0] || 'User',
+        email: userEmail,
+        role: (decoded.role as any) || (isOwner ? 'admin' : 'user'),
+        plan: (decoded.plan as any) || (isOwner ? 'pro' : 'free'),
+        status: 'active',
+        preferredCurrency: 'BDT',
+        preferredLanguage: 'en',
+        emailVerified: true,
+        createdAt: nowIso,
+        updatedAt: nowIso,
+      };
+      db.users.push(user);
+      saveDb();
     }
 
     // Always ensure superadmin privilege for the platform owner
