@@ -248,294 +248,306 @@ router.post('/auth/sync-user', (req, res) => {
 });
 
 router.post('/auth/register', (req, res) => {
-  const { name, email, phone, password, preferredLanguage = 'en', preferredCurrency = 'BDT' } = req.body;
+  try {
+    const { name, email, phone, password, preferredLanguage = 'en', preferredCurrency = 'BDT' } = req.body;
 
-  const rawIdentifier = String(email || phone || '').trim();
-  if (!name || !rawIdentifier || !password) {
-    res.status(400).json({ error: 'Name, email or mobile number, and password are required' });
-    return;
+    const rawIdentifier = String(email || phone || '').trim();
+    if (!name || !rawIdentifier || !password) {
+      res.status(400).json({ error: 'Name, email or mobile number, and password are required' });
+      return;
+    }
+
+    const isPhone = isPhoneNumber(rawIdentifier);
+    const normalizedPhone = isPhone ? normalizeBDPhone(rawIdentifier) : (phone ? normalizeBDPhone(String(phone).trim()) : undefined);
+    const cleanEmail = isPhone
+      ? `${normalizedPhone}@mobile.hishabkhata.com`
+      : rawIdentifier.toLowerCase();
+
+    const db = getDb();
+    const existing = findUserByIdentifier(db, rawIdentifier) || db.users.find(u => {
+      const uEmail = u.email?.trim().toLowerCase();
+      const uPhone = u.phone ? normalizeBDPhone(u.phone) : '';
+      if (cleanEmail && uEmail === cleanEmail) return true;
+      if (normalizedPhone && uPhone && uPhone === normalizedPhone) return true;
+      if (isPhone && uEmail === `${normalizedPhone}@mobile.hishabkhata.com`) return true;
+      return false;
+    });
+
+    if (existing) {
+      res.status(400).json({ error: 'An account with this email or mobile number already exists. Please sign in instead.' });
+      return;
+    }
+
+    const now = new Date().toISOString();
+    const userId = `usr-${Date.now()}`;
+    const passwordHash = bcrypt.hashSync(String(password), 10);
+
+    const newUser: User = {
+      id: userId,
+      name: String(name).trim(),
+      email: cleanEmail,
+      phone: normalizedPhone,
+      role: 'user',
+      preferredLanguage,
+      preferredCurrency,
+      plan: 'free',
+      status: 'active',
+      emailVerified: true,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    // Persist user both in memory and to disk/registry
+    registerOrSyncUser(newUser, passwordHash);
+
+    // Create default starter wallets
+    const defaultCashWallet: Wallet = {
+      id: `w-cash-${Date.now()}`,
+      userId,
+      name: 'Cash Wallet',
+      type: 'cash',
+      balance: 0,
+      currency: preferredCurrency,
+      color: '#10B981',
+      isDefault: true,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    const defaultBankWallet: Wallet = {
+      id: `w-bank-${Date.now()}`,
+      userId,
+      name: 'Main Bank Account',
+      type: 'bank',
+      balance: 0,
+      currency: preferredCurrency,
+      color: '#0F766E',
+      isDefault: false,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    if (!Array.isArray(db.wallets)) db.wallets = [];
+    db.wallets.push(defaultCashWallet, defaultBankWallet);
+
+    // Welcome notification
+    if (!Array.isArray(db.notifications)) db.notifications = [];
+    db.notifications.push({
+      id: `notif-${Date.now()}`,
+      userId,
+      type: 'system',
+      titleKey: 'Welcome to Hishab Khata!',
+      messageKey: 'Your financial workspace is ready. Add your first income or expense to get started.',
+      isRead: false,
+      createdAt: now,
+    });
+
+    saveDb();
+
+    const token = generateToken(newUser);
+    res.status(201).json({ user: newUser, token });
+  } catch (err: any) {
+    console.error('Registration error on server:', err);
+    res.status(500).json({ error: err?.message || 'Server error occurred during registration. Please try again.' });
   }
-
-  const isPhone = isPhoneNumber(rawIdentifier);
-  const normalizedPhone = isPhone ? normalizeBDPhone(rawIdentifier) : (phone ? normalizeBDPhone(String(phone).trim()) : undefined);
-  const cleanEmail = isPhone
-    ? `${normalizedPhone}@mobile.hishabkhata.com`
-    : rawIdentifier.toLowerCase();
-
-  const db = getDb();
-  const existing = findUserByIdentifier(db, rawIdentifier) || db.users.find(u => {
-    const uEmail = u.email?.trim().toLowerCase();
-    const uPhone = u.phone ? normalizeBDPhone(u.phone) : '';
-    if (cleanEmail && uEmail === cleanEmail) return true;
-    if (normalizedPhone && uPhone && uPhone === normalizedPhone) return true;
-    if (isPhone && uEmail === `${normalizedPhone}@mobile.hishabkhata.com`) return true;
-    return false;
-  });
-
-  if (existing) {
-    res.status(400).json({ error: 'An account with this email or mobile number already exists. Please sign in instead.' });
-    return;
-  }
-
-  const now = new Date().toISOString();
-  const userId = `usr-${Date.now()}`;
-  const passwordHash = bcrypt.hashSync(String(password), 10);
-
-  const newUser: User = {
-    id: userId,
-    name: String(name).trim(),
-    email: cleanEmail,
-    phone: normalizedPhone,
-    role: 'user',
-    preferredLanguage,
-    preferredCurrency,
-    plan: 'free',
-    status: 'active',
-    emailVerified: true,
-    createdAt: now,
-    updatedAt: now,
-  };
-
-  // Persist user both in memory and to disk/registry
-  registerOrSyncUser(newUser, passwordHash);
-
-  // Create default starter wallets
-  const defaultCashWallet: Wallet = {
-    id: `w-cash-${Date.now()}`,
-    userId,
-    name: 'Cash Wallet',
-    type: 'cash',
-    balance: 0,
-    currency: preferredCurrency,
-    color: '#10B981',
-    isDefault: true,
-    createdAt: now,
-    updatedAt: now,
-  };
-
-  const defaultBankWallet: Wallet = {
-    id: `w-bank-${Date.now()}`,
-    userId,
-    name: 'Main Bank Account',
-    type: 'bank',
-    balance: 0,
-    currency: preferredCurrency,
-    color: '#0F766E',
-    isDefault: false,
-    createdAt: now,
-    updatedAt: now,
-  };
-
-  db.wallets.push(defaultCashWallet, defaultBankWallet);
-
-  // Welcome notification
-  db.notifications.push({
-    id: `notif-${Date.now()}`,
-    userId,
-    type: 'system',
-    titleKey: 'Welcome to Hishab Khata!',
-    messageKey: 'Your financial workspace is ready. Add your first income or expense to get started.',
-    isRead: false,
-    createdAt: now,
-  });
-
-  saveDb();
-
-  const token = generateToken(newUser);
-  res.status(201).json({ user: newUser, token });
 });
 
 router.post('/auth/login', (req, res) => {
-  const { email, identifier, password } = req.body;
-  const rawIdentifier = String(identifier || email || '').trim();
+  try {
+    const { email, identifier, password } = req.body;
+    const rawIdentifier = String(identifier || email || '').trim();
 
-  if (!rawIdentifier || !password) {
-    res.status(400).json({ error: 'Email or mobile number and password are required' });
-    return;
-  }
-
-  const rawPassword = String(password);
-  const trimmedPassword = rawPassword.trim();
-  const db = getDb();
-
-  // 1. FIRST check if an existing user matches this identifier in our database
-  let user = findUserByIdentifier(db, rawIdentifier);
-
-  let cleanEmail = rawIdentifier.toLowerCase();
-  // If no user matched, check shorthand handles for sultan owner admin
-  if (!user) {
-    if (
-      cleanEmail === 'sultan' ||
-      cleanEmail === 'sultanit' ||
-      cleanEmail === 'sultanitbangladesh'
-    ) {
-      cleanEmail = 'sultanitbangladesh@gmail.com';
-      user = findUserByIdentifier(db, cleanEmail);
+    if (!rawIdentifier || !password) {
+      res.status(400).json({ error: 'Email or mobile number and password are required' });
+      return;
     }
-  }
 
-  // Reject permanently removed dummy accounts
-  if (
-    cleanEmail === 'admin@hishabkhata.com' ||
-    cleanEmail === 'admin@hishabkhata.io' ||
-    cleanEmail === 'user@hishabkhata.com' ||
-    cleanEmail === 'demo@hishabkhata.io' ||
-    cleanEmail === 'admin'
-  ) {
-    res.status(401).json({
-      error: 'This account has been permanently removed. Please log in with your registered account or Sultan Admin (sultanitbangladesh@gmail.com).'
-    });
-    return;
-  }
+    const rawPassword = String(password);
+    const trimmedPassword = rawPassword.trim();
+    const db = getDb();
 
-  const nowIso = new Date().toISOString();
+    // 1. FIRST check if an existing user matches this identifier in our database
+    let user = findUserByIdentifier(db, rawIdentifier);
 
-  const isOwnerOrAdminEmail =
-    cleanEmail === 'sultanitbangladesh@gmail.com';
+    let cleanEmail = rawIdentifier.toLowerCase();
+    // If no user matched, check shorthand handles for sultan owner admin
+    if (!user) {
+      if (
+        cleanEmail === 'sultan' ||
+        cleanEmail === 'sultanit' ||
+        cleanEmail === 'sultanitbangladesh'
+      ) {
+        cleanEmail = 'sultanitbangladesh@gmail.com';
+        user = findUserByIdentifier(db, cleanEmail);
+      }
+    }
 
-  const VALID_ADMIN_PASSWORDS = [
-    'admin123',
-    'SultanAdmin@2026',
-    'admin@2026',
-    'sultan123',
-    'admin786',
-    '123456',
-    'sultan',
-    'admin',
-    'password123',
-    'Sultan1234',
-    'admin@123',
-    'Sultan@2026',
-    'sultanadmin'
-  ];
-
-  // If user does not exist in the database yet:
-  if (!user) {
-    if (!isOwnerOrAdminEmail) {
+    // Reject permanently removed dummy accounts
+    if (
+      cleanEmail === 'admin@hishabkhata.com' ||
+      cleanEmail === 'admin@hishabkhata.io' ||
+      cleanEmail === 'user@hishabkhata.com' ||
+      cleanEmail === 'demo@hishabkhata.io' ||
+      cleanEmail === 'admin'
+    ) {
       res.status(401).json({
-        error: 'No account found with this email or mobile number. Please click "Sign Up" to create your account.'
+        error: 'This account has been permanently removed. Please log in with your registered account or Sultan Admin (sultanitbangladesh@gmail.com).'
       });
       return;
     }
 
-    const matchesAdminPassword =
-      VALID_ADMIN_PASSWORDS.includes(rawPassword) ||
-      VALID_ADMIN_PASSWORDS.includes(trimmedPassword);
-    if (!matchesAdminPassword) {
-      res.status(401).json({ error: 'Invalid admin credentials. Incorrect password.' });
+    const nowIso = new Date().toISOString();
+
+    const isOwnerOrAdminEmail =
+      cleanEmail === 'sultanitbangladesh@gmail.com';
+
+    const VALID_ADMIN_PASSWORDS = [
+      'admin123',
+      'SultanAdmin@2026',
+      'admin@2026',
+      'sultan123',
+      'admin786',
+      '123456',
+      'sultan',
+      'admin',
+      'password123',
+      'Sultan1234',
+      'admin@123',
+      'Sultan@2026',
+      'sultanadmin'
+    ];
+
+    // If user does not exist in the database yet:
+    if (!user) {
+      if (!isOwnerOrAdminEmail) {
+        res.status(401).json({
+          error: 'No account found with this email or mobile number. Please click "Sign Up" to create your account.'
+        });
+        return;
+      }
+
+      const matchesAdminPassword =
+        VALID_ADMIN_PASSWORDS.includes(rawPassword) ||
+        VALID_ADMIN_PASSWORDS.includes(trimmedPassword);
+      if (!matchesAdminPassword) {
+        res.status(401).json({ error: 'Invalid admin credentials. Incorrect password.' });
+        return;
+      }
+
+      const newUserId = 'admin-sultan-001';
+      const newUser: User = {
+        id: newUserId,
+        name: 'Sultan (Owner Admin)',
+        email: cleanEmail,
+        role: 'admin',
+        preferredLanguage: 'en',
+        preferredCurrency: 'BDT',
+        plan: 'pro',
+        status: 'active',
+        emailVerified: true,
+        avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+        createdAt: nowIso,
+        updatedAt: nowIso,
+      };
+
+      db.users.push(newUser);
+      db.passwordHashes[newUserId] = bcrypt.hashSync(trimmedPassword || 'admin123', 10);
+
+      if (!Array.isArray(db.wallets)) db.wallets = [];
+      db.wallets.push(
+        {
+          id: `w-${newUserId}-cash`,
+          userId: newUserId,
+          name: 'Cash Wallet',
+          type: 'cash',
+          balance: 10000,
+          currency: 'BDT',
+          color: '#10B981',
+          isDefault: true,
+          createdAt: nowIso,
+          updatedAt: nowIso,
+        },
+        {
+          id: `w-${newUserId}-bkash`,
+          userId: newUserId,
+          name: 'bKash Wallet',
+          type: 'bkash',
+          balance: 25000,
+          currency: 'BDT',
+          color: '#E2136E',
+          isDefault: false,
+          accountNumber: '01712-345678',
+          createdAt: nowIso,
+          updatedAt: nowIso,
+        }
+      );
+
+      saveDb();
+      const token = generateToken(newUser);
+      res.json({ user: newUser, token });
       return;
     }
 
-    const newUserId = 'admin-sultan-001';
-    const newUser: User = {
-      id: newUserId,
-      name: 'Sultan (Owner Admin)',
-      email: cleanEmail,
-      role: 'admin',
-      preferredLanguage: 'en',
-      preferredCurrency: 'BDT',
-      plan: 'pro',
-      status: 'active',
-      emailVerified: true,
-      avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-      createdAt: nowIso,
-      updatedAt: nowIso,
-    };
+    // If user exists, verify password with resilience for admin accounts
+    const hash = db.passwordHashes[user.id];
+    let isMatch = hash ? (bcrypt.compareSync(rawPassword, hash) || bcrypt.compareSync(trimmedPassword, hash)) : false;
 
-    db.users.push(newUser);
-    db.passwordHashes[newUserId] = bcrypt.hashSync(trimmedPassword || 'admin123', 10);
+    const isAdminAccount =
+      user.role === 'admin' ||
+      isOwnerOrAdminEmail;
 
-    // Provide default wallets so the account is immediately functional
-    db.wallets.push(
-      {
-        id: `w-${newUserId}-cash`,
-        userId: newUserId,
-        name: 'Cash Wallet',
-        type: 'cash',
-        balance: 10000,
-        currency: 'BDT',
-        color: '#10B981',
-        isDefault: true,
-        createdAt: nowIso,
-        updatedAt: nowIso,
-      },
-      {
-        id: `w-${newUserId}-bkash`,
-        userId: newUserId,
-        name: 'bKash Wallet',
-        type: 'bkash',
-        balance: 25000,
-        currency: 'BDT',
-        color: '#E2136E',
-        isDefault: false,
-        accountNumber: '01712-345678',
-        createdAt: nowIso,
-        updatedAt: nowIso,
+    if (isAdminAccount) {
+      const matchesAdminPassword =
+        VALID_ADMIN_PASSWORDS.includes(rawPassword) ||
+        VALID_ADMIN_PASSWORDS.includes(trimmedPassword);
+
+      if (isMatch || matchesAdminPassword) {
+        isMatch = true;
+        db.passwordHashes[user.id] = bcrypt.hashSync(trimmedPassword, 10);
+        user.status = 'active';
+        user.role = 'admin';
+        user.plan = 'pro';
+        user.updatedAt = nowIso;
+        saveDb();
+      } else {
+        isMatch = false;
       }
-    );
+    } else if (!isMatch && (user.email === 'user@hishabkhata.com' || user.email === 'demo@hishabkhata.io')) {
+      const knownUserPasswords = ['password123', 'demo123', '123456', 'password', 'user123'];
+      if (knownUserPasswords.includes(rawPassword) || knownUserPasswords.includes(trimmedPassword)) {
+        isMatch = true;
+        db.passwordHashes[user.id] = bcrypt.hashSync(trimmedPassword, 10);
+        saveDb();
+      }
+    }
 
-    saveDb();
-    const token = generateToken(newUser);
-    res.json({ user: newUser, token });
-    return;
-  }
+    if (!isMatch) {
+      res.status(401).json({ error: 'Invalid email or password. Please check your credentials.' });
+      return;
+    }
 
-  // If user exists, verify password with resilience for admin accounts
-  const hash = db.passwordHashes[user.id];
-  let isMatch = hash ? (bcrypt.compareSync(rawPassword, hash) || bcrypt.compareSync(trimmedPassword, hash)) : false;
-
-  const isAdminAccount =
-    user.role === 'admin' ||
-    isOwnerOrAdminEmail;
-
-  if (isAdminAccount) {
-    const matchesAdminPassword =
-      VALID_ADMIN_PASSWORDS.includes(rawPassword) ||
-      VALID_ADMIN_PASSWORDS.includes(trimmedPassword);
-
-    if (isMatch || matchesAdminPassword) {
-      isMatch = true;
-      db.passwordHashes[user.id] = bcrypt.hashSync(trimmedPassword, 10);
+    if (user.status === 'deactivated' && !isAdminAccount) {
+      res.status(403).json({ error: 'Account has been deactivated. Please contact administrator.' });
+      return;
+    } else if (user.status === 'deactivated' && isAdminAccount) {
       user.status = 'active';
+      saveDb();
+    }
+
+    // Ensure role is admin if it's the owner email
+    if (isOwnerOrAdminEmail) {
       user.role = 'admin';
       user.plan = 'pro';
-      user.updatedAt = nowIso;
-      saveDb();
-    } else {
-      isMatch = false;
-    }
-  } else if (!isMatch && (user.email === 'user@hishabkhata.com' || user.email === 'demo@hishabkhata.io')) {
-    const knownUserPasswords = ['password123', 'demo123', '123456', 'password', 'user123'];
-    if (knownUserPasswords.includes(rawPassword) || knownUserPasswords.includes(trimmedPassword)) {
-      isMatch = true;
-      db.passwordHashes[user.id] = bcrypt.hashSync(trimmedPassword, 10);
+      user.status = 'active';
       saveDb();
     }
-  }
 
-  if (!isMatch) {
-    res.status(401).json({ error: 'Invalid email or password. Please check your credentials.' });
-    return;
+    const token = generateToken(user);
+    res.json({ user, token });
+  } catch (err: any) {
+    console.error('Login error on server:', err);
+    res.status(500).json({ error: err?.message || 'Server error occurred during login. Please try again.' });
   }
-
-  if (user.status === 'deactivated' && !isAdminAccount) {
-    res.status(403).json({ error: 'Account has been deactivated. Please contact administrator.' });
-    return;
-  } else if (user.status === 'deactivated' && isAdminAccount) {
-    user.status = 'active';
-    saveDb();
-  }
-
-  // Ensure role is admin if it's the owner email
-  if (isOwnerOrAdminEmail) {
-    user.role = 'admin';
-    user.plan = 'pro';
-    user.status = 'active';
-    saveDb();
-  }
-
-  const token = generateToken(user);
-  res.json({ user, token });
 });
 
 router.post('/auth/firebase-google', (req, res) => {

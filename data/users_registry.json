@@ -12,7 +12,7 @@
       "emailVerified": true,
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "createdAt": "2026-09-03T06:43:20.562Z",
-      "updatedAt": "2026-09-05T09:13:44.175Z"
+      "updatedAt": "2026-09-05T09:44:55.641Z"
     },
     {
       "id": "usr-1788594159081",
@@ -39,12 +39,55 @@
       "emailVerified": true,
       "createdAt": "2026-09-05T09:13:53.823Z",
       "updatedAt": "2026-09-05T09:13:53.823Z"
+    },
+    {
+      "id": "usr-1788600863223",
+      "name": "Ahmed",
+      "email": "ahmed@ahmed.com",
+      "role": "user",
+      "preferredLanguage": "en",
+      "preferredCurrency": "BDT",
+      "plan": "free",
+      "status": "active",
+      "emailVerified": true,
+      "createdAt": "2026-09-05T09:34:23.223Z",
+      "updatedAt": "2026-09-05T09:34:23.223Z"
+    },
+    {
+      "id": "usr-1788601476086",
+      "name": "New Test User",
+      "email": "newuser_2026@test.com",
+      "role": "user",
+      "preferredLanguage": "en",
+      "preferredCurrency": "BDT",
+      "plan": "free",
+      "status": "active",
+      "emailVerified": true,
+      "createdAt": "2026-09-05T09:44:36.086Z",
+      "updatedAt": "2026-09-05T09:44:36.086Z"
+    },
+    {
+      "id": "usr-1788601482138",
+      "name": "Rahim Mobile",
+      "email": "01812345678@mobile.hishabkhata.com",
+      "phone": "01812345678",
+      "role": "user",
+      "preferredLanguage": "en",
+      "preferredCurrency": "BDT",
+      "plan": "free",
+      "status": "active",
+      "emailVerified": true,
+      "createdAt": "2026-09-05T09:44:42.138Z",
+      "updatedAt": "2026-09-05T09:44:42.138Z"
     }
   ],
   "passwordHashes": {
-    "admin-sultan-001": "$2b$10$0249qjUByPC5HrBpuuxRbOVAUgDHlbSEQ8tyZabWj31KM7nvaHceC",
+    "admin-sultan-001": "$2b$10$dz4riAHXiGY9YSX2uLPit.NvAzgSq7lYMQ90Q6CllY1wi5msI72hG",
     "usr-1788594159081": "$2b$10$W5FlHuSN8XKNNCu13fllseSEFYCfXRFVTjmYB.C41m4bx7NjvuMlu",
-    "usr-1788599633823": "$2b$10$Encq1V3DZ.zt6Oc2ph0VC.lf54LdSDWBrL1rK9rTWZYsNCRJ4j/XO"
+    "usr-1788599633823": "$2b$10$Encq1V3DZ.zt6Oc2ph0VC.lf54LdSDWBrL1rK9rTWZYsNCRJ4j/XO",
+    "usr-1788600863223": "$2b$10$mB2gCRzzZ/XBr.O5XokTXulaEyDSsH4LAwAZZ.2H2wHf6FCI0q63a",
+    "usr-1788601476086": "$2b$10$F.pToGsEMvlYJZqFy8pFTeDLbhbRzMatHcKOcUDkN19n4f.X3Ykf.",
+    "usr-1788601482138": "$2b$10$ogJbECLVjDlUeUFMCkqcJ.9eJBv0l22923Xu1p490kbDR.jPxBQ3O"
   },
-  "updatedAt": "2026-09-05T09:20:12.881Z"
+  "updatedAt": "2026-09-05T09:45:11.631Z"
 }

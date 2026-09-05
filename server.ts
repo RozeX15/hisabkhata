@@ -42,6 +42,17 @@ async function startServer() {
     });
   }
 
+  // Global error handler
+  app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    console.error('Unhandled server error:', err);
+    if (!res.headersSent) {
+      res.status(500).json({
+        error: err?.message || 'Server error occurred. Please try again.',
+        success: false,
+      });
+    }
+  });
+
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`Hishab Khata full-stack server running on http://0.0.0.0:${PORT}`);
   });

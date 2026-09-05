@@ -12,7 +12,7 @@
       "emailVerified": true,
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "createdAt": "2026-09-03T06:43:20.562Z",
-      "updatedAt": "2026-09-05T09:13:44.175Z"
+      "updatedAt": "2026-09-05T09:44:55.641Z"
     },
     {
       "id": "usr-1788594159081",
@@ -39,12 +39,55 @@
       "emailVerified": true,
       "createdAt": "2026-09-05T09:13:53.823Z",
       "updatedAt": "2026-09-05T09:13:53.823Z"
+    },
+    {
+      "id": "usr-1788600863223",
+      "name": "Ahmed",
+      "email": "ahmed@ahmed.com",
+      "role": "user",
+      "preferredLanguage": "en",
+      "preferredCurrency": "BDT",
+      "plan": "free",
+      "status": "active",
+      "emailVerified": true,
+      "createdAt": "2026-09-05T09:34:23.223Z",
+      "updatedAt": "2026-09-05T09:34:23.223Z"
+    },
+    {
+      "id": "usr-1788601476086",
+      "name": "New Test User",
+      "email": "newuser_2026@test.com",
+      "role": "user",
+      "preferredLanguage": "en",
+      "preferredCurrency": "BDT",
+      "plan": "free",
+      "status": "active",
+      "emailVerified": true,
+      "createdAt": "2026-09-05T09:44:36.086Z",
+      "updatedAt": "2026-09-05T09:44:36.086Z"
+    },
+    {
+      "id": "usr-1788601482138",
+      "name": "Rahim Mobile",
+      "email": "01812345678@mobile.hishabkhata.com",
+      "phone": "01812345678",
+      "role": "user",
+      "preferredLanguage": "en",
+      "preferredCurrency": "BDT",
+      "plan": "free",
+      "status": "active",
+      "emailVerified": true,
+      "createdAt": "2026-09-05T09:44:42.138Z",
+      "updatedAt": "2026-09-05T09:44:42.138Z"
     }
   ],
   "passwordHashes": {
-    "admin-sultan-001": "$2b$10$0249qjUByPC5HrBpuuxRbOVAUgDHlbSEQ8tyZabWj31KM7nvaHceC",
+    "admin-sultan-001": "$2b$10$dz4riAHXiGY9YSX2uLPit.NvAzgSq7lYMQ90Q6CllY1wi5msI72hG",
     "usr-1788594159081": "$2b$10$W5FlHuSN8XKNNCu13fllseSEFYCfXRFVTjmYB.C41m4bx7NjvuMlu",
-    "usr-1788599633823": "$2b$10$Encq1V3DZ.zt6Oc2ph0VC.lf54LdSDWBrL1rK9rTWZYsNCRJ4j/XO"
+    "usr-1788599633823": "$2b$10$Encq1V3DZ.zt6Oc2ph0VC.lf54LdSDWBrL1rK9rTWZYsNCRJ4j/XO",
+    "usr-1788600863223": "$2b$10$mB2gCRzzZ/XBr.O5XokTXulaEyDSsH4LAwAZZ.2H2wHf6FCI0q63a",
+    "usr-1788601476086": "$2b$10$F.pToGsEMvlYJZqFy8pFTeDLbhbRzMatHcKOcUDkN19n4f.X3Ykf.",
+    "usr-1788601482138": "$2b$10$ogJbECLVjDlUeUFMCkqcJ.9eJBv0l22923Xu1p490kbDR.jPxBQ3O"
   },
   "wallets": [
     {
@@ -119,6 +162,78 @@
       "isDefault": false,
       "createdAt": "2026-09-05T09:13:53.823Z",
       "updatedAt": "2026-09-05T09:13:53.823Z"
+    },
+    {
+      "id": "w-cash-1788600863337",
+      "userId": "usr-1788600863223",
+      "name": "Cash Wallet",
+      "type": "cash",
+      "balance": 0,
+      "currency": "BDT",
+      "color": "#10B981",
+      "isDefault": true,
+      "createdAt": "2026-09-05T09:34:23.223Z",
+      "updatedAt": "2026-09-05T09:34:23.223Z"
+    },
+    {
+      "id": "w-bank-1788600863337",
+      "userId": "usr-1788600863223",
+      "name": "Main Bank Account",
+      "type": "bank",
+      "balance": 0,
+      "currency": "BDT",
+      "color": "#0F766E",
+      "isDefault": false,
+      "createdAt": "2026-09-05T09:34:23.223Z",
+      "updatedAt": "2026-09-05T09:34:23.223Z"
+    },
+    {
+      "id": "w-cash-1788601476174",
+      "userId": "usr-1788601476086",
+      "name": "Cash Wallet",
+      "type": "cash",
+      "balance": 0,
+      "currency": "BDT",
+      "color": "#10B981",
+      "isDefault": true,
+      "createdAt": "2026-09-05T09:44:36.086Z",
+      "updatedAt": "2026-09-05T09:44:36.086Z"
+    },
+    {
+      "id": "w-bank-1788601476174",
+      "userId": "usr-1788601476086",
+      "name": "Main Bank Account",
+      "type": "bank",
+      "balance": 0,
+      "currency": "BDT",
+      "color": "#0F766E",
+      "isDefault": false,
+      "createdAt": "2026-09-05T09:44:36.086Z",
+      "updatedAt": "2026-09-05T09:44:36.086Z"
+    },
+    {
+      "id": "w-cash-1788601482227",
+      "userId": "usr-1788601482138",
+      "name": "Cash Wallet",
+      "type": "cash",
+      "balance": 0,
+      "currency": "BDT",
+      "color": "#10B981",
+      "isDefault": true,
+      "createdAt": "2026-09-05T09:44:42.138Z",
+      "updatedAt": "2026-09-05T09:44:42.138Z"
+    },
+    {
+      "id": "w-bank-1788601482227",
+      "userId": "usr-1788601482138",
+      "name": "Main Bank Account",
+      "type": "bank",
+      "balance": 0,
+      "currency": "BDT",
+      "color": "#0F766E",
+      "isDefault": false,
+      "createdAt": "2026-09-05T09:44:42.138Z",
+      "updatedAt": "2026-09-05T09:44:42.138Z"
     }
   ],
   "categories": [
@@ -360,12 +475,21 @@
   "loanPayments": [],
   "notifications": [
     {
+      "id": "notif-1788601328945",
+      "userId": "usr-1788594159081",
+      "type": "system",
+      "titleKey": "⚠️ Payment Verification Issue",
+      "messageKey": "Your subscription payment (TrxID: 123654) could not be verified. Note from Admin: Transaction ID not verified or amount mismatch.i f u try to span it again,u will ban for ever. Please check your TrxID and re-submit or contact support.",
+      "isRead": true,
+      "createdAt": "2026-09-05T09:42:08.945Z"
+    },
+    {
       "id": "notif-adm-1788599879362-admin-sultan-001",
       "userId": "admin-sultan-001",
       "type": "system",
       "titleKey": "🔔 New PRO Upgrade Payment Submitted",
       "messageKey": "Numerical (nw@yixin.com) submitted 4999 BDT via BKASH (TrxID: 123654). Please verify and approve.",
-      "isRead": false,
+      "isRead": true,
       "createdAt": "2026-09-05T09:17:59.362Z"
     },
     {
@@ -374,7 +498,7 @@
       "type": "system",
       "titleKey": "Subscription Payment Submitted",
       "messageKey": "We received your payment request (4999 BDT via BKASH, TrxID: 123654). Admin will verify and activate your PRO subscription shortly.",
-      "isRead": false,
+      "isRead": true,
       "createdAt": "2026-09-05T09:17:59.362Z"
     },
     {
@@ -383,7 +507,7 @@
       "type": "system",
       "titleKey": "🔔 New PRO Upgrade Payment Submitted",
       "messageKey": "User Account (user@hishabkhata.com) submitted 4999 BDT via BKASH (TrxID: 125634). Please verify and approve.",
-      "isRead": false,
+      "isRead": true,
       "createdAt": "2026-09-03T09:18:16.009Z"
     },
     {
@@ -392,7 +516,7 @@
       "type": "system",
       "titleKey": "🔔 New PRO Upgrade Payment Submitted",
       "messageKey": "yixinbd@gmail.com (yixinbd@gmail.com) submitted 4999 BDT via BKASH (TrxID: 123456). Please verify and approve.",
-      "isRead": false,
+      "isRead": true,
       "createdAt": "2026-09-03T07:11:24.958Z"
     },
     {
@@ -401,7 +525,7 @@
       "type": "system",
       "titleKey": "Welcome to Hishab Khata!",
       "messageKey": "Your financial workspace is ready. Add your first income or expense to get started.",
-      "isRead": false,
+      "isRead": true,
       "createdAt": "2026-09-05T07:42:39.081Z"
     },
     {
@@ -412,6 +536,33 @@
       "messageKey": "Your financial workspace is ready. Add your first income or expense to get started.",
       "isRead": false,
       "createdAt": "2026-09-05T09:13:53.823Z"
+    },
+    {
+      "id": "notif-1788600863337",
+      "userId": "usr-1788600863223",
+      "type": "system",
+      "titleKey": "Welcome to Hishab Khata!",
+      "messageKey": "Your financial workspace is ready. Add your first income or expense to get started.",
+      "isRead": false,
+      "createdAt": "2026-09-05T09:34:23.223Z"
+    },
+    {
+      "id": "notif-1788601476174",
+      "userId": "usr-1788601476086",
+      "type": "system",
+      "titleKey": "Welcome to Hishab Khata!",
+      "messageKey": "Your financial workspace is ready. Add your first income or expense to get started.",
+      "isRead": false,
+      "createdAt": "2026-09-05T09:44:36.086Z"
+    },
+    {
+      "id": "notif-1788601482227",
+      "userId": "usr-1788601482138",
+      "type": "system",
+      "titleKey": "Welcome to Hishab Khata!",
+      "messageKey": "Your financial workspace is ready. Add your first income or expense to get started.",
+      "isRead": false,
+      "createdAt": "2026-09-05T09:44:42.138Z"
     }
   ],
   "languages": [
@@ -1914,6 +2065,16 @@
   },
   "adminLogs": [
     {
+      "id": "log-1788601328945",
+      "adminId": "admin-sultan-001",
+      "adminEmail": "sultanitbangladesh@gmail.com",
+      "action": "REJECT_SUBSCRIPTION_PAYMENT",
+      "targetType": "PAYMENT",
+      "targetId": "pay-1788599879362",
+      "details": "Rejected payment for nw@yixin.com: Transaction ID not verified or amount mismatch.i f u try to span it again,u will ban for ever",
+      "createdAt": "2026-09-05T09:42:08.945Z"
+    },
+    {
       "id": "log-1788574766751",
       "adminId": "admin-demo-002",
       "adminEmail": "admin@hishabkhata.com",
@@ -2026,8 +2187,11 @@
       "paymentMethod": "bkash",
       "senderNumberOrAccount": "01812345678",
       "transactionId": "123654",
-      "status": "pending",
-      "createdAt": "2026-09-05T09:17:59.362Z"
+      "status": "rejected",
+      "createdAt": "2026-09-05T09:17:59.362Z",
+      "adminNotes": "Transaction ID not verified or amount mismatch.i f u try to span it again,u will ban for ever",
+      "reviewedAt": "2026-09-05T09:42:08.945Z",
+      "reviewedBy": "sultanitbangladesh@gmail.com"
     },
     {
       "id": "pay-1788427096010",
@@ -2142,7 +2306,7 @@
       "role": "admin",
       "isOnline": true,
       "currentView": "Admin Control Center",
-      "lastActiveAt": "2026-09-05T09:17:01.980Z",
+      "lastActiveAt": "2026-09-05T09:42:34.084Z",
       "deviceType": "desktop",
       "browser": "Admin Console",
       "lastAction": "Monitoring System Telemetry"
@@ -2169,13 +2333,128 @@
       "role": "user",
       "isOnline": true,
       "currentView": "dashboard",
-      "lastActiveAt": "2026-09-05T09:20:09.193Z",
+      "lastActiveAt": "2026-09-05T09:45:11.629Z",
       "deviceType": "desktop",
       "browser": "Chrome",
       "lastAction": "Viewing dashboard"
     }
   },
   "liveActivities": [
+    {
+      "id": "act-1788601405995-2ect",
+      "userId": "usr-1788594159081",
+      "userName": "Numerical",
+      "userEmail": "nw@yixin.com",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to DASHBOARD",
+      "currentView": "dashboard",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-05T09:43:25.995Z"
+    },
+    {
+      "id": "act-1788601366762-u6me",
+      "userId": "usr-1788594159081",
+      "userName": "Numerical",
+      "userEmail": "nw@yixin.com",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to NOTIFICATIONS",
+      "currentView": "notifications",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-05T09:42:46.762Z"
+    },
+    {
+      "id": "act-1788601350395-6irg",
+      "userId": "admin-sultan-001",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to ADMIN",
+      "currentView": "admin",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-05T09:42:30.395Z"
+    },
+    {
+      "id": "act-1788601344071-4n2t",
+      "userId": "admin-sultan-001",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to SUGGESTIONS",
+      "currentView": "suggestions",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-05T09:42:24.071Z"
+    },
+    {
+      "id": "act-1788601332767-vg9o",
+      "userId": "admin-sultan-001",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to ADMIN",
+      "currentView": "admin",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-05T09:42:12.767Z"
+    },
+    {
+      "id": "act-1788601317764-ldwx",
+      "userId": "admin-sultan-001",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to ADMIN",
+      "currentView": "admin",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-05T09:41:57.764Z"
+    },
+    {
+      "id": "act-1788601302769-7w8q",
+      "userId": "admin-sultan-001",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to ADMIN",
+      "currentView": "admin",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-05T09:41:42.769Z"
+    },
+    {
+      "id": "act-1788601287763-pn9v",
+      "userId": "admin-sultan-001",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to ADMIN",
+      "currentView": "admin",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-05T09:41:27.763Z"
+    },
+    {
+      "id": "act-1788601272869-0qny",
+      "userId": "admin-sultan-001",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to ADMIN",
+      "currentView": "admin",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-05T09:41:12.869Z"
+    },
     {
       "id": "act-1788599904175-gvgb",
       "userId": "usr-1788594159081",
@@ -5039,6 +5318,24 @@
     }
   ],
   "emailLogs": [
+    {
+      "id": "eml-rej-1788601328945",
+      "to": "nw@yixin.com",
+      "from": "billing@hishabkhata.io",
+      "subject": "⚠️ Important Notice: Hishab Khata Subscription Verification",
+      "type": "user_subscription_rejected",
+      "preview": "Your payment submission (TrxID: 123654) could not be verified. Reason: Transaction ID not verified or amount mismatch.i f u try to span it again,u will ban for ever.",
+      "status": "sent",
+      "metadata": {
+        "amount": 4999,
+        "currency": "BDT",
+        "paymentMethod": "bkash",
+        "transactionId": "123654",
+        "adminNotes": "Transaction ID not verified or amount mismatch.i f u try to span it again,u will ban for ever",
+        "userName": "Numerical"
+      },
+      "sentAt": "2026-09-05T09:42:08.945Z"
+    },
     {
       "id": "eml-admin-1788599879362-0",
       "to": "sultanitbangladesh@gmail.com",

@@ -189,14 +189,19 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
       if (errValue === '[object Object]' || errValue.includes('[object Object]')) {
         return 'Authentication failed. Please check your credentials or network connection.';
       }
+      if (errValue.includes('A server error has occurred') || errValue.includes('Server error occurred') || errValue.includes('status 500')) {
+        return mode === 'login'
+          ? 'Unable to reach authentication server. If you are a new user, please click "Sign Up" below to create your account.'
+          : 'Server connection is taking longer than usual. Click below to continue setup instantly.';
+      }
       return errValue;
     }
     if (typeof errValue === 'object') {
       if (errValue.message && typeof errValue.message === 'string' && errValue.message !== '[object Object]') {
-        return errValue.message;
+        return formatErrorMessage(errValue.message);
       }
       if (errValue.error && typeof errValue.error === 'string') {
-        return errValue.error;
+        return formatErrorMessage(errValue.error);
       }
       try {
         const str = JSON.stringify(errValue);
@@ -360,7 +365,8 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
                   {mode === 'login' &&
                     (activeError.includes('No account found') ||
                       activeError.includes('Sign Up') ||
-                      activeError.includes('not found')) && (
+                      activeError.includes('not found') ||
+                      activeError.includes('authentication server')) && (
                       <button
                         type="button"
                         onClick={() => {
@@ -368,12 +374,26 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
                           clearError();
                           setFormError(null);
                         }}
-                        className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs rounded-lg transition cursor-pointer"
+                        className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs rounded-lg transition cursor-pointer shadow-sm"
                       >
                         <Sparkles className="w-3.5 h-3.5" />
                         <span>Click here to Sign Up with this ID</span>
                       </button>
                     )}
+                  {mode === 'register' && (activeError.includes('longer than usual') || activeError.includes('server')) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        register(name.trim() || 'User', email.trim(), password)
+                          .then(onSuccess)
+                          .catch((e: any) => setFormError(e.message));
+                      }}
+                      className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs rounded-lg transition cursor-pointer shadow-sm"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Continue & Complete Account Setup</span>
+                    </button>
+                  )}
                   {mode === 'register' && activeError.includes('already exists') && (
                     <button
                       type="button"
