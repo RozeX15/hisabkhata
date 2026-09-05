@@ -12,11 +12,25 @@
       "emailVerified": true,
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "createdAt": "2026-09-03T06:43:20.562Z",
-      "updatedAt": "2026-09-03T09:19:01.936Z"
+      "updatedAt": "2026-09-05T08:28:42.179Z"
+    },
+    {
+      "id": "usr-1788594159081",
+      "name": "Numerical",
+      "email": "nw@yixin.com",
+      "role": "user",
+      "preferredLanguage": "en",
+      "preferredCurrency": "BDT",
+      "plan": "free",
+      "status": "active",
+      "emailVerified": true,
+      "createdAt": "2026-09-05T07:42:39.081Z",
+      "updatedAt": "2026-09-05T07:42:39.081Z"
     }
   ],
   "passwordHashes": {
-    "admin-sultan-001": "$2b$10$QjC50pF.gdDiyfpyJZzJFO/3zSDIlXW3vWI5vm/13Zjg/heNx0gLe"
+    "admin-sultan-001": "$2b$10$7ry.3IYiJDByQepwy0TAWOK7vgxjpRYGtA399rc9j5I8mo63rDK7W",
+    "usr-1788594159081": "$2b$10$W5FlHuSN8XKNNCu13fllseSEFYCfXRFVTjmYB.C41m4bx7NjvuMlu"
   },
-  "updatedAt": "2026-09-05T05:10:22.797Z"
+  "updatedAt": "2026-09-05T08:28:42.367Z"
 }

@@ -12,11 +12,25 @@
       "emailVerified": true,
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "createdAt": "2026-09-03T06:43:20.562Z",
-      "updatedAt": "2026-09-03T09:19:01.936Z"
+      "updatedAt": "2026-09-05T08:28:42.179Z"
+    },
+    {
+      "id": "usr-1788594159081",
+      "name": "Numerical",
+      "email": "nw@yixin.com",
+      "role": "user",
+      "preferredLanguage": "en",
+      "preferredCurrency": "BDT",
+      "plan": "free",
+      "status": "active",
+      "emailVerified": true,
+      "createdAt": "2026-09-05T07:42:39.081Z",
+      "updatedAt": "2026-09-05T07:42:39.081Z"
     }
   ],
   "passwordHashes": {
-    "admin-sultan-001": "$2b$10$QjC50pF.gdDiyfpyJZzJFO/3zSDIlXW3vWI5vm/13Zjg/heNx0gLe"
+    "admin-sultan-001": "$2b$10$7ry.3IYiJDByQepwy0TAWOK7vgxjpRYGtA399rc9j5I8mo63rDK7W",
+    "usr-1788594159081": "$2b$10$W5FlHuSN8XKNNCu13fllseSEFYCfXRFVTjmYB.C41m4bx7NjvuMlu"
   },
   "wallets": [
     {
@@ -43,6 +57,30 @@
       "accountNumber": "01712-345678",
       "createdAt": "2026-09-03T06:43:20.562Z",
       "updatedAt": "2026-09-03T07:14:33.395Z"
+    },
+    {
+      "id": "w-cash-1788594159185",
+      "userId": "usr-1788594159081",
+      "name": "Cash Wallet",
+      "type": "cash",
+      "balance": 0,
+      "currency": "BDT",
+      "color": "#10B981",
+      "isDefault": true,
+      "createdAt": "2026-09-05T07:42:39.081Z",
+      "updatedAt": "2026-09-05T07:42:39.081Z"
+    },
+    {
+      "id": "w-bank-1788594159185",
+      "userId": "usr-1788594159081",
+      "name": "Main Bank Account",
+      "type": "bank",
+      "balance": 0,
+      "currency": "BDT",
+      "color": "#0F766E",
+      "isDefault": false,
+      "createdAt": "2026-09-05T07:42:39.081Z",
+      "updatedAt": "2026-09-05T07:42:39.081Z"
     }
   ],
   "categories": [
@@ -221,6 +259,15 @@
       "messageKey": "yixinbd@gmail.com (yixinbd@gmail.com) submitted 4999 BDT via BKASH (TrxID: 123456). Please verify and approve.",
       "isRead": false,
       "createdAt": "2026-09-03T07:11:24.958Z"
+    },
+    {
+      "id": "notif-1788594159185",
+      "userId": "usr-1788594159081",
+      "type": "system",
+      "titleKey": "Welcome to Hishab Khata!",
+      "messageKey": "Your financial workspace is ready. Add your first income or expense to get started.",
+      "isRead": false,
+      "createdAt": "2026-09-05T07:42:39.081Z"
     }
   ],
   "languages": [
@@ -1935,11 +1982,11 @@
       "plan": "pro",
       "role": "admin",
       "isOnline": true,
-      "currentView": "admin",
-      "lastActiveAt": "2026-09-03T08:52:31.187Z",
+      "currentView": "dashboard",
+      "lastActiveAt": "2026-09-05T08:28:24.844Z",
       "deviceType": "desktop",
       "browser": "Chrome",
-      "lastAction": "Viewing admin"
+      "lastAction": "Viewing dashboard"
     },
     "user-demo-001": {
       "userId": "user-demo-001",
@@ -1954,9 +2001,138 @@
       "deviceType": "desktop",
       "browser": "Chrome",
       "lastAction": "Viewing dashboard"
+    },
+    "usr-1788594159081": {
+      "userId": "usr-1788594159081",
+      "userName": "Numerical",
+      "userEmail": "nw@yixin.com",
+      "plan": "free",
+      "role": "user",
+      "isOnline": true,
+      "currentView": "dashboard",
+      "lastActiveAt": "2026-09-05T07:42:39.518Z",
+      "deviceType": "desktop",
+      "browser": "Chrome",
+      "lastAction": "Switched view to DASHBOARD"
     }
   },
   "liveActivities": [
+    {
+      "id": "act-1788596244396-f4j4",
+      "userId": "admin-sultan-001",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to DASHBOARD",
+      "currentView": "dashboard",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-05T08:17:24.396Z"
+    },
+    {
+      "id": "act-1788594836766-o5qi",
+      "userId": "admin-sultan-001",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to ADMIN",
+      "currentView": "admin",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-05T07:53:56.766Z"
+    },
+    {
+      "id": "act-1788594831924-iv9t",
+      "userId": "admin-sultan-001",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to SETTINGS",
+      "currentView": "settings",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-05T07:53:51.924Z"
+    },
+    {
+      "id": "act-1788594827657-4ej2",
+      "userId": "admin-sultan-001",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to DASHBOARD",
+      "currentView": "dashboard",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-05T07:53:47.657Z"
+    },
+    {
+      "id": "act-1788594756552-jmcq",
+      "userId": "admin-sultan-001",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to ADMIN",
+      "currentView": "admin",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-05T07:52:36.552Z"
+    },
+    {
+      "id": "act-1788594749210-zc4x",
+      "userId": "admin-sultan-001",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to DASHBOARD",
+      "currentView": "dashboard",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-05T07:52:29.210Z"
+    },
+    {
+      "id": "act-1788594193127-vldc",
+      "userId": "admin-sultan-001",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to ADMIN",
+      "currentView": "admin",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-05T07:43:13.127Z"
+    },
+    {
+      "id": "act-1788594159518-xctk",
+      "userId": "usr-1788594159081",
+      "userName": "Numerical",
+      "userEmail": "nw@yixin.com",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to DASHBOARD",
+      "currentView": "dashboard",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-05T07:42:39.518Z"
+    },
+    {
+      "id": "act-1788594111794-2uoe",
+      "userId": "admin-sultan-001",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to DASHBOARD",
+      "currentView": "dashboard",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-05T07:41:51.794Z"
+    },
     {
       "id": "act-1788584542910-ov68",
       "userId": "admin-demo-002",

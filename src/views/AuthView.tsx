@@ -77,7 +77,32 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
     return { score: 3, label: 'Strong', color: 'bg-emerald-500', text: 'text-emerald-400' };
   }, [password]);
 
-  const activeError = formError || error;
+  const formatErrorMessage = (errValue: any): string | null => {
+    if (!errValue) return null;
+    if (typeof errValue === 'string') {
+      if (errValue === '[object Object]' || errValue.includes('[object Object]')) {
+        return 'Authentication failed. Please check your credentials or network connection.';
+      }
+      return errValue;
+    }
+    if (typeof errValue === 'object') {
+      if (errValue.message && typeof errValue.message === 'string' && errValue.message !== '[object Object]') {
+        return errValue.message;
+      }
+      if (errValue.error && typeof errValue.error === 'string') {
+        return errValue.error;
+      }
+      try {
+        const str = JSON.stringify(errValue);
+        return str !== '{}' ? str : 'Authentication error occurred. Please try again.';
+      } catch {
+        return 'Authentication error occurred. Please try again.';
+      }
+    }
+    return String(errValue);
+  };
+
+  const activeError = formatErrorMessage(formError) || formatErrorMessage(error);
 
   const handleGoogleSignIn = async () => {
     setFormError(null);

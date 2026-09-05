@@ -58,17 +58,30 @@ if (typeof window !== 'undefined') {
 
 // Register PWA Service Worker with auto-update
 if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!refreshing) {
+      refreshing = true;
+      window.location.reload();
+    }
+  });
+
   window.addEventListener('load', () => {
     navigator.serviceWorker
       .register('/sw.js')
       .then((reg) => {
+        // Immediately check for updates from server
+        try {
+          reg.update();
+        } catch {}
+
         // Check for updates
         reg.addEventListener('updatefound', () => {
           const newWorker = reg.installing;
           if (newWorker) {
             newWorker.addEventListener('statechange', () => {
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                // New content is available; prompt worker to activate
+                // New content is available; prompt worker to activate immediately
                 newWorker.postMessage({ type: 'SKIP_WAITING' });
               }
             });

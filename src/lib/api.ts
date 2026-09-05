@@ -60,12 +60,22 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     let errorMsg = '';
     try {
       const data = await response.json();
-      errorMsg = data.error || data.message || '';
+      if (data) {
+        if (typeof data.error === 'string') {
+          errorMsg = data.error;
+        } else if (data.error && typeof data.error === 'object') {
+          errorMsg = data.error.message || data.error.code || JSON.stringify(data.error);
+        } else if (typeof data.message === 'string') {
+          errorMsg = data.message;
+        } else if (data.message && typeof data.message === 'object') {
+          errorMsg = data.message.message || JSON.stringify(data.message);
+        }
+      }
     } catch {
       // Non-JSON response
     }
 
-    if (!errorMsg) {
+    if (!errorMsg || errorMsg === '[object Object]') {
       if (response.status === 401) {
         errorMsg = 'Invalid email or password. Please verify and try again.';
       } else if (response.status === 400) {
@@ -81,7 +91,7 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
       }
     }
 
-    throw new Error(errorMsg);
+    throw new Error(String(errorMsg));
   }
 
   try {

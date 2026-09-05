@@ -1,5 +1,5 @@
-// Hishab Khata PWA Service Worker - v3.0.0
-const CACHE_NAME = 'hishab-khata-v3.0.0';
+// Hishab Khata PWA Service Worker - v3.1.0
+const CACHE_NAME = 'hishab-khata-v3.1.0';
 
 // Only pre-cache static, immutable brand assets - NEVER pre-cache root HTML cache-first
 const STATIC_ASSETS = [
