@@ -32,7 +32,8 @@ import {
   SlidersHorizontal,
   X,
   Filter,
-  Layers
+  Layers,
+  ChevronDown
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -46,7 +47,8 @@ import {
   PieChart,
   Pie,
   Cell,
-  Legend
+  Legend,
+  CartesianGrid
 } from 'recharts';
 import { ActivityLogWidget } from '../components/ActivityLogWidget';
 
@@ -156,12 +158,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     }
   };
 
+  // Resolve all available transactions (combining prop or summary recent)
+  const allTxList = useMemo(() => {
+    if (transactions && transactions.length > 0) return transactions;
+    if (summary?.recentTransactions && summary.recentTransactions.length > 0) return summary.recentTransactions;
+    return [];
+  }, [transactions, summary?.recentTransactions]);
+
   // Filtered transactions based on selectedMonth
   const filteredTransactions = useMemo(() => {
-    if (!transactions) return [];
-    if (selectedMonth === 'all') return transactions;
-    return transactions.filter(t => t.date && t.date.startsWith(selectedMonth));
-  }, [transactions, selectedMonth]);
+    if (!allTxList || allTxList.length === 0) return [];
+    if (selectedMonth === 'all') return allTxList;
+    return allTxList.filter(t => t.date && t.date.startsWith(selectedMonth));
+  }, [allTxList, selectedMonth]);
 
   // 1. Live converted total balance
   const displayTotalBalance = useMemo(() => {
@@ -378,15 +387,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 id="dashboard-month-selector"
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(e.target.value)}
-                className="pl-8 pr-3 py-1.5 bg-transparent text-xs font-extrabold text-slate-900 dark:text-white outline-none cursor-pointer appearance-none"
+                className="pl-8 pr-7 py-1.5 bg-transparent text-xs font-extrabold text-slate-900 dark:text-white outline-none cursor-pointer appearance-none"
               >
-                <option value="all" className="dark:bg-slate-900">All Time (Cumulative)</option>
+                <option value="all" className="bg-white text-slate-900 dark:bg-slate-900 dark:text-white">All Time (Cumulative)</option>
                 {monthOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value} className="dark:bg-slate-900">
+                  <option key={opt.value} value={opt.value} className="bg-white text-slate-900 dark:bg-slate-900 dark:text-white">
                     {opt.label} {opt.value === currentMonthStr ? '• Current' : ''}
                   </option>
                 ))}
               </select>
+              <ChevronDown className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 absolute right-1.5 pointer-events-none" />
             </div>
 
             <button
@@ -493,10 +503,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div>
             <div className="flex items-center justify-between mb-2">
               <div className="flex flex-col">
-                <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                   {t('total_income')}
                 </span>
-                <span className="text-[10px] text-teal-600 dark:text-teal-400 font-semibold truncate max-w-[140px]">
+                <span className="text-[11px] text-teal-700 dark:text-teal-400 font-bold truncate max-w-[140px]">
                   {formatMonthTitle(selectedMonth)}
                 </span>
               </div>
@@ -510,26 +520,26 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       setIsClearModalOpen(true);
                     }}
                     title="Clear income records for this month"
-                    className="px-2 py-0.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 text-[10px] font-extrabold text-rose-600 dark:text-rose-400 transition cursor-pointer"
+                    className="px-2 py-0.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 text-[10px] font-extrabold text-rose-700 dark:text-rose-400 transition cursor-pointer border border-rose-200 dark:border-rose-900/40"
                   >
                     Clear
                   </button>
                 )}
-                <div className="p-1.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-xl">
+                <div className="p-1.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 rounded-xl border border-emerald-200/60 dark:border-emerald-900/40">
                   <TrendingUp className="w-3.5 h-3.5" />
                 </div>
               </div>
             </div>
-            <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight mb-1">
+            <div className="text-2xl font-black text-emerald-700 dark:text-emerald-400 tracking-tight mb-1">
               {formatCurrency(displaySelectedIncome, currency)}
             </div>
           </div>
-          <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-100 dark:border-slate-700/60 mt-2">
-            <span className="text-slate-400 dark:text-slate-500">
+          <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-200 dark:border-slate-700/60 mt-2">
+            <span className="text-slate-600 dark:text-slate-400 font-medium">
               {filteredTransactions.filter(t => t.type === 'income').length} deposits recorded
             </span>
             {isConverted && (
-              <span className="text-[10px] text-slate-400 font-mono">
+              <span className="text-[11px] text-slate-600 dark:text-slate-300 font-mono font-semibold">
                 ≈ {formatCurrency(convertCurrency(displaySelectedIncome, currency, base), base)}
               </span>
             )}
@@ -541,10 +551,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div>
             <div className="flex items-center justify-between mb-2">
               <div className="flex flex-col">
-                <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                   {t('total_expenses')}
                 </span>
-                <span className="text-[10px] text-rose-600 dark:text-rose-400 font-semibold truncate max-w-[140px]">
+                <span className="text-[11px] text-rose-700 dark:text-rose-400 font-bold truncate max-w-[140px]">
                   {formatMonthTitle(selectedMonth)}
                 </span>
               </div>
@@ -558,12 +568,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       setIsClearModalOpen(true);
                     }}
                     title="Clear expense records for this month"
-                    className="px-2 py-0.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 text-[10px] font-extrabold text-rose-600 dark:text-rose-400 transition cursor-pointer"
+                    className="px-2 py-0.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 text-[10px] font-extrabold text-rose-700 dark:text-rose-400 transition cursor-pointer border border-rose-200 dark:border-rose-900/40"
                   >
                     Clear
                   </button>
                 )}
-                <div className="p-1.5 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 rounded-xl">
+                <div className="p-1.5 bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 rounded-xl border border-red-200/60 dark:border-red-900/40">
                   <TrendingDown className="w-3.5 h-3.5" />
                 </div>
               </div>
@@ -572,12 +582,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               {formatCurrency(displaySelectedExpenses, currency)}
             </div>
           </div>
-          <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-100 dark:border-slate-700/60 mt-2">
-            <span className="text-slate-400 dark:text-slate-500">
+          <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-200 dark:border-slate-700/60 mt-2">
+            <span className="text-slate-600 dark:text-slate-400 font-medium">
               {filteredTransactions.filter(t => t.type === 'expense').length} expenses recorded
             </span>
             {isConverted && (
-              <span className="text-[10px] text-slate-400 font-mono">
+              <span className="text-[11px] text-slate-600 dark:text-slate-300 font-mono font-semibold">
                 ≈ {formatCurrency(convertCurrency(displaySelectedExpenses, currency, base), base)}
               </span>
             )}
@@ -589,10 +599,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div>
             <div className="flex items-center justify-between mb-2">
               <div className="flex flex-col">
-                <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                   {t('net_savings')}
                 </span>
-                <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold truncate max-w-[140px]">
+                <span className="text-[11px] text-amber-700 dark:text-amber-400 font-bold truncate max-w-[140px]">
                   {formatMonthTitle(selectedMonth)}
                 </span>
               </div>
@@ -606,24 +616,24 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       setIsClearModalOpen(true);
                     }}
                     title="Clear all transactions for this month"
-                    className="px-2 py-0.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 text-[10px] font-extrabold text-rose-600 dark:text-rose-400 transition cursor-pointer"
+                    className="px-2 py-0.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 text-[10px] font-extrabold text-rose-700 dark:text-rose-400 transition cursor-pointer border border-rose-200 dark:border-rose-900/40"
                   >
                     Reset
                   </button>
                 )}
-                <div className="p-1.5 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 rounded-xl">
+                <div className="p-1.5 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 rounded-xl border border-amber-200/60 dark:border-amber-900/40">
                   <PiggyBank className="w-3.5 h-3.5" />
                 </div>
               </div>
             </div>
-            <div className={`text-2xl font-black tracking-tight mb-1 ${displayNetSavings >= 0 ? 'text-teal-700 dark:text-teal-400' : 'text-red-500'}`}>
+            <div className={`text-2xl font-black tracking-tight mb-1 ${displayNetSavings >= 0 ? 'text-teal-700 dark:text-teal-400' : 'text-red-600 dark:text-red-400'}`}>
               {formatCurrency(displayNetSavings, currency)}
             </div>
           </div>
-          <div className="flex items-center justify-between text-xs text-slate-400 dark:text-slate-500 pt-2 border-t border-slate-100 dark:border-slate-700/60 mt-2">
+          <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 font-medium pt-2 border-t border-slate-200 dark:border-slate-700/60 mt-2">
             <span>{displayNetSavings >= 0 ? 'Surplus (Positive)' : 'Deficit (Negative)'}</span>
             {isConverted && (
-              <span className="text-[10px] font-mono">
+              <span className="text-[11px] text-slate-600 dark:text-slate-300 font-mono font-semibold">
                 ≈ {formatCurrency(convertCurrency(displayNetSavings, currency, base), base)}
               </span>
             )}
@@ -638,7 +648,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             id="quick-add-expense"
             type="button"
             onClick={() => onOpenAddTransaction('expense')}
-            className="px-3.5 py-2 rounded-xl bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-900/50 text-red-700 dark:text-red-300 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+            className="px-3.5 py-2 rounded-xl bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-900/50 text-red-700 dark:text-red-300 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border border-red-200 dark:border-red-900/40 shadow-2xs"
           >
             <ArrowDownLeft className="w-4 h-4" />
             <span>Add Expense</span>
@@ -648,7 +658,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             id="quick-add-income"
             type="button"
             onClick={() => onOpenAddTransaction('income')}
-            className="px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+            className="px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border border-emerald-200 dark:border-emerald-900/40 shadow-2xs"
           >
             <ArrowUpRight className="w-4 h-4" />
             <span>Add Income</span>
@@ -658,7 +668,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             id="quick-add-transfer"
             type="button"
             onClick={() => onOpenAddTransaction('transfer')}
-            className="px-3.5 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+            className="px-3.5 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border border-blue-200 dark:border-blue-900/40 shadow-2xs"
           >
             <ArrowLeftRight className="w-4 h-4" />
             <span>Transfer</span>
@@ -668,7 +678,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             id="quick-add-goal"
             type="button"
             onClick={onOpenAddGoal}
-            className="px-3.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-900/50 text-amber-700 dark:text-amber-300 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+            className="px-3.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-900/50 text-amber-700 dark:text-amber-300 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border border-amber-200 dark:border-amber-900/40 shadow-2xs"
           >
             <Target className="w-4 h-4" />
             <span>New Goal</span>
@@ -678,7 +688,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             id="quick-add-budget"
             type="button"
             onClick={onOpenAddBudget}
-            className="px-3.5 py-2 rounded-xl bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/40 dark:hover:bg-purple-900/50 text-purple-700 dark:text-purple-300 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+            className="px-3.5 py-2 rounded-xl bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/40 dark:hover:bg-purple-900/50 text-purple-700 dark:text-purple-300 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border border-purple-200 dark:border-purple-900/40 shadow-2xs"
           >
             <PieChartIcon className="w-4 h-4" />
             <span>Set Budget</span>
@@ -697,7 +707,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       </div>
 
       {/* 3. Smart Insights Recommendation Strip */}
-      {summary.smartInsights.length > 0 && (
+      {(summary.smartInsights || []).length > 0 && (
         <div className="p-4 rounded-2xl bg-gradient-to-r from-teal-900/10 via-amber-500/10 to-teal-900/5 border border-teal-500/20 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-xl bg-teal-700 text-white shrink-0">
@@ -732,13 +742,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <h2 className="text-base font-extrabold text-slate-900 dark:text-white">
                 Cashflow & Spending Trend
               </h2>
-              <p className="text-xs text-slate-400">Past 6 months comparison</p>
+              <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">Past 6 months comparison</p>
             </div>
             <div className="flex items-center gap-3 text-xs font-semibold">
-              <span className="flex items-center gap-1.5 text-emerald-600">
+              <span className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 font-bold">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Income
               </span>
-              <span className="flex items-center gap-1.5 text-red-500">
+              <span className="flex items-center gap-1.5 text-red-600 dark:text-red-400 font-bold">
                 <span className="w-2.5 h-2.5 rounded-full bg-red-500" /> Expense
               </span>
             </div>
@@ -746,11 +756,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={convertedMonthlyTrend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <XAxis dataKey="month" stroke="#94A3B8" fontSize={11} tickLine={false} />
-                <YAxis stroke="#94A3B8" fontSize={11} tickLine={false} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" opacity={0.7} />
+                <XAxis dataKey="month" stroke="#475569" fontSize={11} tickLine={false} tick={{ fill: '#475569', fontSize: 11, fontWeight: 600 }} />
+                <YAxis stroke="#475569" fontSize={11} tickLine={false} tick={{ fill: '#475569', fontSize: 11, fontWeight: 600 }} />
                 <Tooltip
                   formatter={(val: number) => [formatCurrency(val, currency), '']}
-                  contentStyle={{ backgroundColor: '#0F172A', borderRadius: '12px', border: 'none', color: '#fff', fontSize: '12px' }}
+                  contentStyle={{ backgroundColor: '#0F172A', borderRadius: '12px', border: '1px solid #334155', color: '#fff', fontSize: '12px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.3)' }}
                 />
                 <Bar dataKey="income" fill="#10B981" radius={[6, 6, 0, 0]} />
                 <Bar dataKey="expense" fill="#EF4444" radius={[6, 6, 0, 0]} />
@@ -766,13 +777,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <h2 className="text-base font-extrabold text-slate-900 dark:text-white">
                 Expense Breakdown
               </h2>
-              <p className="text-xs text-slate-400">Current month distribution</p>
+              <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">Current month distribution</p>
             </div>
           </div>
 
           <div className="flex-1 min-h-[180px] flex items-center justify-center">
             {categoryPieData.length === 0 ? (
-              <p className="text-xs text-slate-400">No expense transactions recorded this month</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">No expense transactions recorded this month</p>
             ) : (
               <ResponsiveContainer width="100%" height={180}>
                 <PieChart>
@@ -791,7 +802,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   </Pie>
                   <Tooltip
                     formatter={(val: number) => [formatCurrency(val, currency), '']}
-                    contentStyle={{ backgroundColor: '#0F172A', borderRadius: '12px', border: 'none', color: '#fff', fontSize: '12px' }}
+                    contentStyle={{ backgroundColor: '#0F172A', borderRadius: '12px', border: '1px solid #334155', color: '#fff', fontSize: '12px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.3)' }}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -804,7 +815,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <div key={i} className="flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2 truncate">
                   <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
-                  <span className="text-slate-600 dark:text-slate-300 font-medium truncate">{c.name}</span>
+                  <span className="text-slate-700 dark:text-slate-300 font-semibold truncate">{c.name}</span>
                 </div>
                 <span className="font-bold text-slate-900 dark:text-white shrink-0">
                   {c.percentage}% ({formatCurrency(c.convertedAmount, currency)})
@@ -824,7 +835,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <h2 className="text-base font-extrabold text-slate-900 dark:text-white">
                 Monthly Category Budgets
               </h2>
-              <p className="text-xs text-slate-400">Track and prevent overspending</p>
+              <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">Track and prevent overspending</p>
             </div>
             <button
               type="button"
@@ -837,10 +848,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
 
           <div className="space-y-4">
-            {summary.budgetSummaries.length === 0 ? (
-              <div className="text-center py-6 text-slate-400">
-                <PieChartIcon className="w-8 h-8 mx-auto mb-1 opacity-30" />
-                <p className="text-xs font-medium">No budgets created yet</p>
+            {(summary.budgetSummaries || []).length === 0 ? (
+              <div className="text-center py-6 text-slate-500 dark:text-slate-400">
+                <PieChartIcon className="w-8 h-8 mx-auto mb-1 opacity-40 text-teal-600" />
+                <p className="text-xs font-semibold">No budgets created yet</p>
               </div>
             ) : (
               summary.budgetSummaries.map((b) => {
@@ -851,11 +862,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 return (
                   <div key={b.id} className="space-y-1.5">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-bold text-slate-800 dark:text-slate-200">
+                      <span className="font-bold text-slate-900 dark:text-slate-100">
                         {b.categoryName}
                       </span>
                       <div className="flex items-center gap-2">
-                        <span className="text-slate-500 dark:text-slate-400 font-medium">
+                        <span className="text-slate-600 dark:text-slate-300 font-semibold">
                           {formatCurrency(convertedSpent, currency)} / {formatCurrency(convertedAmount, currency)}
                         </span>
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
@@ -867,7 +878,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         </span>
                       </div>
                     </div>
-                    <div className="w-full h-2.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                    <div className="w-full h-2.5 bg-slate-200 dark:bg-slate-700/80 rounded-full overflow-hidden">
                       <div
                         className={`h-full rounded-full transition-all ${
                           isOver ? 'bg-red-500' : isWarning ? 'bg-amber-500' : 'bg-teal-600'
@@ -889,7 +900,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <h2 className="text-base font-extrabold text-slate-900 dark:text-white">
                 Active Savings Goals
               </h2>
-              <p className="text-xs text-slate-400">Milestones & emergency funds</p>
+              <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">Milestones & emergency funds</p>
             </div>
             <button
               type="button"
@@ -902,10 +913,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
 
           <div className="space-y-3">
-            {summary.savingsGoals.length === 0 ? (
-              <div className="text-center py-6 text-slate-400">
-                <Target className="w-8 h-8 mx-auto mb-1 opacity-30" />
-                <p className="text-xs font-medium">No savings goals created yet</p>
+            {(summary.savingsGoals || []).length === 0 ? (
+              <div className="text-center py-6 text-slate-500 dark:text-slate-400">
+                <Target className="w-8 h-8 mx-auto mb-1 opacity-40 text-teal-600" />
+                <p className="text-xs font-semibold">No savings goals created yet</p>
               </div>
             ) : (
               summary.savingsGoals.map((g) => {
@@ -914,7 +925,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 const convertedCurrent = convertCurrency(g.currentAmount, g.currency || base, currency);
                 const convertedTarget = convertCurrency(g.targetAmount, g.currency || base, currency);
                 return (
-                  <div key={g.id} className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
+                  <div key={g.id} className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3 shadow-2xs">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2 mb-1">
                         <span className="text-xs font-extrabold text-slate-900 dark:text-white truncate">
@@ -930,7 +941,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                           style={{ width: `${Math.min(100, percent)}%` }}
                         />
                       </div>
-                      <div className="flex items-center justify-between text-[11px] text-slate-400">
+                      <div className="flex items-center justify-between text-[11px] text-slate-600 dark:text-slate-400 font-medium">
                         <span>{formatCurrency(convertedCurrent, currency)} saved</span>
                         <span>Target: {formatCurrency(convertedTarget, currency)}</span>
                       </div>
@@ -959,7 +970,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <h2 className="text-base font-extrabold text-slate-900 dark:text-white">
               {t('recent_transactions')}
             </h2>
-            <p className="text-xs text-slate-400">Latest financial activities</p>
+            <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">Latest financial activities</p>
           </div>
           <button
             type="button"
@@ -971,9 +982,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </button>
         </div>
 
-        <div className="divide-y divide-slate-100 dark:divide-slate-800/80">
+        <div className="divide-y divide-slate-200 dark:divide-slate-800/80">
           {filteredTransactions.length === 0 ? (
-            <div className="text-center py-8 text-slate-400 text-xs">
+            <div className="text-center py-8 text-slate-500 dark:text-slate-400 text-xs font-medium">
               No transactions recorded for {formatMonthTitle(selectedMonth)}. Click "Add" above to start.
             </div>
           ) : (
@@ -985,9 +996,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <div key={tx.id} className="py-3 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className={`p-2.5 rounded-2xl shrink-0 ${
-                      isIncome ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400' :
-                      isTransfer ? 'bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400' :
-                      'bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400'
+                      isIncome ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-900/40' :
+                      isTransfer ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400 border border-blue-200/60 dark:border-blue-900/40' :
+                      'bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-400 border border-red-200/60 dark:border-red-900/40'
                     }`}>
                       {isIncome ? <ArrowUpRight className="w-4 h-4" /> : isTransfer ? <ArrowLeftRight className="w-4 h-4" /> : <ArrowDownLeft className="w-4 h-4" />}
                     </div>
@@ -995,7 +1006,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
                         {tx.description}
                       </p>
-                      <p className="text-[11px] text-slate-400 flex items-center gap-2">
+                      <p className="text-[11px] text-slate-600 dark:text-slate-400 font-medium flex items-center gap-2">
                         <span>{tx.date}</span>
                         {tx.note && <span className="truncate max-w-[120px]">({tx.note})</span>}
                       </p>
@@ -1004,16 +1015,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
                   <div className="text-right shrink-0">
                     <p className={`text-xs sm:text-sm font-extrabold ${
-                      isIncome ? 'text-emerald-600 dark:text-emerald-400' :
-                      isTransfer ? 'text-blue-600 dark:text-blue-400' :
+                      isIncome ? 'text-emerald-700 dark:text-emerald-400' :
+                      isTransfer ? 'text-blue-700 dark:text-blue-400' :
                       'text-red-600 dark:text-red-400'
                     }`}>
                       {isIncome ? '+' : isTransfer ? '' : '-'}{formatCurrency(convertedTxAmount, currency)}
                     </p>
-                    <div className="flex items-center justify-end gap-1 text-[10px] text-slate-400">
-                      <span className="uppercase font-semibold">{tx.type}</span>
+                    <div className="flex items-center justify-end gap-1 text-[10px] text-slate-600 dark:text-slate-400 font-medium">
+                      <span className="uppercase font-bold">{tx.type}</span>
                       {isConverted && (
-                        <span className="font-mono">({formatCurrency(tx.amount, tx.currency || base)})</span>
+                        <span className="font-mono font-semibold">({formatCurrency(tx.amount, tx.currency || base)})</span>
                       )}
                     </div>
                   </div>
@@ -1047,7 +1058,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </button>
             </div>
 
-            <p className="text-xs text-slate-600 dark:text-slate-300">
+            <p className="text-xs text-slate-700 dark:text-slate-300 font-medium">
               You are modifying financial records for: <strong className="text-teal-700 dark:text-teal-400 font-bold">{formatMonthTitle(selectedMonth)}</strong>. Choose which records to delete:
             </p>
 
@@ -1056,7 +1067,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 onClick={() => setClearType('all')}
                 className={`flex items-start gap-3 p-3 rounded-2xl border cursor-pointer transition ${
                   clearType === 'all'
-                    ? 'border-rose-500 bg-rose-50/50 dark:bg-rose-950/20 text-slate-900 dark:text-white'
+                    ? 'border-rose-500 bg-rose-50 dark:bg-rose-950/20 text-slate-900 dark:text-white ring-1 ring-rose-400/40'
                     : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50'
                 }`}
               >
@@ -1068,8 +1079,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   className="mt-0.5 text-rose-600"
                 />
                 <div className="text-xs">
-                  <p className="font-bold">All Records (Income, Expense & Transfers)</p>
-                  <p className="text-[11px] text-slate-400">Resets this month's income, expenses, and net savings back to 0. Balances in affected wallets will be recalculated automatically.</p>
+                  <p className="font-extrabold text-slate-900 dark:text-white">All Records (Income, Expense & Transfers)</p>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-400 font-medium mt-0.5">Resets this month's income, expenses, and net savings back to 0. Balances in affected wallets will be recalculated automatically.</p>
                 </div>
               </label>
 
@@ -1077,7 +1088,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 onClick={() => setClearType('income')}
                 className={`flex items-start gap-3 p-3 rounded-2xl border cursor-pointer transition ${
                   clearType === 'income'
-                    ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20 text-slate-900 dark:text-white'
+                    ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/20 text-slate-900 dark:text-white ring-1 ring-emerald-400/40'
                     : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50'
                 }`}
               >
@@ -1089,8 +1100,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   className="mt-0.5 text-emerald-600"
                 />
                 <div className="text-xs">
-                  <p className="font-bold">Income Records Only</p>
-                  <p className="text-[11px] text-slate-400">Deletes this month's income transactions. Resets Total Income to 0 for this month and deducts from wallet balances.</p>
+                  <p className="font-extrabold text-slate-900 dark:text-white">Income Records Only</p>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-400 font-medium mt-0.5">Deletes this month's income transactions. Resets Total Income to 0 for this month and deducts from wallet balances.</p>
                 </div>
               </label>
 
@@ -1098,7 +1109,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 onClick={() => setClearType('expense')}
                 className={`flex items-start gap-3 p-3 rounded-2xl border cursor-pointer transition ${
                   clearType === 'expense'
-                    ? 'border-rose-500 bg-rose-50/50 dark:bg-rose-950/20 text-slate-900 dark:text-white'
+                    ? 'border-rose-500 bg-rose-50 dark:bg-rose-950/20 text-slate-900 dark:text-white ring-1 ring-rose-400/40'
                     : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50'
                 }`}
               >
@@ -1110,13 +1121,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   className="mt-0.5 text-rose-600"
                 />
                 <div className="text-xs">
-                  <p className="font-bold">Expense Records Only</p>
-                  <p className="text-[11px] text-slate-400">Deletes this month's expense transactions. Resets Total Expenses to 0 for this month and refunds wallet balances.</p>
+                  <p className="font-extrabold text-slate-900 dark:text-white">Expense Records Only</p>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-400 font-medium mt-0.5">Deletes this month's expense transactions. Resets Total Expenses to 0 for this month and refunds wallet balances.</p>
                 </div>
               </label>
             </div>
 
-            <div className="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-2xl border border-amber-200 dark:border-amber-800/50 text-[11px] text-amber-800 dark:text-amber-300 font-medium">
+            <div className="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-2xl border border-amber-200 dark:border-amber-800/50 text-[11px] text-amber-900 dark:text-amber-300 font-semibold">
               ⚠️ <strong>Warning:</strong> Deleted transactions cannot be recovered. Wallet account balances will adjust automatically.
             </div>
 
@@ -1124,7 +1135,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <button
                 type="button"
                 onClick={() => setIsClearModalOpen(false)}
-                className="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                className="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
               >
                 Cancel
               </button>
@@ -1156,22 +1167,22 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <button
                 type="button"
                 onClick={() => setIsResetBalanceModalOpen(false)}
-                className="p-1 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition"
+                className="p-1 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700 flex items-center justify-between">
+            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex items-center justify-between">
               <div>
-                <p className="text-[11px] text-slate-400 uppercase font-bold">Current Total Net Balance</p>
+                <p className="text-[11px] text-slate-600 dark:text-slate-400 uppercase font-bold">Current Total Net Balance</p>
                 <p className="text-xl font-black text-slate-900 dark:text-white">{formatCurrency(displayTotalBalance, currency)}</p>
               </div>
               <span className="text-xs font-bold text-teal-700 dark:text-teal-400">Across {wallets.length} Wallets</span>
             </div>
 
             <div className="space-y-2">
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+              <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
                 Set Target Balance (in {base}):
               </label>
               <div className="flex items-center gap-2">
@@ -1192,7 +1203,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   Set to 0
                 </button>
               </div>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-slate-600 dark:text-slate-400 font-medium">
                 Setting this will adjust your wallet account balances to this target amount.
               </p>
             </div>
@@ -1201,7 +1212,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <button
                 type="button"
                 onClick={() => setIsResetBalanceModalOpen(false)}
-                className="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                className="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
               >
                 Cancel
               </button>
