@@ -11,6 +11,7 @@ import {
   User as UserIcon,
   ArrowRight,
   ShieldCheck,
+  ShieldAlert,
   Sparkles,
   Zap,
   Loader2,
@@ -21,7 +22,9 @@ import {
   AlertCircle,
   HelpCircle,
   KeyRound,
-  RefreshCw
+  RefreshCw,
+  Check,
+  Copy
 } from 'lucide-react';
 
 interface AuthViewProps {
@@ -62,20 +65,123 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
     return 'generic';
   }, [email]);
 
-  // Password strength calculation for register mode
-  const passwordStrength = useMemo(() => {
-    if (!password) return { score: 0, label: '', color: 'bg-slate-700' };
+  const [copiedGenerated, setCopiedGenerated] = useState(false);
+
+  // Premium Password Security & Strength Analysis
+  const passwordSecurity = useMemo(() => {
+    if (!password) {
+      return {
+        score: 0,
+        label: '',
+        color: 'bg-slate-700',
+        textColor: 'text-slate-400',
+        badgeBg: 'bg-slate-800 text-slate-400 border-slate-700',
+        checks: {
+          length: false,
+          upper: false,
+          lower: false,
+          number: false,
+          symbol: false,
+        },
+        suggestions: ['Use at least 8 characters with a mix of letters, numbers & symbols.'],
+        isSecure: false,
+      };
+    }
+
+    const hasLength = password.length >= 8;
+    const hasUpper = /[A-Z]/.test(password);
+    const hasLower = /[a-z]/.test(password);
+    const hasNumber = /\d/.test(password);
+    const hasSymbol = /[^A-Za-z0-9]/.test(password);
+
     let score = 0;
     if (password.length >= 6) score += 1;
-    if (password.length >= 8) score += 1;
-    if (/[A-Z]/.test(password) && /[a-z]/.test(password)) score += 1;
-    if (/\d/.test(password)) score += 1;
-    if (/[^A-Za-z0-9]/.test(password)) score += 1;
+    if (hasLength) score += 1;
+    if (hasUpper && hasLower) score += 1;
+    if (hasNumber) score += 1;
+    if (hasSymbol) score += 1;
 
-    if (score <= 2) return { score: 1, label: 'Weak', color: 'bg-red-500', text: 'text-red-400' };
-    if (score <= 3) return { score: 2, label: 'Good', color: 'bg-amber-500', text: 'text-amber-400' };
-    return { score: 3, label: 'Strong', color: 'bg-emerald-500', text: 'text-emerald-400' };
+    const suggestions: string[] = [];
+    if (!hasLength) suggestions.push('Use 8 or more characters');
+    if (!hasUpper) suggestions.push('Include uppercase letter (A-Z)');
+    if (!hasNumber) suggestions.push('Include numbers (0-9)');
+    if (!hasSymbol) suggestions.push('Include special symbols (!@#$)');
+
+    if (score <= 2) {
+      return {
+        score: 1,
+        label: 'Weak Password',
+        color: 'bg-rose-500',
+        textColor: 'text-rose-400',
+        badgeBg: 'bg-rose-500/10 text-rose-400 border-rose-500/30',
+        checks: { length: hasLength, upper: hasUpper, lower: hasLower, number: hasNumber, symbol: hasSymbol },
+        suggestions: suggestions.length > 0 ? suggestions : ['Try making your password longer.'],
+        isSecure: false,
+      };
+    }
+    if (score <= 3) {
+      return {
+        score: 2,
+        label: 'Moderate Strength',
+        color: 'bg-amber-500',
+        textColor: 'text-amber-400',
+        badgeBg: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
+        checks: { length: hasLength, upper: hasUpper, lower: hasLower, number: hasNumber, symbol: hasSymbol },
+        suggestions: suggestions.length > 0 ? suggestions : ['Good start! Add a symbol or capital letter to strengthen.'],
+        isSecure: false,
+      };
+    }
+    if (score === 4) {
+      return {
+        score: 3,
+        label: 'Strong Password',
+        color: 'bg-teal-400',
+        textColor: 'text-teal-400',
+        badgeBg: 'bg-teal-500/10 text-teal-400 border-teal-500/30',
+        checks: { length: hasLength, upper: hasUpper, lower: hasLower, number: hasNumber, symbol: hasSymbol },
+        suggestions: ['Strong password! Meets recommended security standards.'],
+        isSecure: true,
+      };
+    }
+    return {
+      score: 4,
+      label: 'Very Strong / Secure',
+      color: 'bg-emerald-400',
+      textColor: 'text-emerald-400',
+      badgeBg: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
+      checks: { length: hasLength, upper: hasUpper, lower: hasLower, number: hasNumber, symbol: hasSymbol },
+      suggestions: ['Bank-grade security! Excellent account protection.'],
+      isSecure: true,
+    };
   }, [password]);
+
+  // Backward compatible alias
+  const passwordStrength = useMemo(() => ({
+    score: passwordSecurity.score,
+    label: passwordSecurity.label,
+    color: passwordSecurity.color,
+    text: passwordSecurity.textColor,
+  }), [passwordSecurity]);
+
+  const handleGenerateStrongPassword = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%&*';
+    let pass = '';
+    pass += 'ABCDEFGHJKLMNPQRSTUVWXYZ'[Math.floor(Math.random() * 24)];
+    pass += 'abcdefghijkmnpqrstuvwxyz'[Math.floor(Math.random() * 24)];
+    pass += '23456789'[Math.floor(Math.random() * 8)];
+    pass += '!@#$%&*'[Math.floor(Math.random() * 7)];
+    for (let i = 4; i < 14; i++) {
+      pass += chars[Math.floor(Math.random() * chars.length)];
+    }
+    const shuffled = pass.split('').sort(() => 0.5 - Math.random()).join('');
+    setPassword(shuffled);
+    setShowPassword(true);
+    if (navigator?.clipboard) {
+      navigator.clipboard.writeText(shuffled).catch(() => {});
+      setCopiedGenerated(true);
+      setTimeout(() => setCopiedGenerated(false), 2500);
+    }
+  };
 
   const formatErrorMessage = (errValue: any): string | null => {
     if (!errValue) return null;
@@ -409,9 +515,22 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
 
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
-                  Password
-                </label>
+                <div className="flex items-center gap-2">
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                    Password
+                  </label>
+                  {mode === 'register' && (
+                    <button
+                      type="button"
+                      onClick={handleGenerateStrongPassword}
+                      className="text-[11px] font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition cursor-pointer"
+                      title="Generate a high-security random password and copy to clipboard"
+                    >
+                      <Sparkles className="w-3 h-3 text-amber-400" />
+                      <span>{copiedGenerated ? 'Copied & Applied!' : 'Suggest Strong'}</span>
+                    </button>
+                  )}
+                </div>
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
@@ -421,6 +540,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
                   <span>{showPassword ? 'Hide' : 'Show'}</span>
                 </button>
               </div>
+
               <div className="relative">
                 <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
                 <input
@@ -428,23 +548,64 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
+                  placeholder={mode === 'register' ? 'Create a secure password' : 'Enter your password'}
                   className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-700 bg-slate-950 text-white text-sm font-medium focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition placeholder:text-slate-500"
                   required
                 />
               </div>
 
-              {/* Password strength meter in Register mode */}
-              {mode === 'register' && password && (
-                <div className="mt-2 space-y-1">
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-slate-400">Strength:</span>
-                    <span className={`font-bold ${passwordStrength.text}`}>{passwordStrength.label}</span>
+              {/* Real-time Password Security Meter & Suggestions */}
+              {password && (
+                <div className="mt-2.5 p-3 rounded-2xl bg-slate-950/80 border border-slate-800/90 space-y-2.5 shadow-inner">
+                  {/* Score Bar & Header */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      {passwordSecurity.isSecure ? (
+                        <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                      ) : (
+                        <ShieldAlert className="w-4 h-4 text-amber-400" />
+                      )}
+                      <span className="text-xs text-slate-400">Security Rating:</span>
+                    </div>
+                    <span className={`text-xs font-black px-2 py-0.5 rounded-full border ${passwordSecurity.badgeBg}`}>
+                      {passwordSecurity.label}
+                    </span>
                   </div>
-                  <div className="grid grid-cols-3 gap-1.5 h-1.5">
-                    <div className={`h-full rounded-full transition-all ${passwordStrength.score >= 1 ? passwordStrength.color : 'bg-slate-800'}`} />
-                    <div className={`h-full rounded-full transition-all ${passwordStrength.score >= 2 ? passwordStrength.color : 'bg-slate-800'}`} />
-                    <div className={`h-full rounded-full transition-all ${passwordStrength.score >= 3 ? passwordStrength.color : 'bg-slate-800'}`} />
+
+                  {/* 4-Segment Strength Progress Bar */}
+                  <div className="grid grid-cols-4 gap-1.5 h-1.5">
+                    <div className={`h-full rounded-full transition-all duration-300 ${passwordSecurity.score >= 1 ? passwordSecurity.color : 'bg-slate-800'}`} />
+                    <div className={`h-full rounded-full transition-all duration-300 ${passwordSecurity.score >= 2 ? passwordSecurity.color : 'bg-slate-800'}`} />
+                    <div className={`h-full rounded-full transition-all duration-300 ${passwordSecurity.score >= 3 ? passwordSecurity.color : 'bg-slate-800'}`} />
+                    <div className={`h-full rounded-full transition-all duration-300 ${passwordSecurity.score >= 4 ? passwordSecurity.color : 'bg-slate-800'}`} />
+                  </div>
+
+                  {/* Interactive Checklist Pills (Register mode) */}
+                  {mode === 'register' && (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 pt-1">
+                      <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg border transition ${passwordSecurity.checks.length ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-400' : 'bg-slate-900 border-slate-800 text-slate-500'}`}>
+                        {passwordSecurity.checks.length ? <Check className="w-3 h-3 text-emerald-400 shrink-0" /> : <span className="w-3 text-center">•</span>}
+                        <span>8+ chars</span>
+                      </div>
+                      <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg border transition ${passwordSecurity.checks.upper ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-400' : 'bg-slate-900 border-slate-800 text-slate-500'}`}>
+                        {passwordSecurity.checks.upper ? <Check className="w-3 h-3 text-emerald-400 shrink-0" /> : <span className="w-3 text-center">•</span>}
+                        <span>Uppercase</span>
+                      </div>
+                      <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg border transition ${passwordSecurity.checks.number ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-400' : 'bg-slate-900 border-slate-800 text-slate-500'}`}>
+                        {passwordSecurity.checks.number ? <Check className="w-3 h-3 text-emerald-400 shrink-0" /> : <span className="w-3 text-center">•</span>}
+                        <span>Number (0-9)</span>
+                      </div>
+                      <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg border transition ${passwordSecurity.checks.symbol ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-400' : 'bg-slate-900 border-slate-800 text-slate-500'}`}>
+                        {passwordSecurity.checks.symbol ? <Check className="w-3 h-3 text-emerald-400 shrink-0" /> : <span className="w-3 text-center">•</span>}
+                        <span>Symbol (!@#)</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Smart Guidance / Suggestion Hint */}
+                  <div className="pt-0.5 text-[11px] leading-relaxed text-slate-400 flex items-start gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                    <span>{passwordSecurity.suggestions[0]}</span>
                   </div>
                 </div>
               )}

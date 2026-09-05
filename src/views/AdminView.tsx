@@ -572,11 +572,14 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
     const list = Array.from(map.values());
     const nowMs = Date.now();
 
-    // Re-evaluate online/away
+    // Re-evaluate online/away based on real active timestamp
     const evaluated = list.map((p) => {
-      const lastMs = new Date(p.lastActiveAt).getTime();
-      const diffMs = nowMs - lastMs;
-      const isOnline = p.isOnline || diffMs < 90000;
+      const lastMs = new Date(p.lastActiveAt || 0).getTime();
+      const isValidDate = !isNaN(lastMs) && lastMs > 0;
+      const diffMs = isValidDate ? nowMs - lastMs : Infinity;
+      const isCurrent = user && (user.id === p.userId || user.email === p.userEmail);
+      // Online: active within last 90 seconds or is current active admin session
+      const isOnline = Boolean(isCurrent || (diffMs < 90000));
       const statusGroup: 'online' | 'away' | 'offline' = isOnline
         ? 'online'
         : (diffMs < 600000 ? 'away' : 'offline');
@@ -1205,7 +1208,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
                         <div className="flex items-center justify-between text-xs">
                           <span className="text-slate-400 font-medium">Current View:</span>
                           <span className="font-bold text-teal-700 dark:text-teal-300 capitalize truncate max-w-[150px]">
-                            {p.currentView.replace('-', ' ')}
+                            {String(p.currentView || 'dashboard').replace(/-/g, ' ')}
                           </span>
                         </div>
 
@@ -1213,7 +1216,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
                           <span className="text-slate-400 font-medium">Device & Browser:</span>
                           <span className="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-1">
                             <Laptop className="w-3 h-3 text-slate-400" />
-                            <span>{p.deviceType} / {p.browser}</span>
+                            <span>{p.deviceType || 'Desktop'} / {p.browser || 'Browser'}</span>
                           </span>
                         </div>
 
@@ -1229,7 +1232,14 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
                     <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between">
                       <span className="text-[10px] text-slate-400 flex items-center gap-1">
                         <Clock className="w-3 h-3" />
-                        <span>{new Date(p.lastActiveAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+                        <span>
+                          {p.lastActiveAt
+                            ? (() => {
+                                const d = new Date(p.lastActiveAt);
+                                return isNaN(d.getTime()) ? 'Recently' : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                              })()
+                            : 'Just now'}
+                        </span>
                       </span>
 
                       {!isCurrentAdmin && (
