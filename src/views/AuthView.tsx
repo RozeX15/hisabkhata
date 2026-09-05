@@ -282,6 +282,19 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
                       <span>Click here to Sign In instead</span>
                     </button>
                   )}
+                  {activeError.includes('restricted on this domain') && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const targetEmail = email.trim().includes('@') ? email.trim() : 'sultanitbangladesh@gmail.com';
+                        loginWithGoogle(targetEmail).then(onSuccess).catch((e: any) => setFormError(e.message));
+                      }}
+                      className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-lg transition cursor-pointer"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Direct Sign-In with Google ({email.trim().includes('@') ? email.trim() : 'sultanitbangladesh@gmail.com'})</span>
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

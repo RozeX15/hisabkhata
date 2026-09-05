@@ -280,6 +280,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return res.user;
     } catch (err: any) {
       const errMsg = err?.message || '';
+      const isUnauthorizedDomain =
+        err?.code === 'auth/unauthorized-domain' ||
+        errMsg.includes('unauthorized domain') ||
+        errMsg.includes('auth/unauthorized-domain');
       const isConfigOrNotFound =
         errMsg.includes('Requested resource was not found') ||
         err?.code === 'auth/configuration-not-found' ||
@@ -288,6 +292,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
         setError(null);
+      } else if (isUnauthorizedDomain) {
+        const friendlyMsg = 'Google Popup is restricted on this domain. You can sign in directly below with your email & password or use Direct Google Sign-In.';
+        setError(friendlyMsg);
+        const wrappedErr = new Error(friendlyMsg);
+        (wrappedErr as any).isUnauthorizedDomain = true;
+        throw wrappedErr;
       } else if (isConfigOrNotFound) {
         const friendlyMsg = 'Google Authentication is currently unavailable via popup in this environment. Please sign in with your email & password or direct ID.';
         setError(friendlyMsg);
