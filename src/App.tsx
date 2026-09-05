@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { AuthProvider, useAuth } from './lib/auth';
 import { I18nProvider, useI18n } from './lib/i18n';
 import { api } from './lib/api';
+import { safeStorage } from './lib/storage';
 import { playNotificationChime, triggerNativePushNotification } from './lib/pushNotifications';
 import {
   Wallet,
@@ -54,11 +55,20 @@ const MainAppContent: React.FC = () => {
   const { user, token, logout, loginDemoUser, loginWithGoogle, loginSultanAdmin } = useAuth();
   const { isRTL, currency, setCurrency } = useI18n();
 
+  // Clean stale reload locks once React mounts cleanly
+  useEffect(() => {
+    try {
+      sessionStorage.removeItem('hk_chunk_reload_lock');
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
   // Navigation State
   const [activeView, setActiveView] = useState<string>('dashboard');
   const [legalType, setLegalType] = useState<'privacy' | 'terms' | 'about'>('about');
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
-    return localStorage.getItem('hishab_dark_mode') === 'true';
+    return safeStorage.getItem('hishab_dark_mode') === 'true';
   });
 
   // Realtime Live Presence Tracker
@@ -104,8 +114,8 @@ const MainAppContent: React.FC = () => {
   useEffect(() => {
     if (user?.id) {
       const userTutorialKey = `hk_onboarding_${user.id}`;
-      const hasSeenUser = localStorage.getItem(userTutorialKey);
-      const hasSeenGlobal = localStorage.getItem('hk_onboarding_completed');
+      const hasSeenUser = safeStorage.getItem(userTutorialKey);
+      const hasSeenGlobal = safeStorage.getItem('hk_onboarding_completed');
       if (!hasSeenUser && !hasSeenGlobal) {
         // Automatically display the tutorial
         const timer = setTimeout(() => {
@@ -125,7 +135,7 @@ const MainAppContent: React.FC = () => {
       document.documentElement.classList.remove('dark');
       document.body.classList.remove('dark');
     }
-    localStorage.setItem('hishab_dark_mode', String(isDarkMode));
+    safeStorage.setItem('hishab_dark_mode', String(isDarkMode));
   }, [isDarkMode]);
 
   // Load All User Financial Data

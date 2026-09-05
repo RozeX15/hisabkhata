@@ -1,3 +1,4 @@
+import { safeStorage } from './storage';
 import {
   User,
   Wallet,
@@ -22,14 +23,14 @@ import {
 const API_BASE = '/api';
 
 export function getAuthToken(): string | null {
-  return localStorage.getItem('hk_auth_token');
+  return safeStorage.getItem('hk_auth_token');
 }
 
 export function setAuthToken(token: string | null) {
   if (token) {
-    localStorage.setItem('hk_auth_token', token);
+    safeStorage.setItem('hk_auth_token', token);
   } else {
-    localStorage.removeItem('hk_auth_token');
+    safeStorage.removeItem('hk_auth_token');
   }
 }
 

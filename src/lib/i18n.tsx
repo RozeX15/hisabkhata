@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { defaultLanguages, baseTranslations } from './translations';
 import { LanguageInfo } from '../types';
+import { safeStorage } from './storage';
 
 interface I18nContextType {
   language: string;
@@ -36,15 +37,15 @@ const KEY_ALIASES: Record<string, string> = {
 
 export const I18nProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<string>(() => {
-    return localStorage.getItem('hk_language') || 'en';
+    return safeStorage.getItem('hk_language') || 'en';
   });
 
   const [currency, setCurrencyState] = useState<string>(() => {
-    return localStorage.getItem('hk_currency') || 'BDT';
+    return safeStorage.getItem('hk_currency') || 'BDT';
   });
 
   const [languages, setLanguagesList] = useState<LanguageInfo[]>(() => {
-    const saved = localStorage.getItem('hk_languages_list');
+    const saved = safeStorage.getItem('hk_languages_list');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -63,7 +64,7 @@ export const I18nProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   });
 
   const [customTranslations, setCustomTranslations] = useState<Record<string, Record<string, string>>>(() => {
-    const saved = localStorage.getItem('hk_custom_translations');
+    const saved = safeStorage.getItem('hk_custom_translations');
     if (saved) {
       try { return JSON.parse(saved); } catch { /* ignore */ }
     }
@@ -77,13 +78,13 @@ export const I18nProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const setCurrency = (curr: string) => {
     setCurrencyState(curr);
-    localStorage.setItem('hk_currency', curr);
+    safeStorage.setItem('hk_currency', curr);
   };
 
   useEffect(() => {
     document.documentElement.dir = isRtl ? 'rtl' : 'ltr';
     document.documentElement.lang = language;
-    localStorage.setItem('hk_language', language);
+    safeStorage.setItem('hk_language', language);
   }, [language, isRtl]);
 
   const setLanguage = (newLang: string) => {
@@ -92,7 +93,7 @@ export const I18nProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     const validCode = targetLang ? targetLang.code : 'en';
     setLanguageState(validCode);
-    localStorage.setItem('hk_language', validCode);
+    safeStorage.setItem('hk_language', validCode);
 
     const isLangRtl = Boolean(targetLang?.isRtl);
     document.documentElement.dir = isLangRtl ? 'rtl' : 'ltr';
@@ -100,7 +101,7 @@ export const I18nProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     // Background sync with user profile if logged in
     try {
-      const token = localStorage.getItem('hk_auth_token');
+      const token = safeStorage.getItem('hk_auth_token');
       if (token) {
         fetch('/api/users/profile', {
           method: 'PUT',
@@ -123,7 +124,7 @@ export const I18nProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           [key]: val,
         },
       };
-      localStorage.setItem('hk_custom_translations', JSON.stringify(updated));
+      safeStorage.setItem('hk_custom_translations', JSON.stringify(updated));
       return updated;
     });
   };
