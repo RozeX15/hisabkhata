@@ -82,6 +82,43 @@ export const SuggestionsView: React.FC<SuggestionsViewProps> = ({
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
+  // Anti-Spam state
+  const [cooldownSec, setCooldownSec] = useState<number>(0);
+  const [mathA, setMathA] = useState<number>(5);
+  const [mathB, setMathB] = useState<number>(3);
+  const [mathInput, setMathInput] = useState<string>('');
+
+  const generateNewMathChallenge = () => {
+    const a = Math.floor(Math.random() * 8) + 2;
+    const b = Math.floor(Math.random() * 7) + 1;
+    setMathA(a);
+    setMathB(b);
+    setMathInput('');
+  };
+
+  // Check persistent anti-flood cooldown
+  useEffect(() => {
+    const checkCooldown = () => {
+      try {
+        const until = parseInt(sessionStorage.getItem('hk_sug_cooldown_until') || '0', 10);
+        const remaining = Math.max(0, Math.ceil((until - Date.now()) / 1000));
+        setCooldownSec(remaining);
+      } catch {
+        // Safe fallback
+      }
+    };
+    checkCooldown();
+    const timer = setInterval(checkCooldown, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Regenerate math challenge when modal opens
+  useEffect(() => {
+    if (isModalOpen) {
+      generateNewMathChallenge();
+    }
+  }, [isModalOpen]);
+
   // Upvoting tracking
   const [upvotingIds, setUpvotingIds] = useState<Set<string>>(new Set());
 
@@ -117,14 +154,42 @@ export const SuggestionsView: React.FC<SuggestionsViewProps> = ({
     setErrorMsg('');
     setSuccessMsg('');
 
-    if (!title.trim() || !description.trim()) {
+    if (cooldownSec > 0 && user?.role !== 'admin') {
+      setErrorMsg(`Anti-Spam Cooldown: Please wait ${cooldownSec}s before submitting again.`);
+      return;
+    }
+
+    const cleanTitle = title.trim();
+    const cleanDesc = description.trim();
+
+    if (!cleanTitle || !cleanDesc) {
       setErrorMsg('Please provide both a title and details for your suggestion.');
       return;
     }
 
+    if (cleanTitle.length < 5) {
+      setErrorMsg('Title must be at least 5 characters long.');
+      return;
+    }
+
+    if (cleanDesc.length < 15) {
+      setErrorMsg('Please provide more details in the description (at least 15 characters).');
+      return;
+    }
+
+    // Anti-Bot Math Challenge verification
+    if (parseInt(mathInput.trim(), 10) !== (mathA + mathB)) {
+      setErrorMsg(`Anti-Bot Verification: ${mathA} + ${mathB} is not "${mathInput}". Please answer correctly.`);
+      return;
+    }
+
     if (hasSuperChat) {
-      if (effectiveAmount <= 0) {
-        setErrorMsg('Please specify a valid SuperChat amount greater than 0.');
+      if (effectiveAmount < 10) {
+        setErrorMsg('Minimum SuperChat contribution is 10 BDT.');
+        return;
+      }
+      if (effectiveAmount > 50000) {
+        setErrorMsg('Maximum SuperChat contribution is 50,000 BDT.');
         return;
       }
       if (paymentMethod === 'wallet_balance') {
@@ -138,17 +203,35 @@ export const SuggestionsView: React.FC<SuggestionsViewProps> = ({
           return;
         }
       }
-      if ((paymentMethod === 'bkash' || paymentMethod === 'nagad') && !paymentTrxId.trim()) {
-        setErrorMsg('Please enter the SMS TrxID / Transaction ID for verification.');
-        return;
+      if (paymentMethod === 'bkash' || paymentMethod === 'nagad') {
+        const cleanTrx = paymentTrxId.trim().toUpperCase();
+        if (!cleanTrx) {
+          setErrorMsg('Please enter the SMS TrxID / Transaction ID for verification.');
+          return;
+        }
+        if (cleanTrx.length < 8) {
+          setErrorMsg('Transaction ID must be at least 8 characters long.');
+          return;
+        }
+        if (!/^[A-Z0-9]+$/.test(cleanTrx)) {
+          setErrorMsg('Transaction ID should only contain letters and numbers (no spaces or special symbols).');
+          return;
+        }
+        if (senderNumber.trim()) {
+          const cleanPhone = senderNumber.replace(/\D/g, '');
+          if (!/^(?:88)?01[3-9]\d{8}$/.test(cleanPhone)) {
+            setErrorMsg('Invalid Bangladeshi mobile number format. Must be an 11-digit number starting with 013-019.');
+            return;
+          }
+        }
       }
     }
 
     setSubmitting(true);
     try {
       await api.submitSuggestion({
-        title: title.trim(),
-        description: description.trim(),
+        title: cleanTitle,
+        description: cleanDesc,
         category,
         impact,
         hasSuperChat,
@@ -157,7 +240,7 @@ export const SuggestionsView: React.FC<SuggestionsViewProps> = ({
         superChatMessage: superChatMessage.trim() || undefined,
         paymentMethod: hasSuperChat ? paymentMethod : undefined,
         walletId: hasSuperChat && paymentMethod === 'wallet_balance' ? walletId : undefined,
-        paymentTrxId: hasSuperChat && paymentTrxId.trim() ? paymentTrxId.trim() : undefined,
+        paymentTrxId: hasSuperChat && paymentTrxId.trim() ? paymentTrxId.trim().toUpperCase() : undefined,
         senderNumber: hasSuperChat && senderNumber.trim() ? senderNumber.trim() : undefined,
       });
 
@@ -169,6 +252,11 @@ export const SuggestionsView: React.FC<SuggestionsViewProps> = ({
         });
       }
 
+      // Activate 45s cooldown
+      const nextCooldown = Date.now() + 45000;
+      sessionStorage.setItem('hk_sug_cooldown_until', String(nextCooldown));
+      setCooldownSec(45);
+
       setSuccessMsg(hasSuperChat ? '🎉 SuperChat sent! Sultan Admin has been alerted!' : '✅ Suggestion posted successfully!');
       setTitle('');
       setDescription('');
@@ -177,6 +265,7 @@ export const SuggestionsView: React.FC<SuggestionsViewProps> = ({
       setPaymentTrxId('');
       setSenderNumber('');
       setCustomAmount('');
+      setMathInput('');
       
       await loadSuggestions();
       if (onRefreshWallets && hasSuperChat && paymentMethod === 'wallet_balance') {
@@ -189,6 +278,7 @@ export const SuggestionsView: React.FC<SuggestionsViewProps> = ({
       }, 1400);
     } catch (err: any) {
       setErrorMsg(err.message || 'Failed to submit suggestion');
+      generateNewMathChallenge();
     } finally {
       setSubmitting(false);
     }
@@ -567,12 +657,18 @@ export const SuggestionsView: React.FC<SuggestionsViewProps> = ({
 
               {/* Title */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Suggestion Title *
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Suggestion Title *
+                  </label>
+                  <span className={`text-[10px] ${title.length > 110 ? 'text-amber-500 font-bold' : 'text-slate-400'}`}>
+                    {title.length}/120
+                  </span>
+                </div>
                 <input
                   type="text"
                   required
+                  maxLength={120}
                   placeholder="e.g. Add monthly budget report PDF export with charts"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
@@ -619,11 +715,17 @@ export const SuggestionsView: React.FC<SuggestionsViewProps> = ({
 
               {/* Details */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Detailed Explanation *
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Detailed Explanation *
+                  </label>
+                  <span className={`text-[10px] ${description.length > 1100 ? 'text-amber-500 font-bold' : 'text-slate-400'}`}>
+                    {description.length}/1200
+                  </span>
+                </div>
                 <textarea
                   required
+                  maxLength={1200}
                   rows={4}
                   placeholder="Describe your idea or what feature you want implemented, and why it would be helpful..."
                   value={description}
@@ -836,6 +938,40 @@ export const SuggestionsView: React.FC<SuggestionsViewProps> = ({
                 )}
               </div>
 
+              {/* Anti-Bot & Anti-Spam Security Section */}
+              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700/80 space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-200">
+                    <ShieldCheck className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+                    <span>Anti-Spam & Human Check *</span>
+                  </div>
+                  <span className="text-[10px] text-teal-700 dark:text-teal-400 font-semibold">Security Verified</span>
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
+                  To protect community suggestions from automated bots, please solve this quick math check:
+                </p>
+                <div className="flex items-center gap-2.5 pt-1">
+                  <div className="px-3 py-1.5 rounded-xl bg-teal-100 dark:bg-teal-950/80 border border-teal-200 dark:border-teal-800 text-teal-900 dark:text-teal-200 font-black text-xs font-mono select-none shadow-sm">
+                    {mathA} + {mathB} = ?
+                  </div>
+                  <input
+                    type="number"
+                    required
+                    placeholder="Enter answer"
+                    value={mathInput}
+                    onChange={(e) => setMathInput(e.target.value)}
+                    className="w-32 px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-xs font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={generateNewMathChallenge}
+                    className="text-[11px] text-teal-600 dark:text-teal-400 hover:underline cursor-pointer font-bold"
+                  >
+                    Refresh
+                  </button>
+                </div>
+              </div>
+
               {/* Submit Button */}
               <div className="pt-2 flex items-center justify-end gap-2.5">
                 <button
@@ -847,8 +983,8 @@ export const SuggestionsView: React.FC<SuggestionsViewProps> = ({
                 </button>
                 <button
                   type="submit"
-                  disabled={submitting}
-                  className={`px-5 py-2.5 rounded-xl font-bold text-xs text-white transition flex items-center gap-2 cursor-pointer ${
+                  disabled={submitting || (cooldownSec > 0 && user?.role !== 'admin')}
+                  className={`px-5 py-2.5 rounded-xl font-bold text-xs text-white transition flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
                     hasSuperChat
                       ? 'bg-amber-500 hover:bg-amber-600 text-slate-950 font-black shadow-md'
                       : 'bg-teal-700 hover:bg-teal-800'
@@ -856,6 +992,8 @@ export const SuggestionsView: React.FC<SuggestionsViewProps> = ({
                 >
                   {submitting ? (
                     <span>Submitting...</span>
+                  ) : cooldownSec > 0 && user?.role !== 'admin' ? (
+                    <span>Cooldown ({cooldownSec}s)...</span>
                   ) : (
                     <>
                       <Send className="w-3.5 h-3.5" />

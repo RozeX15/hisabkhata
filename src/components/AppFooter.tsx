@@ -42,12 +42,30 @@ export const AppFooter: React.FC<AppFooterProps> = ({
   const { t, language } = useI18n();
 
   const scrollToTop = () => {
-    // Scroll the window or main container
-    const mainContainer = document.querySelector('main');
-    if (mainContainer) {
-      mainContainer.scrollTo({ top: 0, behavior: 'smooth' });
+    // Primary target: the main overflow-y-auto layout container in App.tsx
+    const scrollContainer =
+      document.getElementById('main-scroll-container') ||
+      document.querySelector('div.overflow-y-auto') ||
+      document.querySelector('main');
+
+    if (scrollContainer) {
+      try {
+        scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+      } catch {
+        scrollContainer.scrollTop = 0;
+      }
     }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    try {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch {
+      window.scrollTo(0, 0);
+    }
+    try {
+      document.documentElement.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch {
+      document.documentElement.scrollTop = 0;
+    }
   };
 
   // -------------------------------------------------------------
@@ -75,7 +93,7 @@ export const AppFooter: React.FC<AppFooterProps> = ({
                 </span>
               </div>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                Owner Access: <span className="font-semibold text-slate-700 dark:text-slate-200">{userEmail || 'sultanitbangladesh@gmail.com'}</span>
+                Owner Access: <span className="font-semibold text-slate-700 dark:text-slate-200">{userEmail || 'Authorized Administrator'}</span>
               </p>
             </div>
           </div>

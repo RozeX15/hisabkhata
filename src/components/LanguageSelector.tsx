@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useI18n } from '../lib/i18n';
 import { Globe, ChevronDown, Check } from 'lucide-react';
 
-export const LanguageSelector: React.FC<{ variant?: 'minimal' | 'full' | 'dropdown' }> = ({ variant = 'dropdown' }) => {
+export const LanguageSelector: React.FC<{ variant?: 'minimal' | 'full' | 'dropdown'; isDarkBg?: boolean }> = ({ variant = 'dropdown', isDarkBg = false }) => {
   const { language, setLanguage, languages, isRtl } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -41,7 +41,9 @@ export const LanguageSelector: React.FC<{ variant?: 'minimal' | 'full' | 'dropdo
               className={`p-3 rounded-2xl border text-left flex items-center justify-between transition cursor-pointer ${
                 isSelected
                   ? 'border-teal-600 bg-teal-50/80 dark:bg-teal-950/40 text-teal-800 dark:text-teal-200 ring-2 ring-teal-500/20 shadow-sm'
-                  : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600'
+                  : isDarkBg
+                    ? 'border-slate-800 bg-slate-900/90 text-slate-200 hover:border-slate-700'
+                    : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600'
               }`}
             >
               <div>
@@ -75,27 +77,39 @@ export const LanguageSelector: React.FC<{ variant?: 'minimal' | 'full' | 'dropdo
         id="language-selector-btn"
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="inline-flex items-center gap-2 px-3 py-1.5 text-xs sm:text-sm font-semibold rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/70 transition shadow-xs cursor-pointer"
+        className={`inline-flex items-center gap-2 px-3 py-1.5 text-xs sm:text-sm font-semibold rounded-xl border transition shadow-xs cursor-pointer ${
+          isDarkBg
+            ? 'border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800'
+            : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/70'
+        }`}
         aria-expanded={isOpen}
       >
-        <Globe className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+        <Globe className="w-4 h-4 text-teal-500 dark:text-teal-400 shrink-0" />
         <span className="font-bold">{currentLang?.nativeName || currentLang?.name}</span>
         {currentLang?.isRtl && (
-          <span className="px-1 py-0.2 text-[9px] bg-teal-100 dark:bg-teal-900/60 text-teal-800 dark:text-teal-300 rounded font-bold">RTL</span>
+          <span className="px-1 py-0.2 text-[9px] bg-teal-900/60 text-teal-300 rounded font-bold">RTL</span>
         )}
         <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
       </button>
 
       {isOpen && (
-        <div className={`absolute z-50 mt-1.5 w-64 origin-top rounded-2xl bg-white dark:bg-slate-800 shadow-2xl border border-slate-200 dark:border-slate-700 py-2 max-h-96 overflow-hidden flex flex-col focus:outline-none ${isRtl ? 'left-0' : 'right-0'}`}>
-          <div className="px-3 pb-2 border-b border-slate-100 dark:border-slate-700/60">
+        <div className={`absolute z-50 mt-1.5 w-64 origin-top rounded-2xl shadow-2xl border py-2 max-h-96 overflow-hidden flex flex-col focus:outline-none ${
+          isDarkBg
+            ? 'bg-slate-900 border-slate-700 text-slate-100'
+            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100'
+        } ${isRtl ? 'left-0' : 'right-0'}`}>
+          <div className={`px-3 pb-2 border-b ${isDarkBg ? 'border-slate-800' : 'border-slate-100 dark:border-slate-700/60'}`}>
             <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Select Language / ভাষা নির্বাচন</p>
             <input
               type="text"
               placeholder="Search language..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full px-2.5 py-1 text-xs rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-teal-500"
+              className={`w-full px-2.5 py-1 text-xs rounded-lg border placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-teal-500 ${
+                isDarkBg
+                  ? 'bg-slate-950 border-slate-700 text-white'
+                  : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white'
+              }`}
               onClick={(e) => e.stopPropagation()}
             />
           </div>
@@ -115,18 +129,20 @@ export const LanguageSelector: React.FC<{ variant?: 'minimal' | 'full' | 'dropdo
                   }}
                   className={`w-full flex items-center justify-between px-3.5 py-2 text-xs sm:text-sm text-left ${
                     isSelected
-                      ? 'bg-teal-50 dark:bg-teal-950/50 text-teal-700 dark:text-teal-300 font-bold'
-                      : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50'
+                      ? 'bg-teal-950/60 text-teal-300 font-bold'
+                      : isDarkBg
+                        ? 'text-slate-200 hover:bg-slate-800'
+                        : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50'
                   } transition cursor-pointer`}
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <span className="font-semibold truncate">{lang.nativeName}</span>
                     <span className="text-[11px] text-slate-400 font-normal truncate">({lang.name})</span>
                     {lang.isRtl && (
-                      <span className="px-1 py-0.2 text-[8px] bg-teal-100 dark:bg-teal-900/60 text-teal-700 dark:text-teal-300 rounded font-bold">RTL</span>
+                      <span className="px-1 py-0.2 text-[8px] bg-teal-900/60 text-teal-300 rounded font-bold">RTL</span>
                     )}
                   </div>
-                  {isSelected && <Check className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />}
+                  {isSelected && <Check className="w-4 h-4 text-teal-400 shrink-0" />}
                 </button>
               );
             })}

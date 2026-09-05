@@ -2815,6 +2815,41 @@ router.put('/admin/system-limits', adminOnly, (req: AuthRequest, res) => {
 // SUGGESTIONS & SUPERCHAT APIS
 // ==========================================
 
+// Anti-Spam protection for Suggestions & SuperChat
+const suggestionCooldowns = new Map<string, number>(); // userId -> timestamp of last submission
+const suggestionHourlyCounters = new Map<string, { count: number; windowStart: number }>();
+
+const SPAM_PATTERNS = [
+  /1xbet/i,
+  /melbet/i,
+  /babu88/i,
+  /crazytime/i,
+  /bet365/i,
+  /casino/i,
+  /slot88/i,
+  /t\.me\//i,
+  /telegram\.me/i,
+  /wa\.me\//i,
+  /whatsapp/i,
+  /earn-money-fast/i,
+  /free-diamonds/i,
+  /crypto-giveaway/i,
+  /bit\.ly\//i,
+  /tinyurl\.com\//i,
+];
+
+function checkSpamText(text: string): { isSpam: boolean; message?: string } {
+  if (/(.)\1{7,}/.test(text)) {
+    return { isSpam: true, message: 'Spam detected: Excessive repetitive characters.' };
+  }
+  for (const pattern of SPAM_PATTERNS) {
+    if (pattern.test(text)) {
+      return { isSpam: true, message: 'Spam detected: External gambling, casino, or promotional links are forbidden.' };
+    }
+  }
+  return { isSpam: false };
+}
+
 router.get('/suggestions', (req: AuthRequest, res) => {
   const db = getDb();
   const suggestions = db.suggestions || [];
@@ -2840,45 +2875,173 @@ router.post('/suggestions', authMiddleware, (req: AuthRequest, res) => {
     walletId,
   } = req.body;
 
-  if (!title || !description) {
-    return res.status(400).json({ error: 'Title and description are required' });
+  const now = Date.now();
+
+  // 1. Anti-Flood Cooldown Check (45s)
+  const lastTime = suggestionCooldowns.get(user.id) || 0;
+  const cooldownPeriod = 45 * 1000;
+  if (now - lastTime < cooldownPeriod && user.role !== 'admin') {
+    const remainingSec = Math.ceil((cooldownPeriod - (now - lastTime)) / 1000);
+    return res.status(429).json({
+      error: `Anti-Spam Security: Please wait ${remainingSec} seconds before submitting another suggestion or SuperChat.`,
+    });
+  }
+
+  // 2. Hourly Rate Limit Check (5 submissions / hour)
+  const userHourly = suggestionHourlyCounters.get(user.id) || { count: 0, windowStart: now };
+  if (now - userHourly.windowStart > 3600 * 1000) {
+    userHourly.count = 0;
+    userHourly.windowStart = now;
+  }
+  if (userHourly.count >= 5 && user.role !== 'admin') {
+    return res.status(429).json({
+      error: 'Anti-Spam Limit: You have reached the maximum limit of 5 suggestions/SuperChats per hour. Please try again later.',
+    });
+  }
+
+  // 3. String Sanitization & Length Checks
+  const cleanTitle = String(title || '').trim();
+  const cleanDescription = String(description || '').trim();
+  const cleanSuperChatMessage = String(superChatMessage || '').trim();
+
+  if (cleanTitle.length < 5) {
+    return res.status(400).json({ error: 'Title must be at least 5 characters long.' });
+  }
+  if (cleanTitle.length > 120) {
+    return res.status(400).json({ error: 'Title cannot exceed 120 characters.' });
+  }
+  if (cleanDescription.length < 15) {
+    return res.status(400).json({ error: 'Description must be at least 15 characters long to provide sufficient detail.' });
+  }
+  if (cleanDescription.length > 1200) {
+    return res.status(400).json({ error: 'Description cannot exceed 1200 characters.' });
+  }
+  if (cleanSuperChatMessage.length > 300) {
+    return res.status(400).json({ error: 'SuperChat note cannot exceed 300 characters.' });
+  }
+
+  // 4. Spam Pattern Detection
+  const spamCheckTitle = checkSpamText(cleanTitle);
+  if (spamCheckTitle.isSpam) return res.status(400).json({ error: spamCheckTitle.message });
+
+  const spamCheckDesc = checkSpamText(cleanDescription);
+  if (spamCheckDesc.isSpam) return res.status(400).json({ error: spamCheckDesc.message });
+
+  if (cleanSuperChatMessage) {
+    const spamCheckNote = checkSpamText(cleanSuperChatMessage);
+    if (spamCheckNote.isSpam) return res.status(400).json({ error: spamCheckNote.message });
+  }
+
+  // 5. Duplicate Suggestion Check (within 24 hours)
+  const isDuplicate = (db.suggestions || []).some(
+    s => s.userId === user.id &&
+    s.title.toLowerCase().trim() === cleanTitle.toLowerCase() &&
+    (now - new Date(s.createdAt).getTime()) < 24 * 3600 * 1000
+  );
+  if (isDuplicate) {
+    return res.status(400).json({
+      error: 'Duplicate suggestion detected. You have already submitted an identical suggestion within the last 24 hours.',
+    });
   }
 
   const numAmount = Math.max(0, parseFloat(String(superChatAmount)) || 0);
   let isVerified = false;
 
-  // If paying via in-app wallet balance
-  if (hasSuperChat && numAmount > 0 && paymentMethod === 'wallet_balance' && walletId) {
-    const wallet = db.wallets.find(w => w.id === walletId && w.userId === user.id);
-    if (!wallet) {
-      return res.status(400).json({ error: 'Selected wallet not found' });
+  // 6. SuperChat Fraud & Anti-Spam Verification
+  if (hasSuperChat) {
+    if (numAmount < 10) {
+      return res.status(400).json({ error: 'Minimum SuperChat contribution is 10 BDT.' });
     }
-    if (wallet.balance < numAmount) {
-      return res.status(400).json({ error: 'Insufficient wallet balance for this SuperChat' });
+    if (numAmount > 50000) {
+      return res.status(400).json({ error: 'Maximum single SuperChat contribution is 50,000 BDT.' });
     }
 
-    // Deduct wallet balance and create a recorded transaction
-    wallet.balance -= numAmount;
-    wallet.updatedAt = new Date().toISOString();
+    // Payment via wallet balance
+    if (paymentMethod === 'wallet_balance') {
+      if (!walletId) {
+        return res.status(400).json({ error: 'Please select a source wallet for SuperChat payment.' });
+      }
+      const wallet = db.wallets.find(w => w.id === walletId && w.userId === user.id);
+      if (!wallet) {
+        return res.status(400).json({ error: 'Selected wallet not found.' });
+      }
+      if (wallet.balance < numAmount) {
+        return res.status(400).json({ error: 'Insufficient wallet balance for this SuperChat.' });
+      }
 
-    const txId = `tx-sc-${Date.now()}`;
-    db.transactions.unshift({
-      id: txId,
-      userId: user.id,
-      walletId: wallet.id,
-      type: 'expense',
-      amount: numAmount,
-      currency: wallet.currency || 'BDT',
-      categoryId: 'cat-oth-exp',
-      category: 'App SuperChat',
-      date: new Date().toISOString().substring(0, 10),
-      description: `SuperChat to Admin for App Improvement: ${title}`,
-      note: superChatMessage || 'Contribution to Hishab Khata development',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
+      // Deduct wallet balance and create a recorded transaction
+      wallet.balance -= numAmount;
+      wallet.updatedAt = new Date().toISOString();
 
-    isVerified = true;
+      const txId = `tx-sc-${Date.now()}`;
+      db.transactions.unshift({
+        id: txId,
+        userId: user.id,
+        walletId: wallet.id,
+        type: 'expense',
+        amount: numAmount,
+        currency: wallet.currency || 'BDT',
+        categoryId: 'cat-oth-exp',
+        category: 'App SuperChat',
+        date: new Date().toISOString().substring(0, 10),
+        description: `SuperChat to Admin for App Improvement: ${cleanTitle}`,
+        note: cleanSuperChatMessage || 'Contribution to Hishab Khata development',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+
+      isVerified = true;
+    } else if (paymentMethod === 'bkash' || paymentMethod === 'nagad' || paymentMethod === 'rocket' || paymentMethod === 'bank') {
+      const cleanTrxId = String(paymentTrxId || '').trim().toUpperCase();
+      const cleanSender = String(senderNumber || '').trim();
+
+      if (!cleanTrxId) {
+        return res.status(400).json({ error: 'Transaction ID (TrxID) is required for SuperChat verification.' });
+      }
+
+      // Valid TrxID format: 8 to 18 alphanumeric characters
+      if (!/^[A-Z0-9]{8,18}$/.test(cleanTrxId)) {
+        return res.status(400).json({
+          error: 'Invalid TrxID format. Please provide a valid 8-16 character alphanumeric Transaction ID from your payment SMS.',
+        });
+      }
+
+      // Block dummy TrxIDs
+      const dummyTrxList = ['12345678', '00000000', 'AAAAAAAA', 'TESTTEST', 'NONE1234', '11111111', '1234567890', 'BKASH123', 'NAGAD123', 'ASDFGHJK'];
+      if (dummyTrxList.includes(cleanTrxId) || /(.)\1{7,}/.test(cleanTrxId)) {
+        return res.status(400).json({ error: 'Invalid or dummy TrxID entered. Please provide your actual payment TrxID.' });
+      }
+
+      // Anti-Spam: Prevent reusing the same TrxID across all suggestions
+      const existingInSuggestions = (db.suggestions || []).find(
+        s => s.paymentTrxId && s.paymentTrxId.toUpperCase() === cleanTrxId
+      );
+      if (existingInSuggestions) {
+        return res.status(400).json({
+          error: 'This Transaction ID (TrxID) has already been submitted for a previous SuperChat. Duplicate TrxIDs are rejected.',
+        });
+      }
+
+      // Anti-Spam: Prevent reusing a subscription payment TrxID
+      const existingInSubs = (db.subscriptionPayments || []).find(
+        p => p.transactionId && p.transactionId.toUpperCase() === cleanTrxId
+      );
+      if (existingInSubs) {
+        return res.status(400).json({
+          error: 'This Transaction ID has already been recorded for a subscription payment. Duplicate TrxIDs are rejected.',
+        });
+      }
+
+      // Validate Bangladeshi mobile number if provided
+      if (cleanSender) {
+        const numericPhone = cleanSender.replace(/\D/g, '');
+        if (!/^(?:88)?01[3-9]\d{8}$/.test(numericPhone)) {
+          return res.status(400).json({
+            error: 'Invalid Bangladeshi mobile number format. Please enter an 11-digit number starting with 013-019.',
+          });
+        }
+      }
+    }
   }
 
   // Determine tier based on amount
@@ -2894,18 +3057,18 @@ router.post('/suggestions', authMiddleware, (req: AuthRequest, res) => {
     userEmail: user.email,
     userAvatar: user.avatarUrl,
     category,
-    title: String(title).trim(),
-    description: String(description).trim(),
+    title: cleanTitle,
+    description: cleanDescription,
     impact,
     status: 'pending',
     hasSuperChat: Boolean(hasSuperChat && numAmount > 0),
     superChatAmount: hasSuperChat ? numAmount : 0,
     superChatCurrency,
     superChatTier: hasSuperChat ? (superChatTier || calculatedTier) : undefined,
-    superChatMessage: hasSuperChat ? superChatMessage : undefined,
+    superChatMessage: hasSuperChat ? cleanSuperChatMessage : undefined,
     paymentMethod: hasSuperChat ? paymentMethod : undefined,
-    paymentTrxId: hasSuperChat ? paymentTrxId : undefined,
-    senderNumber: hasSuperChat ? senderNumber : undefined,
+    paymentTrxId: hasSuperChat && paymentTrxId ? String(paymentTrxId).trim().toUpperCase() : undefined,
+    senderNumber: hasSuperChat && senderNumber ? String(senderNumber).trim() : undefined,
     isSuperChatVerified: isVerified,
     upvotes: 1,
     upvotedUserIds: [user.id],
@@ -2915,6 +3078,11 @@ router.post('/suggestions', authMiddleware, (req: AuthRequest, res) => {
 
   if (!db.suggestions) db.suggestions = [];
   db.suggestions.unshift(newSuggestion);
+
+  // Record successful submission for rate-limiting
+  suggestionCooldowns.set(user.id, now);
+  userHourly.count += 1;
+  suggestionHourlyCounters.set(user.id, userHourly);
 
   // Notify Sultan Admin
   const adminNotification: AppNotification = {

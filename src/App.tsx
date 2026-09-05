@@ -36,7 +36,7 @@ import { usePWAInstall } from './lib/usePWAInstall';
 import { recordActionConfirmation } from './lib/actionNotifications';
 import { usePresenceTracker } from './lib/usePresenceTracker';
 import { DEFAULT_CATEGORIES } from './constants/categories';
-import { Download, Sparkles, X } from 'lucide-react';
+import { Download, Sparkles, X, ArrowUp } from 'lucide-react';
 
 // Views
 import { LandingPage } from './views/LandingPage';
@@ -70,10 +70,70 @@ const MainAppContent: React.FC = () => {
 
   // Navigation State
   const [activeView, setActiveView] = useState<string>('dashboard');
+  const [lastNonLegalView, setLastNonLegalView] = useState<string>('dashboard');
   const [legalType, setLegalType] = useState<'privacy' | 'terms' | 'about'>('about');
+  const [showScrollTop, setShowScrollTop] = useState<boolean>(false);
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
     return safeStorage.getItem('hishab_dark_mode') === 'true';
   });
+
+  const scrollToTop = () => {
+    const scrollContainer =
+      document.getElementById('main-scroll-container') ||
+      document.querySelector('div.overflow-y-auto') ||
+      document.querySelector('main');
+    if (scrollContainer) {
+      try {
+        scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+      } catch {
+        scrollContainer.scrollTop = 0;
+      }
+    }
+    try {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch {
+      window.scrollTo(0, 0);
+    }
+    try {
+      document.documentElement.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch {
+      document.documentElement.scrollTop = 0;
+    }
+  };
+
+  const handleNavigate = (view: string) => {
+    if (view !== 'legal') {
+      setLastNonLegalView(view);
+    }
+    setActiveView(view);
+    scrollToTop();
+  };
+
+  const handleOpenLegal = (type: 'privacy' | 'terms' | 'about') => {
+    setLegalType(type);
+    if (activeView !== 'legal') {
+      setLastNonLegalView(activeView);
+    }
+    setActiveView('legal');
+    scrollToTop();
+  };
+
+  // Listen to scroll events on main canvas container to toggle floating Back to Top
+  useEffect(() => {
+    const scrollContainer = document.getElementById('main-scroll-container');
+    if (!scrollContainer) return;
+
+    const onScroll = () => {
+      if (scrollContainer.scrollTop > 260) {
+        setShowScrollTop(true);
+      } else {
+        setShowScrollTop(false);
+      }
+    };
+
+    scrollContainer.addEventListener('scroll', onScroll, { passive: true });
+    return () => scrollContainer.removeEventListener('scroll', onScroll);
+  }, [user, token, activeView]);
 
   // Realtime Live Presence Tracker
   usePresenceTracker(user, token, activeView);
@@ -302,13 +362,21 @@ const MainAppContent: React.FC = () => {
   // Public Landing / Auth Views
   if (!user || !token) {
     if (activeView === 'legal') {
-      return <LegalViews type={legalType} onBack={() => setActiveView('landing')} />;
+      return (
+        <LegalViews
+          type={legalType}
+          isAuthenticated={false}
+          onBack={() => setActiveView('landing')}
+          onSelectType={(t) => setLegalType(t)}
+        />
+      );
     }
 
     if (activeView === 'auth' || activeView === 'login' || activeView === 'register') {
       return (
         <AuthView
           onBackToLanding={() => setActiveView('landing')}
+          onViewLegal={handleOpenLegal}
           onSuccess={(loggedInUser) => {
             if (loggedInUser?.role === 'admin' || loggedInUser?.email === 'sultanitbangladesh@gmail.com') {
               setActiveView('admin');
@@ -339,10 +407,7 @@ const MainAppContent: React.FC = () => {
               setActiveView('auth');
             }
           }}
-          onViewLegal={(type) => {
-            setLegalType(type);
-            setActiveView('legal');
-          }}
+          onViewLegal={handleOpenLegal}
           onOpenDownloadApp={handleOpenDownloadApp}
         />
         <DownloadAppModal
@@ -710,7 +775,7 @@ const MainAppContent: React.FC = () => {
       {/* Desktop Sidebar */}
       <Sidebar
         activeView={activeView}
-        onNavigate={(v) => setActiveView(v)}
+        onNavigate={handleNavigate}
         unreadNotifsCount={unreadNotifsCount}
         onOpenUpgrade={() => setIsUpgradeModalOpen(true)}
         onOpenDownloadApp={handleOpenDownloadApp}
@@ -718,7 +783,7 @@ const MainAppContent: React.FC = () => {
       />
 
       {/* Main App Canvas */}
-      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
+      <div id="main-scroll-container" className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto relative scroll-smooth">
         <Topbar
           onOpenAddTransaction={() => {
             setEditingTx(null);
@@ -734,7 +799,7 @@ const MainAppContent: React.FC = () => {
           onOpenUpgrade={() => setIsUpgradeModalOpen(true)}
           onOpenTutorial={() => setIsOnboardingModalOpen(true)}
           activeView={activeView}
-          onNavigate={(v) => setActiveView(v)}
+          onNavigate={handleNavigate}
         />
 
         {/* Quick One-Tap Install Banner when not in standalone mode */}
@@ -929,18 +994,24 @@ const MainAppContent: React.FC = () => {
           )}
 
           {activeView === 'admin' && user.role === 'admin' && (
-            <AdminView onNavigate={(v) => setActiveView(v)} />
+            <AdminView onNavigate={handleNavigate} />
+          )}
+
+          {activeView === 'legal' && (
+            <LegalViews
+              type={legalType}
+              isAuthenticated={true}
+              onBack={() => handleNavigate(lastNonLegalView || 'dashboard')}
+              onSelectType={(t) => setLegalType(t)}
+            />
           )}
 
           {/* Unified App Footer for both user and admin view */}
           <AppFooter
             activeView={activeView}
             isAdminView={activeView === 'admin'}
-            onNavigate={(v) => setActiveView(v)}
-            onViewLegal={(type) => {
-              setLegalType(type);
-              setActiveView('legal');
-            }}
+            onNavigate={handleNavigate}
+            onViewLegal={handleOpenLegal}
             onOpenDownloadApp={handleOpenDownloadApp}
             userEmail={user?.email}
             userRole={user?.role}
@@ -951,7 +1022,7 @@ const MainAppContent: React.FC = () => {
         <MobileNav
           activeView={activeView}
           isAdmin={user.role === 'admin'}
-          onNavigate={(v) => setActiveView(v)}
+          onNavigate={handleNavigate}
           onOpenAddTransaction={() => {
             setEditingTx(null);
             setTxModalInitialType('expense');
@@ -959,6 +1030,20 @@ const MainAppContent: React.FC = () => {
           }}
           onOpenDownloadApp={handleOpenDownloadApp}
         />
+
+        {/* Floating Quick Scroll to Top Button */}
+        {showScrollTop && (
+          <button
+            id="floating-back-to-top-btn"
+            type="button"
+            onClick={scrollToTop}
+            className="fixed bottom-20 lg:bottom-6 right-4 sm:right-6 z-40 p-3 rounded-full bg-teal-700 hover:bg-teal-800 text-white shadow-xl shadow-teal-950/30 hover:shadow-2xl hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center justify-center border border-teal-600/50"
+            title="Scroll to top"
+            aria-label="Scroll to top"
+          >
+            <ArrowUp className="w-5 h-5" />
+          </button>
+        )}
       </div>
 
       {/* Modals Container */}

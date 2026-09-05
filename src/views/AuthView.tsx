@@ -30,15 +30,15 @@ import {
 interface AuthViewProps {
   onSuccess: (user?: any) => void;
   onBackToLanding?: () => void;
+  onViewLegal?: (type: 'privacy' | 'terms' | 'about') => void;
 }
 
-export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }) => {
+export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding, onViewLegal }) => {
   const { t } = useI18n();
   const {
     login,
     loginWithGoogle,
     register,
-    loginSultanAdmin,
     loading,
     error,
     clearError
@@ -51,7 +51,6 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
   const [showPassword, setShowPassword] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [showDemoLogins, setShowDemoLogins] = useState(false);
 
   // Dynamic identifier type detection for refined UX
   const identifierType = useMemo(() => {
@@ -263,13 +262,6 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
     }
   };
 
-  const handleQuickFill = (identifier: string, samplePass?: string) => {
-    setEmail(identifier);
-    if (samplePass) setPassword(samplePass);
-    clearError();
-    setFormError(null);
-  };
-
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col justify-between text-slate-100 p-4 sm:p-6 lg:p-8 relative overflow-hidden">
       {/* Background Ambience */}
@@ -290,10 +282,10 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
               onClick={onBackToLanding}
               className="text-xs font-semibold text-slate-400 hover:text-white px-3 py-1.5 rounded-lg hover:bg-slate-800 transition cursor-pointer"
             >
-              Back to Home
+              {t('back_to_home')}
             </button>
           )}
-          <LanguageSelector />
+          <LanguageSelector isDarkBg={true} />
         </div>
       </div>
 
@@ -304,15 +296,15 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
           <div className="text-center mb-6">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-500/10 border border-teal-500/20 text-teal-400 text-xs font-semibold mb-2">
               <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Bank-Grade Cloud Sync</span>
+              <span>{t('auth_badge_sync')}</span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-              {mode === 'login' ? 'Sign In to Account' : 'Create Free Account'}
+              {mode === 'login' ? t('auth_login_title') : t('auth_register_title')}
             </h2>
             <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto">
               {mode === 'login'
-                ? 'Access your wallets, transactions, and live financial ledger'
-                : 'Zero setup fee. Track income, expenses, loans & savings in minutes'}
+                ? t('auth_login_subtitle')
+                : t('auth_register_subtitle')}
             </p>
           </div>
 
@@ -333,7 +325,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
               }`}
             >
               <KeyRound className="w-3.5 h-3.5" />
-              <span>Sign In</span>
+              <span>{t('auth_btn_login')}</span>
             </button>
             <button
               id="auth-tab-register"
@@ -350,7 +342,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
               }`}
             >
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Sign Up</span>
+              <span>{t('auth_btn_register')}</span>
             </button>
           </div>
 
@@ -412,13 +404,12 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
                     <button
                       type="button"
                       onClick={() => {
-                        const targetEmail = email.trim().includes('@') ? email.trim() : 'sultanitbangladesh@gmail.com';
-                        loginWithGoogle(targetEmail).then(onSuccess).catch((e: any) => setFormError(e.message));
+                        loginWithGoogle(email.trim()).then(onSuccess).catch((e: any) => setFormError(e.message));
                       }}
                       className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-lg transition cursor-pointer"
                     >
                       <Sparkles className="w-3.5 h-3.5" />
-                      <span>Direct Sign-In with Google ({email.trim().includes('@') ? email.trim() : 'sultanitbangladesh@gmail.com'})</span>
+                      <span>Direct Sign-In with Google</span>
                     </button>
                   )}
                 </div>
@@ -456,13 +447,13 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
                 />
               </svg>
             )}
-            <span>{mode === 'login' ? 'Continue with Google' : 'Sign up with Google'}</span>
+            <span>{t('auth_google_continue')}</span>
           </button>
 
           <div className="relative flex items-center justify-center mb-5">
             <div className="border-t border-slate-800 w-full" />
             <span className="bg-slate-900 px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0">
-              or with email / mobile number
+              {mode === 'login' ? t('auth_divider_login') : t('auth_divider_register')}
             </span>
             <div className="border-t border-slate-800 w-full" />
           </div>
@@ -472,7 +463,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
             {mode === 'register' && (
               <div>
                 <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                  Full Name
+                  {t('auth_name')}
                 </label>
                 <div className="relative">
                   <UserIcon className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
@@ -481,7 +472,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. Sultan Mahmud"
+                    placeholder={t('auth_name_placeholder')}
                     className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-950 text-white text-sm font-medium focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition placeholder:text-slate-500"
                     required
                   />
@@ -492,7 +483,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
-                  Email or Mobile Number
+                  {t('auth_email')}
                 </label>
                 {/* Dynamic badge */}
                 {identifierType === 'phone' && (
@@ -504,7 +495,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
                 {identifierType === 'email' && (
                   <span className="text-[11px] font-semibold text-teal-400 flex items-center gap-1">
                     <Mail className="w-3 h-3" />
-                    <span>Email Address</span>
+                    <span>Email</span>
                   </span>
                 )}
               </div>
@@ -519,7 +510,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
                   type="text"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@gmail.com or 017xxxxxxxx"
+                  placeholder={t('auth_email_placeholder')}
                   className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-950 text-white text-sm font-medium focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition placeholder:text-slate-500"
                   required
                 />
@@ -527,8 +518,8 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
               <p className="text-[11px] text-slate-400 mt-1.5 flex items-center gap-1">
                 <span>
                   {mode === 'register'
-                    ? 'Use your Gmail/Email or BD mobile number (e.g. 01712345678)'
-                    : 'Works with both registered email & mobile number'}
+                    ? t('auth_email_helper_reg')
+                    : t('auth_email_helper_login')}
                 </span>
               </p>
             </div>
@@ -537,7 +528,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
               <div className="flex items-center justify-between mb-1.5">
                 <div className="flex items-center gap-2">
                   <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
-                    Password
+                    {t('auth_password')}
                   </label>
                   {mode === 'register' && (
                     <button
@@ -547,7 +538,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
                       title="Generate a high-security random password and copy to clipboard"
                     >
                       <Sparkles className="w-3 h-3 text-amber-400" />
-                      <span>{copiedGenerated ? 'Copied & Applied!' : 'Suggest Strong'}</span>
+                      <span>{copiedGenerated ? t('auth_copied_applied') : t('auth_suggest_strong')}</span>
                     </button>
                   )}
                 </div>
@@ -557,7 +548,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
                   className="text-xs text-teal-400 hover:text-teal-300 flex items-center gap-1 font-semibold cursor-pointer"
                 >
                   {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                  <span>{showPassword ? 'Hide' : 'Show'}</span>
+                  <span>{showPassword ? t('hide') : t('show')}</span>
                 </button>
               </div>
 
@@ -568,7 +559,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder={mode === 'register' ? 'Create a secure password' : 'Enter your password'}
+                  placeholder={mode === 'register' ? t('auth_password_placeholder_reg') : t('auth_password_placeholder_login')}
                   className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-700 bg-slate-950 text-white text-sm font-medium focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition placeholder:text-slate-500"
                   required
                 />
@@ -585,7 +576,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
                       ) : (
                         <ShieldAlert className="w-4 h-4 text-amber-400" />
                       )}
-                      <span className="text-xs text-slate-400">Security Rating:</span>
+                      <span className="text-xs text-slate-400">{t('auth_security_rating')}</span>
                     </div>
                     <span className={`text-xs font-black px-2 py-0.5 rounded-full border ${passwordSecurity.badgeBg}`}>
                       {passwordSecurity.label}
@@ -640,11 +631,11 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
               {loading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Verifying Account...</span>
+                  <span>{t('auth_verifying')}</span>
                 </>
               ) : (
                 <>
-                  <span>{mode === 'login' ? 'Sign In to Account' : 'Create Account'}</span>
+                  <span>{mode === 'login' ? t('auth_btn_login') : t('auth_btn_register')}</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
@@ -655,7 +646,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
           <div className="mt-6 text-center text-xs text-slate-400">
             {mode === 'login' ? (
               <p>
-                Don't have an account yet?{' '}
+                {t('auth_no_account')}{' '}
                 <button
                   id="auth-switch-to-register-btn"
                   type="button"
@@ -666,12 +657,12 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
                   }}
                   className="text-teal-400 font-bold hover:underline cursor-pointer"
                 >
-                  Create one now
+                  {t('auth_create_one')}
                 </button>
               </p>
             ) : (
               <p>
-                Already have an account?{' '}
+                {t('auth_has_account')}{' '}
                 <button
                   id="auth-switch-to-login-btn"
                   type="button"
@@ -682,46 +673,41 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
                   }}
                   className="text-teal-400 font-bold hover:underline cursor-pointer"
                 >
-                  Sign in here
+                  {t('auth_signin_here')}
                 </button>
               </p>
-            )}
-          </div>
-
-          {/* Quick Demo Credentials Accordion */}
-          <div className="mt-6 pt-4 border-t border-slate-800/80">
-            <button
-              type="button"
-              onClick={() => setShowDemoLogins(!showDemoLogins)}
-              className="w-full text-center text-[11px] font-semibold text-slate-400 hover:text-slate-300 flex items-center justify-center gap-1.5 cursor-pointer"
-            >
-              <Zap className="w-3 h-3 text-amber-400" />
-              <span>{showDemoLogins ? 'Hide Demo / Test Credentials' : 'Quick Test Accounts (Click to Fill)'}</span>
-            </button>
-
-            {showDemoLogins && (
-              <div className="mt-3 p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-2 text-xs">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-bold text-white">Sultan (Owner Admin)</p>
-                    <p className="text-[10px] text-slate-400">sultanitbangladesh@gmail.com</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleQuickFill('sultanitbangladesh@gmail.com', 'admin123')}
-                    className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-amber-400 rounded-lg font-bold text-[11px] cursor-pointer"
-                  >
-                    Fill Admin
-                  </button>
-                </div>
-              </div>
             )}
           </div>
         </div>
       </div>
 
       {/* Footer */}
-      <div className="relative z-10 max-w-6xl w-full mx-auto text-center text-xs text-slate-500">
+      <div className="relative z-10 max-w-6xl w-full mx-auto text-center text-xs text-slate-500 space-y-2">
+        <div className="flex flex-wrap items-center justify-center gap-3 text-slate-400">
+          <button
+            type="button"
+            onClick={() => onViewLegal?.('privacy')}
+            className="hover:text-teal-400 hover:underline transition cursor-pointer"
+          >
+            {t('legal_privacy') || 'Privacy Policy'}
+          </button>
+          <span>•</span>
+          <button
+            type="button"
+            onClick={() => onViewLegal?.('terms')}
+            className="hover:text-teal-400 hover:underline transition cursor-pointer"
+          >
+            {t('legal_terms') || 'Terms of Service'}
+          </button>
+          <span>•</span>
+          <button
+            type="button"
+            onClick={() => onViewLegal?.('about')}
+            className="hover:text-teal-400 hover:underline transition cursor-pointer"
+          >
+            {t('legal_about') || 'About Us'}
+          </button>
+        </div>
         <p>© 2026 Hishab Khata SaaS. Cloud-Synced & Encrypted with Bcrypt + AES-256.</p>
       </div>
     </div>
