@@ -52,7 +52,7 @@ import { SuggestionsView } from './views/SuggestionsView';
 import { LegalViews } from './views/LegalViews';
 
 const MainAppContent: React.FC = () => {
-  const { user, token, logout, loginDemoUser, loginWithGoogle, loginSultanAdmin } = useAuth();
+  const { user, token, logout, loginWithGoogle, loginSultanAdmin } = useAuth();
   const { isRTL, currency, setCurrency } = useI18n();
 
   // Clean stale reload locks once React mounts cleanly
@@ -152,7 +152,7 @@ const MainAppContent: React.FC = () => {
         goalsRes,
         loansRes,
         notifsRes,
-      ] = await Promise.all([
+      ] = await Promise.allSettled([
         api.getDashboardSummary(),
         api.getWallets(),
         api.getCategories(),
@@ -163,17 +163,41 @@ const MainAppContent: React.FC = () => {
         api.getNotifications(),
       ]);
 
-      setSummary((summaryRes as any).summary || summaryRes);
-      setWallets((walletsRes as any).wallets || walletsRes || []);
-      setCategories((categoriesRes as any).categories || categoriesRes || []);
-      setTransactions((txRes as any).transactions || txRes || []);
-      setBudgets((budgetsRes as any).budgets || budgetsRes || []);
-      setSavingsGoals((goalsRes as any).savingsGoals || goalsRes || []);
-      setLoans((loansRes as any).loans || loansRes || []);
-      const notifsList: AppNotification[] = (notifsRes as any).notifications || notifsRes || [];
-      setNotifications(notifsList);
-      setUnreadNotifsCount(notifsList.filter((n: any) => !n.isRead).length);
-      notifsList.forEach(n => knownNotificationIds.current.add(n.id));
+      if (summaryRes.status === 'fulfilled') {
+        const val = summaryRes.value;
+        setSummary((val as any)?.summary || val);
+      }
+      if (walletsRes.status === 'fulfilled') {
+        const val = walletsRes.value;
+        setWallets((val as any)?.wallets || val || []);
+      }
+      if (categoriesRes.status === 'fulfilled') {
+        const val = categoriesRes.value;
+        setCategories((val as any)?.categories || val || []);
+      }
+      if (txRes.status === 'fulfilled') {
+        const val = txRes.value;
+        setTransactions((val as any)?.transactions || val || []);
+      }
+      if (budgetsRes.status === 'fulfilled') {
+        const val = budgetsRes.value;
+        setBudgets((val as any)?.budgets || val || []);
+      }
+      if (goalsRes.status === 'fulfilled') {
+        const val = goalsRes.value;
+        setSavingsGoals((val as any)?.savingsGoals || val || []);
+      }
+      if (loansRes.status === 'fulfilled') {
+        const val = loansRes.value;
+        setLoans((val as any)?.loans || val || []);
+      }
+      if (notifsRes.status === 'fulfilled') {
+        const val = notifsRes.value;
+        const notifsList: AppNotification[] = (val as any)?.notifications || val || [];
+        setNotifications(notifsList);
+        setUnreadNotifsCount(notifsList.filter((n: any) => !n.isRead).length);
+        notifsList.forEach(n => knownNotificationIds.current.add(n.id));
+      }
     } catch (err: any) {
       console.error('Failed to load application data:', err);
     } finally {
@@ -275,11 +299,6 @@ const MainAppContent: React.FC = () => {
             } catch {
               setActiveView('auth');
             }
-          }}
-          onDemoUser={async () => {
-            await loginDemoUser();
-            setActiveView('dashboard');
-            loadAllData();
           }}
           onViewLegal={(type) => {
             setLegalType(type);

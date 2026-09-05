@@ -48,8 +48,67 @@ export interface DatabaseSchema {
   suggestions: SuggestionSuperChat[];
 }
 
-const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), 'data');
+// Resolve durable writable data directory (handles Netlify Functions, AWS Lambda, Cloud Run, and local)
+function resolveWritableDataDir(): string {
+  if (process.env.DATA_DIR) {
+    try {
+      if (!fs.existsSync(process.env.DATA_DIR)) {
+        fs.mkdirSync(process.env.DATA_DIR, { recursive: true });
+      }
+      return process.env.DATA_DIR;
+    } catch {
+      // Fallback
+    }
+  }
+
+  // Detect serverless or read-only execution environments
+  const isServerless = Boolean(
+    process.env.NETLIFY ||
+    process.env.LAMBDA_TASK_ROOT ||
+    process.env.AWS_EXECUTION_ENV ||
+    process.env.VERCEL
+  );
+
+  if (isServerless) {
+    const tmpDataDir = path.join('/tmp', 'hishab_khata_data');
+    try {
+      if (!fs.existsSync(tmpDataDir)) {
+        fs.mkdirSync(tmpDataDir, { recursive: true });
+      }
+      return tmpDataDir;
+    } catch {
+      return '/tmp';
+    }
+  }
+
+  const standardDataDir = path.join(process.cwd(), 'data');
+  try {
+    if (!fs.existsSync(standardDataDir)) {
+      fs.mkdirSync(standardDataDir, { recursive: true });
+    }
+    // Verify write permissions
+    const probeFile = path.join(standardDataDir, '.write_probe');
+    fs.writeFileSync(probeFile, '1');
+    fs.unlinkSync(probeFile);
+    return standardDataDir;
+  } catch {
+    // If standard path is read-only, fallback to /tmp
+    const tmpFallback = path.join('/tmp', 'hishab_khata_data');
+    try {
+      if (!fs.existsSync(tmpFallback)) {
+        fs.mkdirSync(tmpFallback, { recursive: true });
+      }
+      return tmpFallback;
+    } catch {
+      return '/tmp';
+    }
+  }
+}
+
+const DATA_DIR = resolveWritableDataDir();
 const DB_FILE = path.join(DATA_DIR, 'hishab_khata.json');
+const USERS_REGISTRY_FILE = path.join(DATA_DIR, 'users_registry.json');
+const BUNDLED_DB_FILE = path.join(process.cwd(), 'data', 'hishab_khata.json');
 
 let inMemoryDb: DatabaseSchema | null = null;
 
@@ -59,7 +118,6 @@ function ensureDataDir() {
       fs.mkdirSync(DATA_DIR, { recursive: true });
     }
   } catch (err) {
-    // In read-only or serverless environments (e.g. Netlify/Lambda), fallback gracefully
     console.warn('Could not create data directory, running with memory store:', err);
   }
 }
@@ -99,72 +157,10 @@ function getSeedData(): DatabaseSchema {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   };
 
-  const demoUserId = 'user-demo-001';
-  const demoUserId2 = 'user-demo-002';
-  const demoAdminId = 'admin-demo-001';
-  const demoAdminId2 = 'admin-demo-002';
-
   const defaultPasswordHash = bcrypt.hashSync('password123', 10);
-  const demoPasswordHash = bcrypt.hashSync('demo123', 10);
   const adminPasswordHash = bcrypt.hashSync('admin123', 10);
 
   const users: User[] = [
-    {
-      id: demoUserId,
-      name: 'User Account',
-      email: 'user@hishabkhata.com',
-      role: 'user',
-      preferredLanguage: 'en',
-      preferredCurrency: 'BDT',
-      plan: 'free',
-      status: 'active',
-      emailVerified: true,
-      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-      createdAt: nowIso,
-      updatedAt: nowIso,
-    },
-    {
-      id: demoUserId2,
-      name: 'User Account 2',
-      email: 'demo@hishabkhata.io',
-      role: 'user',
-      preferredLanguage: 'bn',
-      preferredCurrency: 'BDT',
-      plan: 'free',
-      status: 'active',
-      emailVerified: true,
-      avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
-      createdAt: nowIso,
-      updatedAt: nowIso,
-    },
-    {
-      id: demoAdminId,
-      name: 'System SuperAdmin',
-      email: 'admin@hishabkhata.io',
-      role: 'admin',
-      preferredLanguage: 'en',
-      preferredCurrency: 'USD',
-      plan: 'pro',
-      status: 'active',
-      emailVerified: true,
-      avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-      createdAt: nowIso,
-      updatedAt: nowIso,
-    },
-    {
-      id: demoAdminId2,
-      name: 'Sultan Admin',
-      email: 'admin@hishabkhata.com',
-      role: 'admin',
-      preferredLanguage: 'en',
-      preferredCurrency: 'USD',
-      plan: 'pro',
-      status: 'active',
-      emailVerified: true,
-      avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-      createdAt: nowIso,
-      updatedAt: nowIso,
-    },
     {
       id: 'admin-sultan-001',
       name: 'Sultan (Owner Admin)',
@@ -182,17 +178,15 @@ function getSeedData(): DatabaseSchema {
   ];
 
   const passwordHashes: Record<string, string> = {
-    [demoUserId]: defaultPasswordHash,
-    [demoUserId2]: demoPasswordHash,
-    [demoAdminId]: adminPasswordHash,
-    [demoAdminId2]: adminPasswordHash,
     'admin-sultan-001': adminPasswordHash,
   };
+
+  const adminId = 'admin-sultan-001';
 
   const wallets: Wallet[] = [
     {
       id: 'w-cash-01',
-      userId: demoUserId,
+      userId: adminId,
       name: 'Cash Wallet',
       type: 'cash',
       balance: 0,
@@ -202,108 +196,18 @@ function getSeedData(): DatabaseSchema {
       createdAt: nowIso,
       updatedAt: nowIso,
     },
-    {
-      id: 'w-bank-01',
-      userId: demoUserId,
-      name: 'Main Bank Account',
-      type: 'bank',
-      balance: 0,
-      currency: 'BDT',
-      color: '#0F766E',
-      isDefault: false,
-      accountNumber: '**** 8842',
-      createdAt: nowIso,
-      updatedAt: nowIso,
-    },
-    {
-      id: 'w-bkash-01',
-      userId: demoUserId,
-      name: 'bKash Personal',
-      type: 'bkash',
-      balance: 0,
-      currency: 'BDT',
-      color: '#E2136E',
-      isDefault: false,
-      accountNumber: '01712-***456',
-      createdAt: nowIso,
-      updatedAt: nowIso,
-    },
   ];
 
   const transactions: Transaction[] = [];
   const budgets: Budget[] = [];
-  const savingsGoals: SavingsGoal[] = [
-    {
-      id: 'goal-seed-01',
-      userId: demoUserId,
-      name: 'Emergency Reserve Fund',
-      targetAmount: 150000,
-      currentAmount: 65000,
-      targetDate: '2026-12-31',
-      deadline: '2026-12-31',
-      icon: 'ShieldCheck',
-      color: '#0F766E',
-      status: 'in_progress',
-      createdAt: nowIso,
-      updatedAt: nowIso,
-    },
-    {
-      id: 'goal-seed-02',
-      userId: demoUserId,
-      name: 'Hardware & Tech Upgrade',
-      targetAmount: 85000,
-      currentAmount: 42000,
-      targetDate: '2026-11-15',
-      deadline: '2026-11-15',
-      icon: 'Laptop',
-      color: '#2563EB',
-      status: 'in_progress',
-      createdAt: nowIso,
-      updatedAt: nowIso,
-    },
-    {
-      id: 'goal-seed-03',
-      userId: 'admin-sultan-001',
-      name: 'Emergency Fund (6 Months)',
-      targetAmount: 300000,
-      currentAmount: 120000,
-      targetDate: '2026-12-31',
-      deadline: '2026-12-31',
-      icon: 'ShieldCheck',
-      color: '#0F766E',
-      status: 'in_progress',
-      createdAt: nowIso,
-      updatedAt: nowIso,
-    },
-  ];
+  const savingsGoals: SavingsGoal[] = [];
   const goalContributions: GoalContribution[] = [];
   const loans: Loan[] = [];
   const loanPayments: LoanPayment[] = [];
 
-  const notifications: AppNotification[] = [
-    {
-      id: 'notif-001',
-      userId: demoUserId,
-      type: 'system',
-      titleKey: 'Welcome to Hishab Khata!',
-      messageKey: 'Your personal financial accounting workspace is ready. Add your first income, expense, or budget to get started.',
-      isRead: false,
-      createdAt: nowIso,
-    },
-  ];
+  const notifications: AppNotification[] = [];
 
-  const adminLogs: AdminLog[] = [
-    {
-      id: 'log-001',
-      adminId: demoAdminId,
-      adminEmail: 'admin@hishabkhata.com',
-      action: 'SYSTEM_BOOTSTRAP',
-      targetType: 'SYSTEM',
-      targetId: 'GLOBAL',
-      details: 'Initialized global multi-currency database with 15 language packs',
-      createdAt: nowIso,
-    },
-  ];
+  const adminLogs: AdminLog[] = [];
 
   const systemLimits: SystemPlanLimits = {
     freeMaxWallets: 3,
@@ -339,77 +243,9 @@ function getSeedData(): DatabaseSchema {
 
   const subscriptionPayments: SubscriptionPayment[] = [];
   const userPresences: Record<string, UserPresence> = {};
-  const liveActivities: LiveUserActivity[] = [
-    {
-      id: 'act-001',
-      userId: demoUserId,
-      userName: 'User Account',
-      userEmail: 'user@hishabkhata.com',
-      action: 'SYSTEM_JOIN',
-      category: 'AUTH',
-      details: 'Logged into Hishab Khata Financial Dashboard',
-      deviceType: 'desktop',
-      currentView: 'dashboard',
-      timestamp: nowIso,
-    }
-  ];
+  const liveActivities: LiveUserActivity[] = [];
   const emailLogs: EmailLogEntry[] = [];
-
-  const suggestions: SuggestionSuperChat[] = [
-    {
-      id: 'sug-001',
-      userId: demoUserId,
-      userName: 'User Account',
-      userEmail: 'user@hishabkhata.com',
-      userAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
-      category: 'feature',
-      title: 'SMS Automatic Transaction Parsing for bKash & Nagad',
-      description: 'It would be amazing if the mobile PWA can auto-read or paste bKash/Nagad cash in & out transaction SMS to record entries automatically with 1 click!',
-      impact: 'high',
-      status: 'planned',
-      adminReply: 'Great idea! We are actively implementing smart SMS parser regex for all Bangladeshi MFS in the next update. Thank you!',
-      adminRepliedAt: nowIso,
-      hasSuperChat: true,
-      superChatAmount: 500,
-      superChatCurrency: 'BDT',
-      superChatTier: 'gold',
-      superChatMessage: 'Keep up the extraordinary work Sultan bhai! Love this SaaS so much!',
-      paymentMethod: 'bkash',
-      paymentTrxId: '9K28X1M90P',
-      senderNumber: '01712-889900',
-      isSuperChatVerified: true,
-      upvotes: 14,
-      upvotedUserIds: [demoUserId, 'user-farhan-002'],
-      createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
-      updatedAt: nowIso,
-    },
-    {
-      id: 'sug-002',
-      userId: 'user-farhan-002',
-      userName: 'Farhan Ahmed',
-      userEmail: 'farhan@smartfintech.bd',
-      category: 'improvement',
-      title: 'Export Monthly Statement Directly to WhatsApp & Telegram',
-      description: 'Allow 1-click sharing of generated monthly PDF summaries directly to WhatsApp contact or Telegram chat for family budgeting.',
-      impact: 'medium',
-      status: 'in_progress',
-      adminReply: 'In progress! We are adding Web Share API integration so you can share directly to WhatsApp, Telegram, or Email.',
-      adminRepliedAt: nowIso,
-      hasSuperChat: true,
-      superChatAmount: 250,
-      superChatCurrency: 'BDT',
-      superChatTier: 'silver',
-      superChatMessage: 'Small tip for the development team. Hishab Khata is a lifesaver!',
-      paymentMethod: 'nagad',
-      paymentTrxId: '7B34Y902KL',
-      senderNumber: '01819-334455',
-      isSuperChatVerified: true,
-      upvotes: 9,
-      upvotedUserIds: ['user-farhan-002'],
-      createdAt: new Date(Date.now() - 86400000).toISOString(),
-      updatedAt: nowIso,
-    }
-  ];
+  const suggestions: SuggestionSuperChat[] = [];
 
   return {
     users,
@@ -443,77 +279,169 @@ export function getDb(): DatabaseSchema {
 
   ensureDataDir();
 
+  // Helper to load and merge user registry if present
+  const loadUserRegistry = (targetDb: DatabaseSchema) => {
+    try {
+      if (fs.existsSync(USERS_REGISTRY_FILE)) {
+        const raw = fs.readFileSync(USERS_REGISTRY_FILE, 'utf-8');
+        const reg = JSON.parse(raw);
+        if (reg && Array.isArray(reg.users)) {
+          for (const regUser of reg.users) {
+            const exists = targetDb.users.some(u => u.id === regUser.id || (u.email && u.email.toLowerCase() === (regUser.email || '').toLowerCase()));
+            if (!exists) {
+              targetDb.users.push(regUser);
+            }
+          }
+        }
+        if (reg && reg.passwordHashes && typeof reg.passwordHashes === 'object') {
+          targetDb.passwordHashes = { ...targetDb.passwordHashes, ...reg.passwordHashes };
+        }
+      }
+    } catch (e) {
+      console.warn('Could not load user registry:', e);
+    }
+  };
+
+  // 1. Try reading from active writable DB_FILE
   if (fs.existsSync(DB_FILE)) {
     try {
       const data = fs.readFileSync(DB_FILE, 'utf-8');
       inMemoryDb = JSON.parse(data);
-      if (!inMemoryDb!.subscriptionPayments) inMemoryDb!.subscriptionPayments = [];
-      if (!inMemoryDb!.adminPaymentConfig) {
-        inMemoryDb!.adminPaymentConfig = {
-          bkashNumber: '01711-234567',
-          bkashType: 'personal',
-          nagadNumber: '01811-234567',
-          nagadType: 'personal',
-          rocketNumber: '01911-234567-8',
-          bankName: 'Islami Bank Bangladesh PLC / City Bank',
-          bankAccountName: 'Hishab Khata SaaS Admin',
-          bankAccountNumber: '2050112020345678',
-          bankBranch: 'Dhanmondi Branch, Dhaka',
-          bankRoutingNumber: '125272847',
-          proMonthlyPriceBDT: 499,
-          proYearlyPriceBDT: 4999,
-          proLifetimePriceBDT: 9999,
-          proMonthlyPriceUSD: 4.99,
-          proYearlyPriceUSD: 49.99,
-          proLifetimePriceUSD: 99.99,
-          yearlyDiscountPercent: 20,
-          instructionsBn: 'বিকাশ বা নগদ অ্যাপ থেকে "Send Money" বা "Payment" করুন। পেমেন্ট সফল হলে প্রাপ্ত TrxID এবং আপনার মোবাইল নম্বর সাবমিট করুন। অ্যাডমিন ৫-১০ মিনিটের মধ্যে ভেরিফাই করে PRO একাউন্ট একটিভ করে দিবে।',
-          instructionsEn: 'Send the exact subscription fee to the bKash, Nagad or Bank Account above. Enter your Sender Number/Account and the Transaction ID (TrxID) below. Admin verifies and activates PRO within minutes.'
-        };
-      }
-      if (!inMemoryDb!.userPresences) inMemoryDb!.userPresences = {};
-      if (!inMemoryDb!.liveActivities) inMemoryDb!.liveActivities = [];
-      if (!inMemoryDb!.emailLogs) inMemoryDb!.emailLogs = [];
-      if (!inMemoryDb!.suggestions) {
-        inMemoryDb!.suggestions = [
-          {
-            id: 'sug-001',
-            userId: 'user-regular-001',
-            userName: 'User Account',
-            userEmail: 'user@hishabkhata.com',
-            userAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
-            category: 'feature',
-            title: 'SMS Automatic Transaction Parsing for bKash & Nagad',
-            description: 'It would be amazing if the mobile PWA can auto-read or paste bKash/Nagad cash in & out transaction SMS to record entries automatically with 1 click!',
-            impact: 'high',
-            status: 'planned',
-            adminReply: 'Great idea! We are actively implementing smart SMS parser regex for all Bangladeshi MFS in the next update. Thank you!',
-            adminRepliedAt: new Date().toISOString(),
-            hasSuperChat: true,
-            superChatAmount: 500,
-            superChatCurrency: 'BDT',
-            superChatTier: 'gold',
-            superChatMessage: 'Keep up the extraordinary work Sultan bhai! Love this SaaS so much!',
-            paymentMethod: 'bkash',
-            paymentTrxId: '9K28X1M90P',
-            senderNumber: '01712-889900',
-            isSuperChatVerified: true,
-            upvotes: 14,
-            upvotedUserIds: ['user-regular-001', 'user-farhan-002'],
-            createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
-            updatedAt: new Date().toISOString(),
-          }
-        ];
-      }
-      return inMemoryDb!;
     } catch (err) {
-      console.error('Error reading database file, reseeding:', err);
+      console.error('Error reading active database file:', err);
     }
   }
 
-  inMemoryDb = getSeedData();
-  saveDb();
+  // 2. If not found or empty, try reading from BUNDLED_DB_FILE
+  if (!inMemoryDb && fs.existsSync(BUNDLED_DB_FILE)) {
+    try {
+      const data = fs.readFileSync(BUNDLED_DB_FILE, 'utf-8');
+      inMemoryDb = JSON.parse(data);
+      // Immediately write a copy to the writable DB_FILE
+      if (inMemoryDb) {
+        saveDb();
+      }
+    } catch (err) {
+      console.error('Error reading bundled database file:', err);
+    }
+  }
+
+  // 3. If still not available, use getSeedData()
+  if (!inMemoryDb) {
+    inMemoryDb = getSeedData();
+    saveDb();
+  }
+
+  // Ensure all necessary collections exist
+  if (!inMemoryDb.users) inMemoryDb.users = [];
+  if (!inMemoryDb.passwordHashes) inMemoryDb.passwordHashes = {};
+  if (!inMemoryDb.wallets) inMemoryDb.wallets = [];
+  if (!inMemoryDb.transactions) inMemoryDb.transactions = [];
+  if (!inMemoryDb.categories) inMemoryDb.categories = getDefaultCategories();
+  if (!inMemoryDb.budgets) inMemoryDb.budgets = [];
+  if (!inMemoryDb.savingsGoals) inMemoryDb.savingsGoals = [];
+  if (!inMemoryDb.loans) inMemoryDb.loans = [];
+  if (!inMemoryDb.notifications) inMemoryDb.notifications = [];
+  if (!inMemoryDb.subscriptionPayments) inMemoryDb.subscriptionPayments = [];
+  if (!inMemoryDb.userPresences) inMemoryDb.userPresences = {};
+  if (!inMemoryDb.liveActivities) inMemoryDb.liveActivities = [];
+  if (!inMemoryDb.emailLogs) inMemoryDb.emailLogs = [];
+  if (!inMemoryDb.suggestions) inMemoryDb.suggestions = [];
+
+  if (!inMemoryDb.adminPaymentConfig) {
+    inMemoryDb.adminPaymentConfig = {
+      bkashNumber: '01711-234567',
+      bkashType: 'personal',
+      nagadNumber: '01811-234567',
+      nagadType: 'personal',
+      rocketNumber: '01911-234567-8',
+      bankName: 'Islami Bank Bangladesh PLC / City Bank',
+      bankAccountName: 'Hishab Khata SaaS Admin',
+      bankAccountNumber: '2050112020345678',
+      bankBranch: 'Dhanmondi Branch, Dhaka',
+      bankRoutingNumber: '125272847',
+      proMonthlyPriceBDT: 499,
+      proYearlyPriceBDT: 4999,
+      proLifetimePriceBDT: 9999,
+      proMonthlyPriceUSD: 4.99,
+      proYearlyPriceUSD: 49.99,
+      proLifetimePriceUSD: 99.99,
+      yearlyDiscountPercent: 20,
+      instructionsBn: 'বিকাশ বা নগদ অ্যাপ থেকে "Send Money" বা "Payment" করুন। পেমেন্ট সফল হলে প্রাপ্ত TrxID এবং আপনার মোবাইল নম্বর সাবমিট করুন। অ্যাডমিন ৫-১০ মিনিটের মধ্যে ভেরিফাই করে PRO একাউন্ট একটিভ করে দিবে।',
+      instructionsEn: 'Send the exact subscription fee to the bKash, Nagad or Bank Account above. Enter your Sender Number/Account and the Transaction ID (TrxID) below. Admin verifies and activates PRO within minutes.'
+    };
+  }
+
+  // Merge any saved user accounts from the persistent registry
+  loadUserRegistry(inMemoryDb);
+
+  // Automatically purge legacy demo accounts (user@hishabkhata.com, admin@hishabkhata.com, admin@hishabkhata.io, demo@hishabkhata.io)
+  const legacyDemoEmails = new Set([
+    'user@hishabkhata.com',
+    'admin@hishabkhata.com',
+    'admin@hishabkhata.io',
+    'demo@hishabkhata.io',
+  ]);
+  const initialLength = inMemoryDb.users.length;
+  inMemoryDb.users = inMemoryDb.users.filter(u => !legacyDemoEmails.has((u.email || '').toLowerCase().trim()));
+  if (inMemoryDb.users.length !== initialLength) {
+    saveDb();
+  }
+
   return inMemoryDb;
+}
+
+export function deleteUserFromDb(userId: string): boolean {
+  const db = getDb();
+  const user = db.users.find(u => u.id === userId);
+  if (!user) return false;
+  if ((user.email || '').toLowerCase().trim() === 'sultanitbangladesh@gmail.com') {
+    return false; // Protect owner admin account
+  }
+
+  db.users = db.users.filter(u => u.id !== userId);
+  delete db.passwordHashes[userId];
+  db.wallets = db.wallets.filter(w => w.userId !== userId);
+  db.transactions = db.transactions.filter(t => t.userId !== userId);
+  db.budgets = db.budgets.filter(b => b.userId !== userId);
+  db.savingsGoals = db.savingsGoals.filter(s => s.userId !== userId);
+  db.loans = db.loans.filter(l => l.userId !== userId);
+  db.notifications = db.notifications.filter(n => n.userId !== userId);
+  delete db.userPresences[userId];
+  db.liveActivities = db.liveActivities.filter(a => a.userId !== userId);
+  saveDb();
+  return true;
+}
+
+export function purgeNonAdminUsersFromDb(): { deletedCount: number } {
+  const db = getDb();
+  const beforeCount = db.users.length;
+  
+  // Keep only the owner admin
+  db.users = db.users.filter(u => (u.email || '').toLowerCase().trim() === 'sultanitbangladesh@gmail.com');
+  const allowedUserIds = new Set(db.users.map(u => u.id));
+
+  for (const id of Object.keys(db.passwordHashes)) {
+    if (!allowedUserIds.has(id)) {
+      delete db.passwordHashes[id];
+    }
+  }
+
+  db.wallets = db.wallets.filter(w => allowedUserIds.has(w.userId));
+  db.transactions = db.transactions.filter(t => allowedUserIds.has(t.userId));
+  db.budgets = db.budgets.filter(b => allowedUserIds.has(b.userId));
+  db.savingsGoals = db.savingsGoals.filter(s => allowedUserIds.has(s.userId));
+  db.loans = db.loans.filter(l => allowedUserIds.has(l.userId));
+  db.notifications = db.notifications.filter(n => allowedUserIds.has(n.userId));
+  for (const id of Object.keys(db.userPresences)) {
+    if (!allowedUserIds.has(id)) {
+      delete db.userPresences[id];
+    }
+  }
+  db.liveActivities = db.liveActivities.filter(a => allowedUserIds.has(a.userId));
+  saveDb();
+
+  return { deletedCount: beforeCount - db.users.length };
 }
 
 export function saveDb(): void {
@@ -523,7 +451,46 @@ export function saveDb(): void {
     const tempFile = `${DB_FILE}.tmp`;
     fs.writeFileSync(tempFile, JSON.stringify(inMemoryDb, null, 2), 'utf-8');
     fs.renameSync(tempFile, DB_FILE);
+
+    // Also persist durable user registry backup
+    try {
+      const regData = {
+        users: inMemoryDb.users,
+        passwordHashes: inMemoryDb.passwordHashes,
+        updatedAt: new Date().toISOString(),
+      };
+      const tempReg = `${USERS_REGISTRY_FILE}.tmp`;
+      fs.writeFileSync(tempReg, JSON.stringify(regData, null, 2), 'utf-8');
+      fs.renameSync(tempReg, USERS_REGISTRY_FILE);
+    } catch {
+      // Non-blocking
+    }
+
+    // In local/container environments, keep bundled DB file in sync as well
+    try {
+      if (BUNDLED_DB_FILE && DB_FILE !== BUNDLED_DB_FILE && fs.existsSync(path.dirname(BUNDLED_DB_FILE))) {
+        fs.writeFileSync(BUNDLED_DB_FILE, JSON.stringify(inMemoryDb, null, 2), 'utf-8');
+      }
+    } catch {
+      // Non-blocking in serverless read-only contexts
+    }
   } catch (err) {
     console.error('Failed to persist database file:', err);
   }
+}
+
+export function registerOrSyncUser(user: User, passwordHash?: string): void {
+  const db = getDb();
+  const existingIdx = db.users.findIndex(u => u.id === user.id || (u.email && u.email.toLowerCase() === (user.email || '').toLowerCase()));
+  if (existingIdx >= 0) {
+    db.users[existingIdx] = { ...db.users[existingIdx], ...user };
+  } else {
+    db.users.push(user);
+  }
+
+  if (passwordHash) {
+    db.passwordHashes[user.id] = passwordHash;
+  }
+
+  saveDb();
 }

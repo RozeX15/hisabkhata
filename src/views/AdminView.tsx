@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useI18n } from '../lib/i18n';
 import { useAuth } from '../lib/auth';
 import { api } from '../lib/api';
@@ -57,8 +57,19 @@ import {
   Sparkles,
   ThumbsUp,
   Trash2,
-  Heart
+  Heart,
+  Database,
+  Download
 } from 'lucide-react';
+import {
+  fetchAllUsersFromFirestore,
+  subscribeToFirestoreUsers,
+  updateUserRoleOrPlanInFirestore,
+  seedDefaultUsersToFirestore,
+  deleteUserFromFirestore,
+  purgeAllNonAdminUsersFromFirestore
+} from '../lib/accountPersistence';
+import firebaseConfigData from '../../firebase-applet-config.json';
 
 interface AdminViewProps {
   onNavigate?: (view: string) => void;
@@ -95,6 +106,10 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
 
   // Filters
   const [userSearch, setUserSearch] = useState('');
+  const [userRoleFilter, setUserRoleFilter] = useState<'all' | 'admin' | 'user'>('all');
+  const [userPlanFilter, setUserPlanFilter] = useState<'all' | 'free' | 'pro'>('all');
+  const [syncingFirestore, setSyncingFirestore] = useState(false);
+  const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
   const [paymentFilter, setPaymentFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
 
   // Direct Message Modal / Form
@@ -129,9 +144,9 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
 
   const fetchAllAdminData = async () => {
     try {
-      const [statsRes, usersRes, presencesRes, paymentsRes, configRes, activitiesRes, emailsRes, sugRes] = await Promise.all([
+      const [statsRes, firestoreUsers, presencesRes, paymentsRes, configRes, activitiesRes, emailsRes, sugRes] = await Promise.all([
         api.getAdminStats(),
-        api.getAdminUsers(),
+        fetchAllUsersFromFirestore().catch(() => api.getAdminUsers()),
         api.getAdminPresences(),
         api.getAdminSubscriptionPayments(),
         api.getSubscriptionConfig(),
@@ -141,7 +156,11 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
       ]);
 
       setStats((statsRes as any).stats || statsRes);
-      setUsers((usersRes as any).users || usersRes);
+      if (Array.isArray(firestoreUsers)) {
+        setUsers(firestoreUsers);
+      } else if ((firestoreUsers as any)?.users) {
+        setUsers((firestoreUsers as any).users);
+      }
       setPresences(presencesRes || []);
       setPayments(paymentsRes || []);
       setPaymentConfig(configRes);
@@ -160,6 +179,14 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
 
   useEffect(() => {
     fetchAllAdminData();
+
+    // Live real-time stream directly from Firebase Firestore users collection
+    const unsubscribeUsers = subscribeToFirestoreUsers((freshFirestoreUsers) => {
+      if (freshFirestoreUsers && freshFirestoreUsers.length > 0) {
+        setUsers(freshFirestoreUsers);
+      }
+    });
+
     // Auto refresh presence & activities every 10 seconds
     const interval = setInterval(() => {
       api.getAdminPresences().then(res => setPresences(res || [])).catch(() => {});
@@ -171,12 +198,57 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
         if (res?.stats) setSuggestionStats(res.stats);
       }).catch(() => {});
     }, 10000);
-    return () => clearInterval(interval);
+
+    return () => {
+      clearInterval(interval);
+      unsubscribeUsers();
+    };
   }, []);
 
   const handleManualRefresh = () => {
     setRefreshing(true);
     fetchAllAdminData();
+  };
+
+  const handleSyncFirestoreUsers = async () => {
+    setSyncingFirestore(true);
+    try {
+      await seedDefaultUsersToFirestore();
+      const fresh = await fetchAllUsersFromFirestore();
+      setUsers(fresh);
+    } catch (err: any) {
+      alert('Firestore sync: ' + (err.message || err));
+    } finally {
+      setSyncingFirestore(false);
+    }
+  };
+
+  const handleCopyEmail = (email: string) => {
+    navigator.clipboard.writeText(email);
+    setCopiedEmail(email);
+    setTimeout(() => setCopiedEmail(null), 2000);
+  };
+
+  const handleExportUsersCsv = () => {
+    const headers = ['User Name', 'Email Address', 'Phone', 'Role', 'Plan', 'Status', 'User ID', 'Created At'];
+    const rows = filteredUsers.map(u => [
+      `"${(u.name || '').replace(/"/g, '""')}"`,
+      `"${(u.email || '').replace(/"/g, '""')}"`,
+      `"${(u.phone || '').replace(/"/g, '""')}"`,
+      u.role || 'user',
+      u.plan || 'free',
+      u.status || 'active',
+      u.id,
+      u.createdAt || ''
+    ]);
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `hishabkhata_firebase_users_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const handleCopy = (text: string, key: string) => {
@@ -185,11 +257,13 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
     setTimeout(() => setCopiedKey(null), 2000);
   };
 
-  // User Management Handlers
+  // User Management Handlers (Persisted to Firebase Firestore)
   const handleUpdateUserRole = async (targetUserId: string, newRole: 'admin' | 'user') => {
     try {
-      await api.updateUserRole(targetUserId, newRole);
-      await fetchAllAdminData();
+      await updateUserRoleOrPlanInFirestore(targetUserId, { role: newRole });
+      await api.updateUserRole(targetUserId, newRole).catch(() => {});
+      const fresh = await fetchAllUsersFromFirestore();
+      setUsers(fresh);
     } catch (err: any) {
       alert(err.message || 'Failed to update role');
     }
@@ -197,8 +271,10 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
 
   const handleUpdateUserPlan = async (targetUserId: string, newPlan: 'free' | 'pro' | 'enterprise') => {
     try {
-      await api.updateUserPlan(targetUserId, newPlan);
-      await fetchAllAdminData();
+      await updateUserRoleOrPlanInFirestore(targetUserId, { plan: newPlan as any });
+      await api.updateUserPlan(targetUserId, newPlan).catch(() => {});
+      const fresh = await fetchAllUsersFromFirestore();
+      setUsers(fresh);
     } catch (err: any) {
       alert(err.message || 'Failed to update plan');
     }
@@ -206,10 +282,52 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
 
   const handleUpdateUserStatus = async (targetUserId: string, newStatus: 'active' | 'deactivated') => {
     try {
-      await api.updateUserStatus(targetUserId, newStatus);
-      await fetchAllAdminData();
+      await updateUserRoleOrPlanInFirestore(targetUserId, { status: newStatus });
+      await api.updateUserStatus(targetUserId, newStatus).catch(() => {});
+      const fresh = await fetchAllUsersFromFirestore();
+      setUsers(fresh);
     } catch (err: any) {
       alert(err.message || 'Failed to update status');
+    }
+  };
+
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
+  const [purgingUsers, setPurgingUsers] = useState(false);
+
+  const handleDeleteUser = async (targetUser: User) => {
+    if ((targetUser.email || '').toLowerCase().trim() === 'sultanitbangladesh@gmail.com' || targetUser.id === 'admin-sultan-001') {
+      alert('Cannot delete Primary Owner Admin account.');
+      return;
+    }
+    if (!window.confirm(`Are you sure you want to permanently delete user account "${targetUser.name}" (${targetUser.email || targetUser.phone || targetUser.id}) from Firebase and the database?`)) {
+      return;
+    }
+    setDeletingUserId(targetUser.id);
+    try {
+      await deleteUserFromFirestore(targetUser.id, targetUser.email, targetUser.phone);
+      const fresh = await fetchAllUsersFromFirestore();
+      setUsers(fresh);
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete user');
+    } finally {
+      setDeletingUserId(null);
+    }
+  };
+
+  const handlePurgeNonAdminUsers = async () => {
+    if (!window.confirm('Are you sure you want to delete ALL non-admin user accounts? Only your Owner Admin account (sultanitbangladesh@gmail.com) will be preserved. All other demo/non-admin user accounts will be permanently deleted from Firebase and the database.')) {
+      return;
+    }
+    setPurgingUsers(true);
+    try {
+      const res = await purgeAllNonAdminUsersFromFirestore();
+      const fresh = await fetchAllUsersFromFirestore();
+      setUsers(fresh);
+      alert(`Cleanup successful: ${res.deletedCount} account(s) deleted. Only Sultan (Owner Admin) is preserved.`);
+    } catch (err: any) {
+      alert(err.message || 'Purge failed');
+    } finally {
+      setPurgingUsers(false);
     }
   };
 
@@ -361,10 +479,31 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
   const onlineCount = presences.filter(p => p.isOnline).length;
   const pendingPaymentsCount = payments.filter(p => p.status === 'pending').length;
 
-  const filteredUsers = users.filter(u =>
-    u.name?.toLowerCase().includes(userSearch.toLowerCase()) ||
-    u.email?.toLowerCase().includes(userSearch.toLowerCase())
-  );
+  const filteredUsers = useMemo(() => {
+    // Ensure every user in the list has a unique id to prevent duplicate React keys
+    const seenIds = new Set<string>();
+    const uniqueList: User[] = [];
+    for (const u of users) {
+      if (u && u.id && !seenIds.has(u.id)) {
+        seenIds.add(u.id);
+        uniqueList.push(u);
+      }
+    }
+
+    return uniqueList.filter(u => {
+      const searchLower = userSearch.toLowerCase().trim();
+      const matchesSearch = !searchLower ||
+        (u.name || '').toLowerCase().includes(searchLower) ||
+        (u.email || '').toLowerCase().includes(searchLower) ||
+        (u.phone || '').toLowerCase().includes(searchLower) ||
+        (u.id || '').toLowerCase().includes(searchLower);
+
+      const matchesRole = userRoleFilter === 'all' || u.role === userRoleFilter;
+      const matchesPlan = userPlanFilter === 'all' || u.plan === userPlanFilter;
+
+      return matchesSearch && matchesRole && matchesPlan;
+    });
+  }, [users, userSearch, userRoleFilter, userPlanFilter]);
 
   const filteredPayments = payments.filter(p => {
     if (paymentFilter === 'all') return true;
@@ -548,6 +687,52 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
         </div>
       )}
 
+      {/* Primary Database Status Banner */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 sm:p-5 rounded-3xl bg-amber-500/10 dark:bg-amber-500/5 border border-amber-400/50 dark:border-amber-500/30">
+        <div className="flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-md shadow-amber-500/20">
+            <Database className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-black uppercase tracking-wider text-amber-900 dark:text-amber-300">
+                Primary Database: Firebase Firestore Only
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 text-[10px] font-extrabold border border-emerald-300 dark:border-emerald-800">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                Live Real-Time Sync
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5 font-medium">
+              Firestore Project: <span className="font-mono font-bold text-slate-900 dark:text-slate-100">pelagic-nebula-7jk7s</span> | Database ID: <span className="font-mono font-bold text-slate-900 dark:text-slate-100">{firebaseConfigData.firestoreDatabaseId || 'ai-studio-hishabkhata-fbe26cc2-dd75-4f5c-950d-f8c94bf7952a'}</span>
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            id="admin-sync-firestore-btn"
+            type="button"
+            onClick={handleSyncFirestoreUsers}
+            disabled={syncingFirestore}
+            className="px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
+            title="Sync all default system accounts and persistent users to Firestore"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${syncingFirestore ? 'animate-spin' : ''}`} />
+            <span>{syncingFirestore ? 'Syncing...' : 'Sync to Firestore'}</span>
+          </button>
+          <button
+            id="admin-jump-to-users-btn"
+            type="button"
+            onClick={() => setActiveTab('users')}
+            className="px-3.5 py-2 bg-slate-900 dark:bg-slate-700 hover:bg-slate-850 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+          >
+            <Users className="w-3.5 h-3.5 text-amber-400" />
+            <span>View All Users ({users.length})</span>
+          </button>
+        </div>
+      </div>
+
       {/* Main Tab Navigation */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-slate-200 dark:border-slate-700/80 text-xs sm:text-sm font-extrabold">
         <button
@@ -639,12 +824,15 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
           onClick={() => setActiveTab('users')}
           className={`px-4 py-2.5 rounded-2xl transition cursor-pointer flex items-center gap-2 shrink-0 ${
             activeTab === 'users'
-              ? 'bg-teal-700 text-white shadow-md'
+              ? 'bg-amber-600 text-white shadow-md'
               : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
           }`}
         >
-          <Users className="w-4 h-4" />
-          <span>Tenant Directory ({users.length})</span>
+          <Database className="w-4 h-4 text-amber-400" />
+          <span>Firebase Users ({users.length})</span>
+          <span className="px-2 py-0.5 rounded-full bg-emerald-400 text-slate-950 text-[10px] font-black">
+            Firestore Live
+          </span>
         </button>
 
         <button
@@ -1136,115 +1324,412 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
       )}
 
       {/* ------------------------------------------------------------- */}
-      {/* TAB 3: TENANT DIRECTORY & ROLES */}
+      {/* TAB 3: FIREBASE FIRESTORE USERS DIRECTORY */}
       {/* ------------------------------------------------------------- */}
       {activeTab === 'users' && (
         <div className="space-y-4">
-          <div className="p-5 rounded-3xl bg-white dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <h3 className="font-extrabold text-base text-slate-900 dark:text-white">
-                Registered Tenant Directory ({users.length})
-              </h3>
-              <p className="text-xs text-slate-400">
-                Manage roles, elevate tier subscriptions, and inspect user accounts.
-              </p>
+          {/* Header Card */}
+          <div className="p-6 rounded-3xl bg-white dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-md shadow-amber-500/20">
+                <Database className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <h3 className="font-black text-lg sm:text-xl text-slate-900 dark:text-white">
+                    Firebase Firestore User Directory
+                  </h3>
+                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 text-[10px] font-black uppercase tracking-wider border border-emerald-300 dark:border-emerald-800 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                    Live Firestore Sync
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-[10px] font-bold">
+                    {users.length} Total Registered
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">
+                  Direct live stream from Firebase Firestore database <code className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-900 rounded font-mono text-amber-700 dark:text-amber-400">{firebaseConfigData.firestoreDatabaseId || 'ai-studio-hishabkhata-fbe26cc2-dd75-4f5c-950d-f8c94bf7952a'}</code>. Showing all existing accounts and new registrations.
+                </p>
+              </div>
             </div>
 
-            <div className="relative w-full sm:w-64">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-              <input
-                type="text"
-                value={userSearch}
-                onChange={(e) => setUserSearch(e.target.value)}
-                placeholder="Search user name or email..."
-                className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-teal-500"
-              />
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              <button
+                id="admin-purge-non-admin-users-btn"
+                type="button"
+                onClick={handlePurgeNonAdminUsers}
+                disabled={purgingUsers}
+                className="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
+                title="Delete all demo and non-admin user accounts from Firebase and database"
+              >
+                <Trash2 className={`w-3.5 h-3.5 ${purgingUsers ? 'animate-spin' : ''}`} />
+                <span>{purgingUsers ? 'Purging...' : 'Delete Non-Admin Users'}</span>
+              </button>
+
+              <button
+                id="admin-sync-firestore-users-btn"
+                type="button"
+                onClick={handleSyncFirestoreUsers}
+                disabled={syncingFirestore}
+                className="px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
+                title="Force sync baseline and new accounts to Cloud Firestore"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${syncingFirestore ? 'animate-spin' : ''}`} />
+                <span>{syncingFirestore ? 'Syncing...' : 'Sync with Firebase'}</span>
+              </button>
+
+              <button
+                id="admin-export-users-csv-btn"
+                type="button"
+                onClick={handleExportUsersCsv}
+                className="px-3.5 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-650 text-slate-800 dark:text-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs border border-slate-200 dark:border-slate-600"
+                title="Download user list with names and emails in CSV format"
+              >
+                <Download className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+                <span>Export CSV</span>
+              </button>
             </div>
           </div>
 
+          {/* Quick Metrics Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="p-4 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 shadow-xs">
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total In Database</p>
+              <p className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-0.5">
+                {users.length}
+              </p>
+              <p className="text-[10px] text-slate-400 mt-0.5">Existing & new accounts</p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 shadow-xs">
+              <p className="text-[11px] font-bold text-purple-500 uppercase tracking-wider">Administrators</p>
+              <p className="text-xl sm:text-2xl font-black text-purple-700 dark:text-purple-400 mt-0.5">
+                {users.filter(u => u.role === 'admin').length}
+              </p>
+              <p className="text-[10px] text-slate-400 mt-0.5">Elevated access</p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 shadow-xs">
+              <p className="text-[11px] font-bold text-amber-500 uppercase tracking-wider">PRO Subscriptions</p>
+              <p className="text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400 mt-0.5">
+                {users.filter(u => u.plan === 'pro').length}
+              </p>
+              <p className="text-[10px] text-slate-400 mt-0.5">Active premium tier</p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 shadow-xs">
+              <p className="text-[11px] font-bold text-teal-600 uppercase tracking-wider">Free Accounts</p>
+              <p className="text-xl sm:text-2xl font-black text-teal-700 dark:text-teal-400 mt-0.5">
+                {users.filter(u => u.plan !== 'pro').length}
+              </p>
+              <p className="text-[10px] text-slate-400 mt-0.5">Standard tier</p>
+            </div>
+          </div>
+
+          {/* Search & Filters Card */}
+          <div className="p-4 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+              <input
+                id="admin-search-users-input"
+                type="text"
+                value={userSearch}
+                onChange={(e) => setUserSearch(e.target.value)}
+                placeholder="Search user by Name, Email address, or Phone number..."
+                className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs sm:text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-teal-500 font-medium"
+              />
+              {userSearch && (
+                <button
+                  onClick={() => setUserSearch('')}
+                  className="absolute right-3 top-2.5 text-xs text-slate-400 hover:text-slate-600"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-1.5">
+              <div className="flex items-center bg-slate-100 dark:bg-slate-900 p-0.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold">
+                <button
+                  type="button"
+                  onClick={() => setUserRoleFilter('all')}
+                  className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${
+                    userRoleFilter === 'all'
+                      ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs'
+                      : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
+                >
+                  All ({users.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setUserRoleFilter('admin')}
+                  className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${
+                    userRoleFilter === 'admin'
+                      ? 'bg-white dark:bg-slate-800 text-purple-700 dark:text-purple-300 shadow-xs'
+                      : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
+                >
+                  Admins ({users.filter(u => u.role === 'admin').length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setUserRoleFilter('user')}
+                  className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${
+                    userRoleFilter === 'user'
+                      ? 'bg-white dark:bg-slate-800 text-teal-700 dark:text-teal-300 shadow-xs'
+                      : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
+                >
+                  Users ({users.filter(u => u.role !== 'admin').length})
+                </button>
+              </div>
+
+              <div className="flex items-center bg-slate-100 dark:bg-slate-900 p-0.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold">
+                <button
+                  type="button"
+                  onClick={() => setUserPlanFilter('all')}
+                  className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${
+                    userPlanFilter === 'all'
+                      ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs'
+                      : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
+                >
+                  All Plans
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setUserPlanFilter('pro')}
+                  className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${
+                    userPlanFilter === 'pro'
+                      ? 'bg-white dark:bg-slate-800 text-amber-700 dark:text-amber-300 shadow-xs'
+                      : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
+                >
+                  PRO Only
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setUserPlanFilter('free')}
+                  className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${
+                    userPlanFilter === 'free'
+                      ? 'bg-white dark:bg-slate-800 text-teal-700 dark:text-teal-300 shadow-xs'
+                      : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
+                >
+                  Free Only
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* User Table with Name and Email Highlighted */}
           <div className="bg-white dark:bg-slate-800/90 rounded-3xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs sm:text-sm">
                 <thead>
                   <tr className="border-b border-slate-100 dark:border-slate-700/80 bg-slate-50/70 dark:bg-slate-900/50 text-slate-400 font-bold uppercase text-[10px] tracking-wider">
-                    <th className="py-3 px-4">User</th>
+                    <th className="py-3 px-4">User Name</th>
+                    <th className="py-3 px-4">Email Address</th>
                     <th className="py-3 px-4">Role</th>
                     <th className="py-3 px-4">Plan</th>
                     <th className="py-3 px-4">Status</th>
-                    <th className="py-3 px-4">Created</th>
+                    <th className="py-3 px-4">Registered Date</th>
+                    <th className="py-3 px-4">Firestore Sync</th>
                     <th className="py-3 px-4 text-center">Manage</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
-                  {filteredUsers.map((u) => (
-                    <tr key={u.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-700/40 transition">
-                      <td className="py-3.5 px-4">
-                        <p className="font-bold text-slate-900 dark:text-white">{u.name}</p>
-                        <p className="text-[11px] text-slate-400">{u.email}</p>
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
-                          u.role === 'admin'
-                            ? 'bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300'
-                            : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
-                        }`}>
-                          {u.role}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
-                          u.plan === 'pro'
-                            ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
-                            : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
-                        }`}>
-                          {u.plan}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                          u.status === 'active'
-                            ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40'
-                            : 'text-red-600 bg-red-50 dark:bg-red-950/40'
-                        }`}>
-                          {u.status}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-400 text-xs">
-                        {new Date(u.createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="py-3.5 px-4 text-center">
-                        <div className="flex items-center justify-center gap-1.5">
-                          <select
-                            value={u.plan}
-                            onChange={(e) => handleUpdateUserPlan(u.id, e.target.value as any)}
-                            className="px-2 py-1 text-[11px] font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white outline-none cursor-pointer"
-                          >
-                            <option value="free">Free</option>
-                            <option value="pro">PRO</option>
-                            <option value="enterprise">Enterprise</option>
-                          </select>
-
-                          <select
-                            value={u.role}
-                            onChange={(e) => handleUpdateUserRole(u.id, e.target.value as any)}
-                            className="px-2 py-1 text-[11px] font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white outline-none cursor-pointer"
-                          >
-                            <option value="user">User</option>
-                            <option value="admin">Admin</option>
-                          </select>
-
-                          <button
-                            type="button"
-                            onClick={() => handleOpenDirectMessage({ id: u.id, name: u.name, email: u.email })}
-                            className="p-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 dark:bg-teal-950/50 dark:hover:bg-teal-900 text-teal-700 dark:text-teal-300 transition cursor-pointer"
-                            title="Send Direct Message"
-                          >
-                            <MessageSquare className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
+                  {filteredUsers.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="py-12 text-center text-slate-400">
+                        <Users className="w-8 h-8 mx-auto text-slate-300 dark:text-slate-600 mb-2" />
+                        <p className="font-bold text-sm text-slate-700 dark:text-slate-300">No users found matching your filters</p>
+                        <p className="text-xs mt-1">Try clearing your search or filters</p>
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    filteredUsers.map((u) => {
+                      const isOwner = u.email === 'sultanitbangladesh@gmail.com';
+                      const initials = (u.name || 'U')
+                        .split(' ')
+                        .map(n => n[0])
+                        .slice(0, 2)
+                        .join('')
+                        .toUpperCase();
+
+                      return (
+                        <tr key={u.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-700/40 transition">
+                          {/* User Name */}
+                          <td className="py-3.5 px-4">
+                            <div className="flex items-center gap-2.5">
+                              <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-xs shrink-0 ${
+                                isOwner
+                                  ? 'bg-amber-400 text-slate-950 ring-2 ring-amber-400/40'
+                                  : u.role === 'admin'
+                                  ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/60 dark:text-purple-300'
+                                  : 'bg-teal-100 text-teal-800 dark:bg-teal-900/60 dark:text-teal-300'
+                              }`}>
+                                {initials}
+                              </div>
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                  <p className="font-black text-slate-900 dark:text-white truncate">
+                                    {u.name || 'Unnamed User'}
+                                  </p>
+                                  {isOwner && (
+                                    <span className="px-1.5 py-0.2 bg-amber-400 text-slate-950 font-black text-[9px] rounded-md tracking-wider uppercase">
+                                      Owner
+                                    </span>
+                                  )}
+                                </div>
+                                {u.phone && (
+                                  <p className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
+                                    <Smartphone className="w-3 h-3 text-slate-400" />
+                                    <span>{u.phone}</span>
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Email Address */}
+                          <td className="py-3.5 px-4">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-mono font-semibold text-slate-900 dark:text-slate-100 text-xs">
+                                {u.email || 'No email associated'}
+                              </span>
+                              {u.email && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopyEmail(u.email)}
+                                  className="p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition cursor-pointer"
+                                  title="Copy Email Address"
+                                >
+                                  {copiedEmail === u.email ? (
+                                    <Check className="w-3.5 h-3.5 text-emerald-500" />
+                                  ) : (
+                                    <Copy className="w-3.5 h-3.5" />
+                                  )}
+                                </button>
+                              )}
+                              {u.email && (
+                                <a
+                                  href={`mailto:${u.email}`}
+                                  className="p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-teal-600 transition cursor-pointer"
+                                  title="Send Email"
+                                >
+                                  <Mail className="w-3.5 h-3.5" />
+                                </a>
+                              )}
+                            </div>
+                          </td>
+
+                          {/* Role */}
+                          <td className="py-3.5 px-4">
+                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                              u.role === 'admin'
+                                ? 'bg-purple-100 text-purple-800 dark:bg-purple-950/80 dark:text-purple-300 border border-purple-200 dark:border-purple-800'
+                                : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                            }`}>
+                              {u.role}
+                            </span>
+                          </td>
+
+                          {/* Plan */}
+                          <td className="py-3.5 px-4">
+                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                              u.plan === 'pro'
+                                ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-300 dark:border-amber-700'
+                                : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                            }`}>
+                              {u.plan}
+                            </span>
+                          </td>
+
+                          {/* Status */}
+                          <td className="py-3.5 px-4">
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateUserStatus(u.id, u.status === 'active' ? 'deactivated' : 'active')}
+                              className={`px-2 py-0.5 rounded-full text-[10px] font-bold cursor-pointer transition ${
+                                u.status === 'active'
+                                  ? 'text-emerald-700 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100'
+                                  : 'text-red-700 bg-red-50 dark:bg-red-950/60 hover:bg-red-100'
+                              }`}
+                              title="Click to toggle active/deactivated"
+                            >
+                              {u.status || 'active'}
+                            </button>
+                          </td>
+
+                          {/* Created / Joined */}
+                          <td className="py-3.5 px-4 text-slate-500 dark:text-slate-400 text-xs">
+                            {u.createdAt ? new Date(u.createdAt).toLocaleDateString(undefined, {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric'
+                            }) : 'Earlier'}
+                          </td>
+
+                          {/* Firestore Status */}
+                          <td className="py-3.5 px-4">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold border border-emerald-200 dark:border-emerald-800">
+                              <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                              <span>Firestore Doc</span>
+                            </span>
+                          </td>
+
+                          {/* Manage Actions */}
+                          <td className="py-3.5 px-4 text-center">
+                            <div className="flex items-center justify-center gap-1.5">
+                              <select
+                                value={u.plan || 'free'}
+                                onChange={(e) => handleUpdateUserPlan(u.id, e.target.value as any)}
+                                className="px-2 py-1 text-[11px] font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white outline-none cursor-pointer"
+                                title="Change User Subscription Plan"
+                              >
+                                <option value="free">Free</option>
+                                <option value="pro">PRO</option>
+                                <option value="enterprise">Enterprise</option>
+                              </select>
+
+                              <select
+                                value={u.role || 'user'}
+                                onChange={(e) => handleUpdateUserRole(u.id, e.target.value as any)}
+                                className="px-2 py-1 text-[11px] font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white outline-none cursor-pointer"
+                                title="Change User Role"
+                              >
+                                <option value="user">User</option>
+                                <option value="admin">Admin</option>
+                              </select>
+
+                              <button
+                                type="button"
+                                onClick={() => handleOpenDirectMessage({ id: u.id, name: u.name, email: u.email })}
+                                className="p-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 dark:bg-teal-950/50 dark:hover:bg-teal-900 text-teal-700 dark:text-teal-300 transition cursor-pointer"
+                                title="Send Direct In-App Message"
+                              >
+                                <MessageSquare className="w-3.5 h-3.5" />
+                              </button>
+
+                              {!isOwner && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteUser(u)}
+                                  disabled={deletingUserId === u.id}
+                                  className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/50 dark:hover:bg-rose-900 text-rose-600 dark:text-rose-400 transition cursor-pointer disabled:opacity-50"
+                                  title="Delete User Account permanently"
+                                >
+                                  <Trash2 className={`w-3.5 h-3.5 ${deletingUserId === u.id ? 'animate-spin' : ''}`} />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </div>

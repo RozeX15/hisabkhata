@@ -95,6 +95,8 @@ export const api = {
   // Auth
   register: (data: any) => request<{ user: User; token: string }>('/auth/register', { method: 'POST', body: JSON.stringify(data) }),
   login: (data: any) => request<{ user: User; token: string }>('/auth/login', { method: 'POST', body: JSON.stringify(data) }),
+  syncUser: (data: { user: Partial<User>; passwordHash?: string; password?: string }) =>
+    request<{ user: User; token: string }>('/auth/sync-user', { method: 'POST', body: JSON.stringify(data) }),
   loginWithGoogle: (data: { email: string; name?: string; avatarUrl?: string; firebaseUid?: string; idToken?: string }) =>
     request<{ user: User; token: string }>('/auth/firebase-google', { method: 'POST', body: JSON.stringify(data) }),
   getMe: () => request<{ user: User }>('/auth/me'),
@@ -215,6 +217,8 @@ export const api = {
     if (data.role) return request<any>(`/admin/users/${id}/role`, { method: 'PUT', body: JSON.stringify({ role: data.role }) });
     return Promise.resolve({ success: true });
   },
+  deleteAdminUser: (id: string) => request<{ success: boolean; message: string }>(`/admin/users/${id}`, { method: 'DELETE' }),
+  purgeNonAdminUsers: () => request<{ success: boolean; deletedCount: number; message: string }>('/admin/users/purge-non-admin', { method: 'POST' }),
   getAdminLanguages: () => request<LanguageInfo[]>('/admin/languages'),
   createAdminLanguage: (data: any) => request<LanguageInfo>('/admin/languages', { method: 'POST', body: JSON.stringify(data) }),
   updateAdminLanguage: (code: string, data: any) => request<LanguageInfo>(`/admin/languages/${code}`, { method: 'PUT', body: JSON.stringify(data) }),

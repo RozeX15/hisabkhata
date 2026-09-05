@@ -208,28 +208,28 @@ export const Topbar: React.FC<TopbarProps> = ({
           </button>
         )}
 
-        {/* AI Advisor Button */}
+        {/* AI Advisor Button (Tablet & Desktop) */}
         <button
           id="topbar-ai-btn"
           type="button"
           onClick={onOpenAiAdvisor}
-          className="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 bg-gradient-to-r from-teal-700 to-teal-600 hover:from-teal-800 hover:to-teal-700 text-white text-xs font-bold rounded-lg shadow-xs transition cursor-pointer"
+          className="hidden sm:inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 bg-gradient-to-r from-teal-700 to-teal-600 hover:from-teal-800 hover:to-teal-700 text-white text-xs font-bold rounded-lg shadow-xs transition cursor-pointer"
           title="Open AI Coach"
         >
           <Sparkles className="w-3.5 h-3.5 text-amber-300" />
           <span className="hidden md:inline">AI Coach</span>
         </button>
 
-        {/* Quick Add Transaction */}
+        {/* Quick Add Transaction (Tablet & Desktop - on mobile, thumb center button handles this) */}
         <button
           id="topbar-add-tx-btn"
           type="button"
           onClick={onOpenAddTransaction}
-          className="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 bg-teal-700 hover:bg-teal-800 text-white text-xs sm:text-sm font-bold rounded-lg shadow-md shadow-teal-700/20 transition cursor-pointer"
+          className="hidden sm:inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 bg-teal-700 hover:bg-teal-800 text-white text-xs sm:text-sm font-bold rounded-lg shadow-md shadow-teal-700/20 transition cursor-pointer"
           title={t('add')}
         >
           <Plus className="w-4 h-4" />
-          <span className="hidden sm:inline">{t('add')}</span>
+          <span className="hidden md:inline">{t('add')}</span>
         </button>
 
         {/* Notification Bell */}
@@ -261,13 +261,13 @@ export const Topbar: React.FC<TopbarProps> = ({
           )}
         </button>
 
-        {/* Tutorial / Help Guide */}
+        {/* Tutorial / Help Guide (Tablet & Desktop) */}
         {onOpenTutorial && (
           <button
             id="topbar-tutorial-btn"
             type="button"
             onClick={onOpenTutorial}
-            className="p-1.5 sm:p-2 text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 rounded-lg hover:bg-teal-50 dark:hover:bg-teal-950/40 transition cursor-pointer"
+            className="hidden md:inline-flex p-1.5 sm:p-2 text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 rounded-lg hover:bg-teal-50 dark:hover:bg-teal-950/40 transition cursor-pointer"
             title="App Tutorial & User Guide / অ্যাপ গাইড"
           >
             <HelpCircle className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -281,7 +281,7 @@ export const Topbar: React.FC<TopbarProps> = ({
               id="topbar-profile-menu-btn"
               type="button"
               onClick={() => setIsProfileOpen(!isProfileOpen)}
-              className="flex items-center gap-1.5 p-1 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+              className="flex items-center gap-1 sm:gap-1.5 p-1 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
               title={`${user.name} (${user.role})`}
             >
               <div
@@ -298,7 +298,7 @@ export const Topbar: React.FC<TopbarProps> = ({
 
             {/* Dropdown Card */}
             {isProfileOpen && (
-              <div className="absolute right-0 mt-2 w-64 p-3 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 z-50 animate-in fade-in zoom-in-95 space-y-2.5">
+              <div className="absolute right-0 mt-2 w-[calc(100vw-24px)] max-w-xs sm:w-64 p-3 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 z-50 animate-in fade-in zoom-in-95 space-y-2.5">
                 <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
                   <p className="text-xs font-extrabold text-slate-900 dark:text-white truncate">
                     {user.name}
@@ -319,6 +319,34 @@ export const Topbar: React.FC<TopbarProps> = ({
                 </div>
 
                 <div className="space-y-1 text-xs">
+                  {/* Mobile-only Quick Add */}
+                  <button
+                    id="topbar-dropdown-add-tx"
+                    type="button"
+                    onClick={() => {
+                      setIsProfileOpen(false);
+                      onOpenAddTransaction();
+                    }}
+                    className="sm:hidden w-full flex items-center gap-2 px-2.5 py-2 rounded-xl text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/40 font-bold transition cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4 text-teal-600 shrink-0" />
+                    <span>{t('add')} (লেনদেন যোগ করুন)</span>
+                  </button>
+
+                  {/* Mobile-only AI Coach */}
+                  <button
+                    id="topbar-dropdown-ai-coach"
+                    type="button"
+                    onClick={() => {
+                      setIsProfileOpen(false);
+                      onOpenAiAdvisor();
+                    }}
+                    className="sm:hidden w-full flex items-center gap-2 px-2.5 py-2 rounded-xl text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/40 font-bold transition cursor-pointer"
+                  >
+                    <Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
+                    <span>AI Coach Advisor</span>
+                  </button>
+
                   {user.role === 'admin' && onNavigate && (
                     <button
                       id="topbar-menu-admin-btn"
@@ -330,7 +358,7 @@ export const Topbar: React.FC<TopbarProps> = ({
                       className="w-full flex items-center gap-2 px-2.5 py-2 rounded-xl text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/40 font-bold transition cursor-pointer"
                     >
                       <ShieldAlert className="w-4 h-4 shrink-0" />
-                      <span>{activeView === 'admin' ? 'Return to User App' : 'SuperAdmin Panel'}</span>
+                      <span>{activeView === 'admin' ? 'Return to User App' : 'SuperAdmin Suite'}</span>
                     </button>
                   )}
 
@@ -345,7 +373,7 @@ export const Topbar: React.FC<TopbarProps> = ({
                       className="w-full flex items-center gap-2 px-2.5 py-2 rounded-xl text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/40 font-bold transition cursor-pointer"
                     >
                       <Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
-                      <span>{t('nav_suggestions')}</span>
+                      <span>{t('nav_suggestions')} & SuperChat</span>
                     </button>
                   )}
 

@@ -33,7 +33,8 @@ import {
   X,
   Filter,
   Layers,
-  ChevronDown
+  ChevronDown,
+  Receipt
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -158,12 +159,40 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     }
   };
 
+  // Active summary with instant fallback computation so dashboard is never blank or stuck loading
+  const activeSummary: DashboardSummary = useMemo(() => {
+    if (summary) return summary;
+    const userWallets = wallets || [];
+    const totalBal = userWallets.reduce((sum, w) => sum + (Number(w.balance) || 0), 0);
+    const userTx = transactions || [];
+    const thisMonthTx = userTx.filter(t => t.date && t.date.startsWith(currentMonthStr));
+    const inc = thisMonthTx.filter(t => t.type === 'income').reduce((s, t) => s + (Number(t.amount) || 0), 0);
+    const exp = thisMonthTx.filter(t => t.type === 'expense').reduce((s, t) => s + (Number(t.amount) || 0), 0);
+
+    return {
+      totalBalance: totalBal,
+      totalIncomeThisMonth: inc,
+      totalExpensesThisMonth: exp,
+      totalSavings: 0,
+      netSavingsThisMonth: inc - exp,
+      incomeChangePercent: 0,
+      expenseChangePercent: 0,
+      recentTransactions: userTx.slice(0, 10),
+      topExpenseCategories: [],
+      budgetSummaries: [],
+      savingsGoals: [],
+      smartInsights: [],
+      upcomingLoans: [],
+      monthlySpendingTrend: [],
+    };
+  }, [summary, wallets, transactions, currentMonthStr]);
+
   // Resolve all available transactions (combining prop or summary recent)
   const allTxList = useMemo(() => {
     if (transactions && transactions.length > 0) return transactions;
-    if (summary?.recentTransactions && summary.recentTransactions.length > 0) return summary.recentTransactions;
+    if (activeSummary?.recentTransactions && activeSummary.recentTransactions.length > 0) return activeSummary.recentTransactions;
     return [];
-  }, [transactions, summary?.recentTransactions]);
+  }, [transactions, activeSummary?.recentTransactions]);
 
   // Filtered transactions based on selectedMonth
   const filteredTransactions = useMemo(() => {
@@ -180,8 +209,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         return sum + convertCurrency(Number(w.balance) || 0, wCurr, currency);
       }, 0);
     }
-    return convertCurrency(summary?.totalBalance || 0, base, currency);
-  }, [wallets, summary?.totalBalance, base, currency]);
+    return convertCurrency(activeSummary.totalBalance || 0, base, currency);
+  }, [wallets, activeSummary.totalBalance, base, currency]);
 
   // 2. Dynamic period income (for selected month or all time)
   const displaySelectedIncome = useMemo(() => {
@@ -193,10 +222,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       }, 0);
     }
     if (selectedMonth === currentMonthStr) {
-      return convertCurrency(summary?.totalIncomeThisMonth || 0, base, currency);
+      return convertCurrency(activeSummary.totalIncomeThisMonth || 0, base, currency);
     }
     return 0;
-  }, [filteredTransactions, selectedMonth, currentMonthStr, summary?.totalIncomeThisMonth, base, currency]);
+  }, [filteredTransactions, selectedMonth, currentMonthStr, activeSummary.totalIncomeThisMonth, base, currency]);
 
   // 3. Dynamic period expenses (for selected month or all time)
   const displaySelectedExpenses = useMemo(() => {
@@ -208,10 +237,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       }, 0);
     }
     if (selectedMonth === currentMonthStr) {
-      return convertCurrency(summary?.totalExpensesThisMonth || 0, base, currency);
+      return convertCurrency(activeSummary.totalExpensesThisMonth || 0, base, currency);
     }
     return 0;
-  }, [filteredTransactions, selectedMonth, currentMonthStr, summary?.totalExpensesThisMonth, base, currency]);
+  }, [filteredTransactions, selectedMonth, currentMonthStr, activeSummary.totalExpensesThisMonth, base, currency]);
 
   // 4. Live converted net savings / cashflow for selected month
   const displayNetSavings = displaySelectedIncome - displaySelectedExpenses;
@@ -258,22 +287,22 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   // 5. Converted monthly spending trend for the chart
   const convertedMonthlyTrend = useMemo(() => {
-    if (!summary?.monthlySpendingTrend) return [];
-    return summary.monthlySpendingTrend.map((m) => ({
+    const trend = activeSummary.monthlySpendingTrend || [];
+    return trend.map((m) => ({
       month: m.month,
       income: Math.round(convertCurrency(m.income, base, currency)),
       expense: Math.round(convertCurrency(m.expense, base, currency)),
     }));
-  }, [summary?.monthlySpendingTrend, base, currency]);
+  }, [activeSummary.monthlySpendingTrend, base, currency]);
 
   // 6. Converted top expense categories & pie data
   const convertedTopCategories = useMemo(() => {
-    if (!summary?.topExpenseCategories) return [];
-    return summary.topExpenseCategories.map((c) => ({
+    const cats = activeSummary.topExpenseCategories || [];
+    return cats.map((c) => ({
       ...c,
       convertedAmount: convertCurrency(c.amount, base, currency),
     }));
-  }, [summary?.topExpenseCategories, base, currency]);
+  }, [activeSummary.topExpenseCategories, base, currency]);
 
   const categoryPieData = useMemo(() => {
     return convertedTopCategories.map(c => ({
@@ -286,21 +315,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   // Exchange rate details
   const rateFromBaseToCurr = getExchangeRate(base, currency);
   const rateFromCurrToBase = getExchangeRate(currency, base);
-
-  if (!summary) {
-    return (
-      <div className="p-8 flex items-center justify-center min-h-[400px]">
-        <div className="animate-pulse space-y-4 w-full max-w-4xl">
-          <div className="h-32 bg-slate-200 dark:bg-slate-800 rounded-3xl" />
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="h-28 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
-            <div className="h-28 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
-            <div className="h-28 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6 pb-12">
@@ -492,7 +506,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <span>Across {wallets.length} active {wallets.length === 1 ? 'account' : 'accounts'}</span>
             {isConverted && (
               <span className="text-[11px] text-teal-200/80 font-mono">
-                ≈ {formatCurrency(summary.totalBalance, base)}
+                ≈ {formatCurrency(activeSummary.totalBalance, base)}
               </span>
             )}
           </div>
@@ -707,7 +721,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       </div>
 
       {/* 3. Smart Insights Recommendation Strip */}
-      {(summary.smartInsights || []).length > 0 && (
+      {(activeSummary.smartInsights || []).length > 0 && (
         <div className="p-4 rounded-2xl bg-gradient-to-r from-teal-900/10 via-amber-500/10 to-teal-900/5 border border-teal-500/20 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-xl bg-teal-700 text-white shrink-0">
@@ -717,8 +731,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <p className="text-xs font-extrabold text-slate-900 dark:text-white">
                 Smart Financial Insight
               </p>
-              <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5">
-                {summary.smartInsights[0].descriptionKey ? t(summary.smartInsights[0].descriptionKey, summary.smartInsights[0].params) : ((summary.smartInsights[0] as any).message || (summary.smartInsights[0] as any).titleKey || '')}
+              <p className="text-xs text-slate-700 dark:text-slate-300 mt-0.5 font-medium">
+                {activeSummary.smartInsights[0].descriptionKey ? t(activeSummary.smartInsights[0].descriptionKey, activeSummary.smartInsights[0].params) : ((activeSummary.smartInsights[0] as any).message || (activeSummary.smartInsights[0] as any).titleKey || '')}
               </p>
             </div>
           </div>
@@ -754,19 +768,29 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
           <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={convertedMonthlyTrend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" opacity={0.7} />
-                <XAxis dataKey="month" stroke="#475569" fontSize={11} tickLine={false} tick={{ fill: '#475569', fontSize: 11, fontWeight: 600 }} />
-                <YAxis stroke="#475569" fontSize={11} tickLine={false} tick={{ fill: '#475569', fontSize: 11, fontWeight: 600 }} />
-                <Tooltip
-                  formatter={(val: number) => [formatCurrency(val, currency), '']}
-                  contentStyle={{ backgroundColor: '#0F172A', borderRadius: '12px', border: '1px solid #334155', color: '#fff', fontSize: '12px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.3)' }}
-                />
-                <Bar dataKey="income" fill="#10B981" radius={[6, 6, 0, 0]} />
-                <Bar dataKey="expense" fill="#EF4444" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            {convertedMonthlyTrend.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-center p-6 rounded-2xl bg-slate-50 dark:bg-slate-900/40 border border-dashed border-slate-200 dark:border-slate-800">
+                <BarChart3 className="w-8 h-8 mb-2 text-teal-600 dark:text-teal-400" />
+                <p className="text-xs font-bold text-slate-800 dark:text-slate-200">Cashflow Trend Chart Ready</p>
+                <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-1 max-w-sm font-medium">
+                  Monthly income and expenses will be charted here automatically as transactions are recorded.
+                </p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={convertedMonthlyTrend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#CBD5E1" opacity={0.7} />
+                  <XAxis dataKey="month" stroke="#334155" fontSize={11} tickLine={false} tick={{ fill: '#334155', fontSize: 11, fontWeight: 700 }} />
+                  <YAxis stroke="#334155" fontSize={11} tickLine={false} tick={{ fill: '#334155', fontSize: 11, fontWeight: 700 }} />
+                  <Tooltip
+                    formatter={(val: number) => [formatCurrency(val, currency), '']}
+                    contentStyle={{ backgroundColor: '#0F172A', borderRadius: '12px', border: '1px solid #334155', color: '#fff', fontSize: '12px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.3)' }}
+                  />
+                  <Bar dataKey="income" fill="#10B981" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="expense" fill="#EF4444" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
 
@@ -783,7 +807,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
           <div className="flex-1 min-h-[180px] flex items-center justify-center">
             {categoryPieData.length === 0 ? (
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">No expense transactions recorded this month</p>
+              <div className="text-center p-4">
+                <PieChartIcon className="w-8 h-8 mx-auto mb-2 text-slate-400 dark:text-slate-500" />
+                <p className="text-xs font-bold text-slate-700 dark:text-slate-300">No expense records this month</p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 font-medium">Breakdown will appear as you record expenses.</p>
+              </div>
             ) : (
               <ResponsiveContainer width="100%" height={180}>
                 <PieChart>
@@ -848,13 +876,22 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
 
           <div className="space-y-4">
-            {(summary.budgetSummaries || []).length === 0 ? (
-              <div className="text-center py-6 text-slate-500 dark:text-slate-400">
-                <PieChartIcon className="w-8 h-8 mx-auto mb-1 opacity-40 text-teal-600" />
-                <p className="text-xs font-semibold">No budgets created yet</p>
+            {(activeSummary.budgetSummaries || []).length === 0 ? (
+              <div className="text-center py-6 px-4 rounded-2xl bg-slate-50 dark:bg-slate-900/40 border border-dashed border-slate-200 dark:border-slate-800">
+                <PieChartIcon className="w-8 h-8 mx-auto mb-2 text-teal-600 dark:text-teal-400" />
+                <p className="text-xs font-bold text-slate-800 dark:text-slate-200">No category budgets set yet</p>
+                <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5 mb-3 font-medium">Set spending limits for Food, Bills, or Shopping to avoid overspending.</p>
+                <button
+                  type="button"
+                  onClick={onOpenAddBudget}
+                  className="px-3 py-1.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold transition shadow-xs cursor-pointer inline-flex items-center gap-1.5"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Create First Budget</span>
+                </button>
               </div>
             ) : (
-              summary.budgetSummaries.map((b) => {
+              activeSummary.budgetSummaries.map((b) => {
                 const isOver = b.status === 'over_budget';
                 const isWarning = b.status === 'warning';
                 const convertedSpent = convertCurrency(b.spent, base, currency);
@@ -866,7 +903,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         {b.categoryName}
                       </span>
                       <div className="flex items-center gap-2">
-                        <span className="text-slate-600 dark:text-slate-300 font-semibold">
+                        <span className="text-slate-700 dark:text-slate-300 font-bold">
                           {formatCurrency(convertedSpent, currency)} / {formatCurrency(convertedAmount, currency)}
                         </span>
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
@@ -913,13 +950,22 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
 
           <div className="space-y-3">
-            {(summary.savingsGoals || []).length === 0 ? (
-              <div className="text-center py-6 text-slate-500 dark:text-slate-400">
-                <Target className="w-8 h-8 mx-auto mb-1 opacity-40 text-teal-600" />
-                <p className="text-xs font-semibold">No savings goals created yet</p>
+            {(activeSummary.savingsGoals || []).length === 0 ? (
+              <div className="text-center py-6 px-4 rounded-2xl bg-slate-50 dark:bg-slate-900/40 border border-dashed border-slate-200 dark:border-slate-800">
+                <Target className="w-8 h-8 mx-auto mb-2 text-teal-600 dark:text-teal-400" />
+                <p className="text-xs font-bold text-slate-800 dark:text-slate-200">No savings goals created yet</p>
+                <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5 mb-3 font-medium">Start building your emergency fund or saving for big goals.</p>
+                <button
+                  type="button"
+                  onClick={onOpenAddGoal}
+                  className="px-3 py-1.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold transition shadow-xs cursor-pointer inline-flex items-center gap-1.5"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Create First Goal</span>
+                </button>
               </div>
             ) : (
-              summary.savingsGoals.map((g) => {
+              activeSummary.savingsGoals.map((g) => {
                 const percent = Math.round((g.currentAmount / g.targetAmount) * 100);
                 const isCompleted = percent >= 100;
                 const convertedCurrent = convertCurrency(g.currentAmount, g.currency || base, currency);
@@ -941,7 +987,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                           style={{ width: `${Math.min(100, percent)}%` }}
                         />
                       </div>
-                      <div className="flex items-center justify-between text-[11px] text-slate-600 dark:text-slate-400 font-medium">
+                      <div className="flex items-center justify-between text-[11px] text-slate-700 dark:text-slate-300 font-semibold">
                         <span>{formatCurrency(convertedCurrent, currency)} saved</span>
                         <span>Target: {formatCurrency(convertedTarget, currency)}</span>
                       </div>
@@ -984,8 +1030,32 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
         <div className="divide-y divide-slate-200 dark:divide-slate-800/80">
           {filteredTransactions.length === 0 ? (
-            <div className="text-center py-8 text-slate-500 dark:text-slate-400 text-xs font-medium">
-              No transactions recorded for {formatMonthTitle(selectedMonth)}. Click "Add" above to start.
+            <div className="text-center py-8 px-4 rounded-2xl bg-slate-50 dark:bg-slate-900/40 border border-dashed border-slate-200 dark:border-slate-800">
+              <Receipt className="w-8 h-8 mx-auto mb-2 text-slate-500 dark:text-slate-400" />
+              <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                No transactions recorded for {formatMonthTitle(selectedMonth)}
+              </p>
+              <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-1 mb-3 max-w-sm mx-auto font-medium">
+                Add your expenses, income, or transfers to see them reflected live in your dashboard.
+              </p>
+              <div className="flex items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => onOpenAddTransaction('expense')}
+                  className="px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition shadow-xs cursor-pointer inline-flex items-center gap-1"
+                >
+                  <ArrowDownLeft className="w-3.5 h-3.5" />
+                  <span>Add Expense</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onOpenAddTransaction('income')}
+                  className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-xs cursor-pointer inline-flex items-center gap-1"
+                >
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                  <span>Add Income</span>
+                </button>
+              </div>
             </div>
           ) : (
             filteredTransactions.slice(0, 10).map((tx) => {

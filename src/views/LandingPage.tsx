@@ -25,7 +25,6 @@ interface LandingPageProps {
   onGetStarted: () => void;
   onLogin: () => void;
   onGoogleSignIn?: () => void;
-  onDemoUser: () => void;
   onViewLegal: (type: 'privacy' | 'terms' | 'about') => void;
   onOpenDownloadApp?: () => void;
 }
@@ -34,7 +33,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   onGetStarted,
   onLogin,
   onGoogleSignIn,
-  onDemoUser,
   onViewLegal,
   onOpenDownloadApp,
 }) => {

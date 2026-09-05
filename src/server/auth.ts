@@ -40,12 +40,8 @@ export function authMiddleware(req: AuthRequest, res: Response, next: NextFuncti
       return;
     }
 
-    // Always ensure superadmin privilege for the platform owner/admins
-    if (
-      user.email === 'sultanitbangladesh@gmail.com' ||
-      user.email === 'admin@hishabkhata.com' ||
-      user.email === 'admin@hishabkhata.io'
-    ) {
+    // Always ensure superadmin privilege for the platform owner
+    if (user.email === 'sultanitbangladesh@gmail.com') {
       user.role = 'admin';
       user.status = 'active';
       user.plan = 'pro';

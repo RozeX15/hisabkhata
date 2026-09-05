@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import bcrypt from 'bcryptjs';
-import { getDb, saveDb } from './db';
+import { getDb, saveDb, registerOrSyncUser, deleteUserFromDb, purgeNonAdminUsersFromDb } from './db';
 import { authMiddleware, adminOnly, generateToken, AuthRequest } from './auth';
 import {
   User,
@@ -97,6 +97,9 @@ function normalizeBDPhone(phone: string): string {
   if (digitsOnly.startsWith('880')) {
     return '0' + digitsOnly.slice(3);
   }
+  if (digitsOnly.length === 10 && digitsOnly.startsWith('1')) {
+    return '0' + digitsOnly;
+  }
   return digitsOnly;
 }
 
@@ -104,6 +107,145 @@ function isPhoneNumber(val: string): boolean {
   const clean = val.replace(/[\s\-\(\)]/g, '');
   return !clean.includes('@') && /^\+?[0-9]{7,15}$/.test(clean);
 }
+
+export function findUserByIdentifier(db: ReturnType<typeof getDb>, rawIdentifier: string): User | undefined {
+  const clean = rawIdentifier.trim();
+  const lower = clean.toLowerCase();
+  const digits = clean.replace(/\D/g, '');
+  const isPhone = isPhoneNumber(clean);
+  const normalizedPhone = isPhone ? normalizeBDPhone(clean) : (digits.length >= 10 ? normalizeBDPhone(digits) : '');
+
+  // 1. Direct email match
+  let found = db.users.find(u => {
+    const uEmail = (u.email || '').trim().toLowerCase();
+    return uEmail === lower;
+  });
+  if (found) return found;
+
+  // 2. Mobile virtual email or phone number match
+  if (normalizedPhone) {
+    found = db.users.find(u => {
+      const uEmail = (u.email || '').trim().toLowerCase();
+      const uPhone = (u.phone || '').trim();
+      const uPhoneNorm = normalizeBDPhone(uPhone);
+      const uPhoneDigits = uPhone.replace(/\D/g, '');
+
+      if (uEmail === `${normalizedPhone}@mobile.hishabkhata.com`) return true;
+      if (uPhone && (uPhoneNorm === normalizedPhone || uPhoneDigits === digits)) return true;
+      return false;
+    });
+    if (found) return found;
+  }
+
+  // 3. Raw digit matching if 7+ digits provided
+  if (digits.length >= 7) {
+    found = db.users.find(u => {
+      const uPhoneDigits = (u.phone || '').replace(/\D/g, '');
+      return uPhoneDigits && (uPhoneDigits === digits || uPhoneDigits.endsWith(digits) || digits.endsWith(uPhoneDigits));
+    });
+    if (found) return found;
+  }
+
+  // 4. Exact username/name match
+  found = db.users.find(u => {
+    const uName = (u.name || '').trim().toLowerCase();
+    return uName === lower;
+  });
+  if (found) return found;
+
+  return undefined;
+}
+
+// Durable User Rehydration / Sync across serverless instances
+router.post('/auth/sync-user', (req, res) => {
+  const { user: userData, passwordHash, password } = req.body;
+  if (!userData || !userData.name || (!userData.email && !userData.phone)) {
+    res.status(400).json({ error: 'User data with name and email or phone is required' });
+    return;
+  }
+
+  const rawIdentifier = String(userData.email || userData.phone || '').trim();
+  const db = getDb();
+  let existingUser = findUserByIdentifier(db, rawIdentifier);
+
+  const now = new Date().toISOString();
+  let finalUser: User;
+  let finalPasswordHash = passwordHash;
+  if (!finalPasswordHash && password) {
+    finalPasswordHash = bcrypt.hashSync(String(password).trim(), 10);
+  }
+
+  if (existingUser) {
+    existingUser.name = userData.name || existingUser.name;
+    existingUser.phone = userData.phone || existingUser.phone;
+    existingUser.preferredLanguage = userData.preferredLanguage || existingUser.preferredLanguage;
+    existingUser.preferredCurrency = userData.preferredCurrency || existingUser.preferredCurrency;
+    existingUser.updatedAt = now;
+    if (finalPasswordHash) {
+      db.passwordHashes[existingUser.id] = finalPasswordHash;
+    }
+    finalUser = existingUser;
+  } else {
+    const userId = userData.id || `usr-${Date.now()}`;
+    finalUser = {
+      id: userId,
+      name: String(userData.name).trim(),
+      email: userData.email,
+      phone: userData.phone,
+      role: userData.role || 'user',
+      preferredLanguage: userData.preferredLanguage || 'en',
+      preferredCurrency: userData.preferredCurrency || 'BDT',
+      plan: userData.plan || 'free',
+      status: 'active',
+      emailVerified: true,
+      avatarUrl: userData.avatarUrl,
+      createdAt: userData.createdAt || now,
+      updatedAt: now,
+    };
+
+    db.users.push(finalUser);
+    if (finalPasswordHash) {
+      db.passwordHashes[finalUser.id] = finalPasswordHash;
+    }
+
+    // Ensure default starter wallets exist
+    const hasWallets = db.wallets.some(w => w.userId === finalUser.id);
+    if (!hasWallets) {
+      db.wallets.push(
+        {
+          id: `w-cash-${Date.now()}`,
+          userId: finalUser.id,
+          name: 'Cash Wallet',
+          type: 'cash',
+          balance: 0,
+          currency: finalUser.preferredCurrency || 'BDT',
+          color: '#10B981',
+          isDefault: true,
+          createdAt: now,
+          updatedAt: now,
+        },
+        {
+          id: `w-bank-${Date.now()}`,
+          userId: finalUser.id,
+          name: 'Main Bank Account',
+          type: 'bank',
+          balance: 0,
+          currency: finalUser.preferredCurrency || 'BDT',
+          color: '#0F766E',
+          isDefault: false,
+          createdAt: now,
+          updatedAt: now,
+        }
+      );
+    }
+  }
+
+  registerOrSyncUser(finalUser, finalPasswordHash);
+  saveDb();
+
+  const token = generateToken(finalUser);
+  res.json({ user: finalUser, token });
+});
 
 router.post('/auth/register', (req, res) => {
   const { name, email, phone, password, preferredLanguage = 'en', preferredCurrency = 'BDT' } = req.body;
@@ -121,7 +263,7 @@ router.post('/auth/register', (req, res) => {
     : rawIdentifier.toLowerCase();
 
   const db = getDb();
-  const existing = db.users.find(u => {
+  const existing = findUserByIdentifier(db, rawIdentifier) || db.users.find(u => {
     const uEmail = u.email?.trim().toLowerCase();
     const uPhone = u.phone ? normalizeBDPhone(u.phone) : '';
     if (cleanEmail && uEmail === cleanEmail) return true;
@@ -154,8 +296,8 @@ router.post('/auth/register', (req, res) => {
     updatedAt: now,
   };
 
-  db.users.push(newUser);
-  db.passwordHashes[userId] = passwordHash;
+  // Persist user both in memory and to disk/registry
+  registerOrSyncUser(newUser, passwordHash);
 
   // Create default starter wallets
   const defaultCashWallet: Wallet = {
@@ -212,49 +354,44 @@ router.post('/auth/login', (req, res) => {
     return;
   }
 
-  const isPhone = isPhoneNumber(rawIdentifier);
-  const normalizedPhone = isPhone ? normalizeBDPhone(rawIdentifier) : '';
-  let cleanEmail = rawIdentifier.toLowerCase();
-
-  // Map common shorthand handles / usernames to the official admin/user accounts
-  if (
-    cleanEmail === 'admin' ||
-    cleanEmail === 'superadmin' ||
-    cleanEmail === 'root'
-  ) {
-    cleanEmail = 'admin@hishabkhata.com';
-  } else if (
-    cleanEmail === 'sultan' ||
-    cleanEmail === 'sultanit' ||
-    cleanEmail === 'sultanitbangladesh'
-  ) {
-    cleanEmail = 'sultanitbangladesh@gmail.com';
-  } else if (cleanEmail === 'user' || cleanEmail === 'demo') {
-    cleanEmail = 'user@hishabkhata.com';
-  }
-
   const rawPassword = String(password);
   const trimmedPassword = rawPassword.trim();
   const db = getDb();
 
-  let user = db.users.find(u => {
-    const uEmail = u.email?.trim().toLowerCase();
-    const uPhone = u.phone ? normalizeBDPhone(u.phone) : '';
-    if (uEmail === cleanEmail) return true;
-    if (isPhone && normalizedPhone) {
-      if (uPhone && uPhone === normalizedPhone) return true;
-      if (uEmail === `${normalizedPhone}@mobile.hishabkhata.com`) return true;
+  // 1. FIRST check if an existing user matches this identifier in our database
+  let user = findUserByIdentifier(db, rawIdentifier);
+
+  let cleanEmail = rawIdentifier.toLowerCase();
+  // If no user matched, check shorthand handles for sultan owner admin
+  if (!user) {
+    if (
+      cleanEmail === 'sultan' ||
+      cleanEmail === 'sultanit' ||
+      cleanEmail === 'sultanitbangladesh'
+    ) {
+      cleanEmail = 'sultanitbangladesh@gmail.com';
+      user = findUserByIdentifier(db, cleanEmail);
     }
-    return false;
-  });
+  }
+
+  // Reject permanently removed dummy accounts
+  if (
+    cleanEmail === 'admin@hishabkhata.com' ||
+    cleanEmail === 'admin@hishabkhata.io' ||
+    cleanEmail === 'user@hishabkhata.com' ||
+    cleanEmail === 'demo@hishabkhata.io' ||
+    cleanEmail === 'admin'
+  ) {
+    res.status(401).json({
+      error: 'This account has been permanently removed. Please log in with your registered account or Sultan Admin (sultanitbangladesh@gmail.com).'
+    });
+    return;
+  }
 
   const nowIso = new Date().toISOString();
 
   const isOwnerOrAdminEmail =
-    cleanEmail === 'sultanitbangladesh@gmail.com' ||
-    cleanEmail.includes('admin@hishabkhata') ||
-    cleanEmail === 'admin@hishabkhata.com' ||
-    cleanEmail === 'admin@hishabkhata.io';
+    cleanEmail === 'sultanitbangladesh@gmail.com';
 
   const VALID_ADMIN_PASSWORDS = [
     'admin123',
@@ -289,12 +426,10 @@ router.post('/auth/login', (req, res) => {
       return;
     }
 
-    const newUserId = cleanEmail.includes('sultan') ? 'admin-sultan-001' : 'admin-demo-002';
+    const newUserId = 'admin-sultan-001';
     const newUser: User = {
       id: newUserId,
-      name: cleanEmail.includes('sultan')
-        ? 'Sultan (Owner Admin)'
-        : 'Sultan Admin',
+      name: 'Sultan (Owner Admin)',
       email: cleanEmail,
       role: 'admin',
       preferredLanguage: 'en',
@@ -417,10 +552,7 @@ router.post('/auth/firebase-google', (req, res) => {
   }
 
   const isOwnerOrAdmin =
-    cleanEmail === 'sultanitbangladesh@gmail.com' ||
-    cleanEmail.includes('admin@hishabkhata') ||
-    cleanEmail === 'admin@hishabkhata.com' ||
-    cleanEmail === 'admin@hishabkhata.io';
+    cleanEmail === 'sultanitbangladesh@gmail.com';
 
   const db = getDb();
   let user = db.users.find(u => u.email.trim().toLowerCase() === cleanEmail);
@@ -2005,6 +2137,38 @@ router.put('/admin/users/:id/role', adminOnly, (req: AuthRequest, res) => {
   logAdmin(req, 'USER_ROLE_CHANGE', 'USER', user.id, `Changed user ${user.email} role to ${role}`);
   saveDb();
   res.json(user);
+});
+
+router.delete('/admin/users/:id', adminOnly, (req: AuthRequest, res) => {
+  const targetId = req.params.id;
+  const db = getDb();
+  const targetUser = db.users.find(u => u.id === targetId);
+  if (!targetUser) {
+    res.status(404).json({ error: 'User not found' });
+    return;
+  }
+  if ((targetUser.email || '').toLowerCase().trim() === 'sultanitbangladesh@gmail.com') {
+    res.status(403).json({ error: 'Cannot delete the Primary Owner Admin account.' });
+    return;
+  }
+
+  const success = deleteUserFromDb(targetId);
+  if (success) {
+    logAdmin(req, 'USER_DELETE', 'USER', targetId, `Deleted user account: ${targetUser.email || targetUser.name}`);
+    res.json({ success: true, message: `User ${targetUser.name} deleted successfully.` });
+  } else {
+    res.status(500).json({ error: 'Failed to delete user.' });
+  }
+});
+
+router.post('/admin/users/purge-non-admin', adminOnly, (req: AuthRequest, res) => {
+  const result = purgeNonAdminUsersFromDb();
+  logAdmin(req, 'PURGE_NON_ADMIN_USERS', 'USER', 'GLOBAL', `Purged ${result.deletedCount} non-admin demo user accounts.`);
+  res.json({
+    success: true,
+    deletedCount: result.deletedCount,
+    message: `Purged ${result.deletedCount} non-admin accounts. Primary Owner Admin preserved.`,
+  });
 });
 
 // -------------------------------------------------------------

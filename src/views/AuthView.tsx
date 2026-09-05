@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useI18n } from '../lib/i18n';
 import { useAuth } from '../lib/auth';
 import { LanguageSelector } from '../components/LanguageSelector';
 import { AppLogo } from '../components/AppLogo';
+import { safeStorage } from '../lib/storage';
+import { isPhoneNumber, normalizeBDPhone } from '../lib/accountPersistence';
 import {
-  Wallet,
   Lock,
   Mail,
   User as UserIcon,
@@ -12,13 +13,15 @@ import {
   ShieldCheck,
   Sparkles,
   Zap,
-  Globe,
   Loader2,
   Eye,
   EyeOff,
-  KeyRound,
   Phone,
-  Smartphone
+  CheckCircle2,
+  AlertCircle,
+  HelpCircle,
+  KeyRound,
+  RefreshCw
 } from 'lucide-react';
 
 interface AuthViewProps {
@@ -28,15 +31,53 @@ interface AuthViewProps {
 
 export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }) => {
   const { t } = useI18n();
-  const { login, loginWithGoogle, register, loading, error, clearError } = useAuth();
+  const {
+    login,
+    loginWithGoogle,
+    register,
+    loginSultanAdmin,
+    loading,
+    error,
+    clearError
+  } = useAuth();
 
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(() => safeStorage.getItem('hk_remembered_identifier') || '');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [showDemoLogins, setShowDemoLogins] = useState(false);
+
+  // Dynamic identifier type detection for refined UX
+  const identifierType = useMemo(() => {
+    const clean = email.trim();
+    if (!clean) return null;
+    if (clean.includes('@')) return 'email';
+    const digits = clean.replace(/\D/g, '');
+    if (digits.length >= 7 || clean.startsWith('01') || clean.startsWith('+880') || clean.startsWith('880')) {
+      return 'phone';
+    }
+    return 'generic';
+  }, [email]);
+
+  // Password strength calculation for register mode
+  const passwordStrength = useMemo(() => {
+    if (!password) return { score: 0, label: '', color: 'bg-slate-700' };
+    let score = 0;
+    if (password.length >= 6) score += 1;
+    if (password.length >= 8) score += 1;
+    if (/[A-Z]/.test(password) && /[a-z]/.test(password)) score += 1;
+    if (/\d/.test(password)) score += 1;
+    if (/[^A-Za-z0-9]/.test(password)) score += 1;
+
+    if (score <= 2) return { score: 1, label: 'Weak', color: 'bg-red-500', text: 'text-red-400' };
+    if (score <= 3) return { score: 2, label: 'Good', color: 'bg-amber-500', text: 'text-amber-400' };
+    return { score: 3, label: 'Strong', color: 'bg-emerald-500', text: 'text-emerald-400' };
+  }, [password]);
+
+  const activeError = formError || error;
 
   const handleGoogleSignIn = async () => {
     setFormError(null);
@@ -86,11 +127,19 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
     }
   };
 
+  const handleQuickFill = (identifier: string, samplePass?: string) => {
+    setEmail(identifier);
+    if (samplePass) setPassword(samplePass);
+    clearError();
+    setFormError(null);
+  };
+
   return (
-    <div className="min-h-screen bg-slate-900 flex flex-col justify-between text-slate-100 p-4 sm:p-6 lg:p-8 relative overflow-hidden">
+    <div className="min-h-screen bg-slate-950 flex flex-col justify-between text-slate-100 p-4 sm:p-6 lg:p-8 relative overflow-hidden">
       {/* Background Ambience */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-teal-600/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-teal-600/15 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-emerald-600/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-slate-900/60 rounded-full blur-2xl pointer-events-none" />
 
       {/* Top Navbar */}
       <div className="relative z-10 max-w-6xl w-full mx-auto flex items-center justify-between">
@@ -113,63 +162,113 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
       </div>
 
       {/* Main Authentication Card */}
-      <div className="relative z-10 max-w-md w-full mx-auto my-8">
-        <div className="p-6 sm:p-8 rounded-3xl bg-slate-800/95 border border-slate-700 shadow-2xl backdrop-blur-md">
+      <div className="relative z-10 max-w-md w-full mx-auto my-6">
+        <div className="p-6 sm:p-8 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl backdrop-blur-xl">
           {/* Header */}
-          <div className="text-center mb-5">
-            <h2 className="text-2xl font-black text-white tracking-tight">
-              {mode === 'login' ? 'Sign In to Hishab Khata' : 'Create Free Account'}
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-500/10 border border-teal-500/20 text-teal-400 text-xs font-semibold mb-2">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>Bank-Grade Cloud Sync</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+              {mode === 'login' ? 'Sign In to Account' : 'Create Free Account'}
             </h2>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto">
               {mode === 'login'
-                ? 'Sign in to access your multi-wallet financial ledger'
-                : 'Start tracking cashflows, debts, and savings goals in minutes'}
+                ? 'Access your wallets, transactions, and live financial ledger'
+                : 'Zero setup fee. Track income, expenses, loans & savings in minutes'}
             </p>
           </div>
 
           {/* Mode Switcher */}
-          <div className="grid grid-cols-2 gap-1 p-1 bg-slate-900/80 rounded-xl mb-5">
+          <div className="grid grid-cols-2 gap-1 p-1 bg-slate-950/80 rounded-2xl mb-5 border border-slate-800/80">
             <button
+              id="auth-tab-login"
               type="button"
               onClick={() => {
                 setMode('login');
                 clearError();
                 setFormError(null);
               }}
-              className={`py-2.5 rounded-lg text-xs font-bold transition cursor-pointer ${
-                mode === 'login' ? 'bg-teal-700 text-white shadow-sm' : 'text-slate-400 hover:text-white'
+              className={`py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
+                mode === 'login'
+                  ? 'bg-teal-600 text-white shadow-md shadow-teal-950'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
               }`}
             >
-              Sign In
+              <KeyRound className="w-3.5 h-3.5" />
+              <span>Sign In</span>
             </button>
             <button
+              id="auth-tab-register"
               type="button"
               onClick={() => {
                 setMode('register');
                 clearError();
                 setFormError(null);
               }}
-              className={`py-2.5 rounded-lg text-xs font-bold transition cursor-pointer ${
-                mode === 'register' ? 'bg-teal-700 text-white shadow-sm' : 'text-slate-400 hover:text-white'
+              className={`py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
+                mode === 'register'
+                  ? 'bg-teal-600 text-white shadow-md shadow-teal-950'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
               }`}
             >
-              Sign Up
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Sign Up</span>
             </button>
           </div>
 
-          {(formError || error) && (
-            <div className="p-3.5 mb-4 text-xs font-semibold text-red-300 bg-red-950/60 rounded-xl border border-red-900/60 leading-relaxed">
-              {formError || error}
+          {/* Error Message with Contextual Recovery Action */}
+          {activeError && (
+            <div className="p-4 mb-5 text-xs font-medium text-red-200 bg-red-950/60 rounded-2xl border border-red-800/60 leading-relaxed shadow-sm">
+              <div className="flex items-start gap-2.5">
+                <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p>{activeError}</p>
+                  {/* Contextual recovery button */}
+                  {mode === 'login' &&
+                    (activeError.includes('No account found') ||
+                      activeError.includes('Sign Up') ||
+                      activeError.includes('not found')) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMode('register');
+                          clearError();
+                          setFormError(null);
+                        }}
+                        className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs rounded-lg transition cursor-pointer"
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Click here to Sign Up with this ID</span>
+                      </button>
+                    )}
+                  {mode === 'register' && activeError.includes('already exists') && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMode('login');
+                        clearError();
+                        setFormError(null);
+                      }}
+                      className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs rounded-lg transition cursor-pointer"
+                    >
+                      <KeyRound className="w-3.5 h-3.5" />
+                      <span>Click here to Sign In instead</span>
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
           )}
 
-          {/* Google Sign-In Button */}
+          {/* Google Sign-In */}
           <button
             id="auth-google-signin-btn"
             type="button"
             onClick={handleGoogleSignIn}
             disabled={googleLoading || loading}
-            className="w-full py-3 px-4 bg-white hover:bg-slate-100 text-slate-800 font-bold text-xs sm:text-sm rounded-xl border border-slate-300 shadow-md transition flex items-center justify-center gap-3 cursor-pointer disabled:opacity-60 mb-5"
+            className="w-full py-3 px-4 bg-white hover:bg-slate-100 text-slate-800 font-bold text-xs sm:text-sm rounded-xl border border-slate-300 shadow-md transition flex items-center justify-center gap-3 cursor-pointer disabled:opacity-60 mb-5 active:scale-[0.99]"
           >
             {googleLoading ? (
               <Loader2 className="w-4 h-4 animate-spin text-slate-700" />
@@ -197,18 +296,18 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
           </button>
 
           <div className="relative flex items-center justify-center mb-5">
-            <div className="border-t border-slate-700 w-full" />
-            <span className="bg-slate-800/90 px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0">
-              or with email / mobile
+            <div className="border-t border-slate-800 w-full" />
+            <span className="bg-slate-900 px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0">
+              or with email / mobile number
             </span>
-            <div className="border-t border-slate-700 w-full" />
+            <div className="border-t border-slate-800 w-full" />
           </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             {mode === 'register' && (
               <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
                   Full Name
                 </label>
                 <div className="relative">
@@ -218,8 +317,8 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Enter your full name"
-                    className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-white text-sm font-medium focus:ring-2 focus:ring-teal-500 outline-none"
+                    placeholder="e.g. Sultan Mahmud"
+                    className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-950 text-white text-sm font-medium focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition placeholder:text-slate-500"
                     required
                   />
                 </div>
@@ -227,31 +326,52 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
             )}
 
             <div>
-              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
-                Email Address or Mobile Number
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                  Email or Mobile Number
+                </label>
+                {/* Dynamic badge */}
+                {identifierType === 'phone' && (
+                  <span className="text-[11px] font-semibold text-emerald-400 flex items-center gap-1">
+                    <Phone className="w-3 h-3" />
+                    <span>BD Mobile</span>
+                  </span>
+                )}
+                {identifierType === 'email' && (
+                  <span className="text-[11px] font-semibold text-teal-400 flex items-center gap-1">
+                    <Mail className="w-3 h-3" />
+                    <span>Email Address</span>
+                  </span>
+                )}
+              </div>
               <div className="relative">
-                <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                {identifierType === 'phone' ? (
+                  <Phone className="w-4 h-4 text-emerald-400 absolute left-3.5 top-3" />
+                ) : (
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                )}
                 <input
                   id="auth-email-input"
                   type="text"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@gmail.com or 017xxxxxxxx"
-                  className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-white text-sm font-medium focus:ring-2 focus:ring-teal-500 outline-none"
+                  className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-950 text-white text-sm font-medium focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition placeholder:text-slate-500"
                   required
                 />
               </div>
-              <p className="text-[11px] text-slate-400 mt-1">
-                {mode === 'register'
-                  ? 'Enter your personal Gmail/Email or BD mobile number (e.g. 01712345678)'
-                  : 'Log in with your registered Email or Mobile number'}
+              <p className="text-[11px] text-slate-400 mt-1.5 flex items-center gap-1">
+                <span>
+                  {mode === 'register'
+                    ? 'Use your Gmail/Email or BD mobile number (e.g. 01712345678)'
+                    : 'Works with both registered email & mobile number'}
+                </span>
               </p>
             </div>
 
             <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider">
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
                   Password
                 </label>
                 <button
@@ -271,20 +391,38 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
-                  className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-white text-sm font-medium focus:ring-2 focus:ring-teal-500 outline-none"
+                  className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-700 bg-slate-950 text-white text-sm font-medium focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition placeholder:text-slate-500"
                   required
                 />
               </div>
+
+              {/* Password strength meter in Register mode */}
+              {mode === 'register' && password && (
+                <div className="mt-2 space-y-1">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-slate-400">Strength:</span>
+                    <span className={`font-bold ${passwordStrength.text}`}>{passwordStrength.label}</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1.5 h-1.5">
+                    <div className={`h-full rounded-full transition-all ${passwordStrength.score >= 1 ? passwordStrength.color : 'bg-slate-800'}`} />
+                    <div className={`h-full rounded-full transition-all ${passwordStrength.score >= 2 ? passwordStrength.color : 'bg-slate-800'}`} />
+                    <div className={`h-full rounded-full transition-all ${passwordStrength.score >= 3 ? passwordStrength.color : 'bg-slate-800'}`} />
+                  </div>
+                </div>
+              )}
             </div>
 
             <button
               id="auth-submit-btn"
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-teal-600 hover:bg-teal-500 text-white font-extrabold text-sm rounded-xl shadow-lg shadow-teal-900/30 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 mt-4"
+              className="w-full py-3 bg-teal-600 hover:bg-teal-500 text-white font-extrabold text-sm rounded-xl shadow-lg shadow-teal-950/50 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 mt-4 active:scale-[0.99]"
             >
               {loading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Verifying Account...</span>
+                </>
               ) : (
                 <>
                   <span>{mode === 'login' ? 'Sign In to Account' : 'Create Account'}</span>
@@ -298,8 +436,9 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
           <div className="mt-6 text-center text-xs text-slate-400">
             {mode === 'login' ? (
               <p>
-                Don't have an account?{' '}
+                Don't have an account yet?{' '}
                 <button
+                  id="auth-switch-to-register-btn"
                   type="button"
                   onClick={() => {
                     setMode('register');
@@ -315,6 +454,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
               <p>
                 Already have an account?{' '}
                 <button
+                  id="auth-switch-to-login-btn"
                   type="button"
                   onClick={() => {
                     setMode('login');
@@ -328,12 +468,42 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
               </p>
             )}
           </div>
+
+          {/* Quick Demo Credentials Accordion */}
+          <div className="mt-6 pt-4 border-t border-slate-800/80">
+            <button
+              type="button"
+              onClick={() => setShowDemoLogins(!showDemoLogins)}
+              className="w-full text-center text-[11px] font-semibold text-slate-400 hover:text-slate-300 flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <Zap className="w-3 h-3 text-amber-400" />
+              <span>{showDemoLogins ? 'Hide Demo / Test Credentials' : 'Quick Test Accounts (Click to Fill)'}</span>
+            </button>
+
+            {showDemoLogins && (
+              <div className="mt-3 p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-2 text-xs">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-bold text-white">Sultan (Owner Admin)</p>
+                    <p className="text-[10px] text-slate-400">sultanitbangladesh@gmail.com</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleQuickFill('sultanitbangladesh@gmail.com', 'admin123')}
+                    className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-amber-400 rounded-lg font-bold text-[11px] cursor-pointer"
+                  >
+                    Fill Admin
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Footer */}
       <div className="relative z-10 max-w-6xl w-full mx-auto text-center text-xs text-slate-500">
-        <p>© 2026 Hishab Khata SaaS. Bank-grade 256-bit encryption & localized financial intelligence.</p>
+        <p>© 2026 Hishab Khata SaaS. Cloud-Synced & Encrypted with Bcrypt + AES-256.</p>
       </div>
     </div>
   );

@@ -68,7 +68,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Navigation List */}
       <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-        <div className="px-3 pb-2 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+        <div className="px-3 pb-2 text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
           Personal Finance
         </div>
         {mainNavItems.map((item) => {
@@ -86,11 +86,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
               className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
                 isActive
                   ? 'bg-teal-700 text-white shadow-md shadow-teal-700/20 font-bold'
-                  : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+                  : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-950 dark:hover:text-white'
               }`}
             >
               <div className="flex items-center gap-3">
-                <Icon className={`w-4.5 h-4.5 ${isActive ? 'text-white' : 'text-slate-400 dark:text-slate-400'}`} />
+                <Icon className={`w-4.5 h-4.5 ${isActive ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
                 <span>{item.label}</span>
               </div>
               <div className="flex items-center gap-1.5">
@@ -134,7 +134,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Admin Navigation */}
         {isAdmin && (
           <div className="pt-4">
-            <div className="px-3 pb-2 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+            <div className="px-3 pb-2 text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               Management
             </div>
             <button
@@ -144,7 +144,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
                 currentView === 'admin'
                   ? 'bg-purple-700 text-white shadow-md shadow-purple-700/20 font-bold'
-                  : 'text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/30'
+                  : 'text-purple-700 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/30'
               }`}
             >
               <div className="flex items-center gap-3">
@@ -165,7 +165,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <Zap className="w-4 h-4 text-amber-500 fill-amber-500" />
               <span className="text-xs font-bold text-slate-900 dark:text-white">Upgrade to PRO</span>
             </div>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-2.5 leading-snug">
+            <p className="text-[11px] text-slate-600 dark:text-slate-300 mb-2.5 leading-snug font-medium">
               Unlimited wallets, PDF/Excel export, and smart AI financial insights.
             </p>
             <button
@@ -203,7 +203,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* User Profile Bar */}
       <div className="p-3 border-t border-slate-100 dark:border-slate-800/80">
-        <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60">
+        <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60">
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-8 h-8 rounded-lg bg-teal-700 text-white font-bold flex items-center justify-center text-xs shrink-0">
               {user?.name?.charAt(0) || 'U'}
@@ -212,7 +212,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <span className="text-xs font-bold text-slate-900 dark:text-white truncate">
                 {user?.name || 'User'}
               </span>
-              <span className="text-[10px] text-slate-400 dark:text-slate-500 truncate">
+              <span className="text-[10px] text-slate-600 dark:text-slate-400 font-medium truncate">
                 {user?.email}
               </span>
             </div>
@@ -222,7 +222,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             type="button"
             onClick={logout}
             title={t('nav_logout')}
-            className="p-1.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400 rounded-lg hover:bg-slate-200/60 dark:hover:bg-slate-700 transition cursor-pointer"
+            className="p-1.5 text-slate-500 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400 rounded-lg hover:bg-slate-200/60 dark:hover:bg-slate-700 transition cursor-pointer"
           >
             <LogOut className="w-4 h-4" />
           </button>
