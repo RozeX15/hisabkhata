@@ -16,7 +16,9 @@ import {
   Loader2,
   Eye,
   EyeOff,
-  KeyRound
+  KeyRound,
+  Phone,
+  Smartphone
 } from 'lucide-react';
 
 interface AuthViewProps {
@@ -35,19 +37,6 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
   const [showPassword, setShowPassword] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [googleLoading, setGoogleLoading] = useState(false);
-
-  const handleQuickLogin = async (fillEmail: string, fillPass: string) => {
-    setEmail(fillEmail);
-    setPassword(fillPass);
-    setFormError(null);
-    clearError();
-    try {
-      const loggedIn = await login(fillEmail, fillPass);
-      onSuccess(loggedIn);
-    } catch (err: any) {
-      setFormError(err.message || 'Login failed. Please check credentials.');
-    }
-  };
 
   const handleGoogleSignIn = async () => {
     setFormError(null);
@@ -70,15 +59,15 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
     setFormError(null);
     clearError();
 
-    const cleanEmail = email.trim();
-    if (!cleanEmail || !password) {
-      setFormError('Please enter both email and password');
+    const cleanIdentifier = email.trim();
+    if (!cleanIdentifier || !password) {
+      setFormError('Please enter your email or mobile number and password');
       return;
     }
 
     try {
       if (mode === 'login') {
-        const loggedIn = await login(cleanEmail, password);
+        const loggedIn = await login(cleanIdentifier, password);
         onSuccess(loggedIn);
       } else {
         if (!name.trim()) {
@@ -89,7 +78,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
           setFormError('Password must be at least 6 characters');
           return;
         }
-        const registered = await register(name.trim(), cleanEmail, password);
+        const registered = await register(name.trim(), cleanIdentifier, password);
         onSuccess(registered);
       }
     } catch (err: any) {
@@ -210,7 +199,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
           <div className="relative flex items-center justify-center mb-5">
             <div className="border-t border-slate-700 w-full" />
             <span className="bg-slate-800/90 px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0">
-              or with email
+              or with email / mobile
             </span>
             <div className="border-t border-slate-700 w-full" />
           </div>
@@ -229,7 +218,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Enter your name"
+                    placeholder="Enter your full name"
                     className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-white text-sm font-medium focus:ring-2 focus:ring-teal-500 outline-none"
                     required
                   />
@@ -239,20 +228,25 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
 
             <div>
               <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
-                {mode === 'login' ? 'Email Address or ID' : 'Email Address'}
+                Email Address or Mobile Number
               </label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
                 <input
                   id="auth-email-input"
-                  type={mode === 'register' ? 'email' : 'text'}
+                  type="text"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder={mode === 'register' ? 'name@example.com' : 'name@example.com or admin'}
+                  placeholder="name@gmail.com or 017xxxxxxxx"
                   className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-white text-sm font-medium focus:ring-2 focus:ring-teal-500 outline-none"
                   required
                 />
               </div>
+              <p className="text-[11px] text-slate-400 mt-1">
+                {mode === 'register'
+                  ? 'Enter your personal Gmail/Email or BD mobile number (e.g. 01712345678)'
+                  : 'Log in with your registered Email or Mobile number'}
+              </p>
             </div>
 
             <div>
@@ -299,30 +293,6 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding }
               )}
             </button>
           </form>
-
-          {/* 1-Click Fast Demo Access (No Super Admin credential exposed) */}
-          {mode === 'login' && (
-            <div className="mt-5 pt-4 border-t border-slate-700/70">
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('user@hishabkhata.com', 'password123')}
-                className="w-full p-2.5 rounded-xl bg-slate-900/90 border border-slate-700 hover:border-teal-500/50 text-left transition flex items-center justify-between cursor-pointer group"
-              >
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-teal-950/80 border border-teal-800/80 flex items-center justify-center">
-                    <UserIcon className="w-4 h-4 text-teal-400 shrink-0" />
-                  </div>
-                  <div>
-                    <span className="text-xs font-bold text-white block group-hover:text-teal-300">Explore Demo Account</span>
-                    <span className="text-[10px] text-slate-400">Experience Hishab Khata with sample transactions</span>
-                  </div>
-                </div>
-                <span className="text-[10px] px-2.5 py-1 rounded-md bg-slate-800 group-hover:bg-teal-950 text-slate-300 group-hover:text-teal-300 font-bold border border-slate-700 group-hover:border-teal-800 transition">
-                  Demo
-                </span>
-              </button>
-            </div>
-          )}
 
           {/* Mode toggle helper text */}
           <div className="mt-6 text-center text-xs text-slate-400">

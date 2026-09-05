@@ -21,7 +21,7 @@
       "role": "user",
       "preferredLanguage": "bn",
       "preferredCurrency": "BDT",
-      "plan": "pro",
+      "plan": "free",
       "status": "active",
       "emailVerified": true,
       "avatarUrl": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80",
@@ -90,7 +90,7 @@
       "role": "user",
       "preferredLanguage": "en",
       "preferredCurrency": "BDT",
-      "plan": "pro",
+      "plan": "free",
       "status": "active",
       "emailVerified": true,
       "avatarUrl": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80",
@@ -2366,14 +2366,27 @@
       "plan": "free",
       "role": "user",
       "isOnline": true,
-      "currentView": "notifications",
-      "lastActiveAt": "2026-09-03T09:18:48.728Z",
+      "currentView": "dashboard",
+      "lastActiveAt": "2026-09-05T01:43:58.234Z",
       "deviceType": "desktop",
       "browser": "Chrome",
-      "lastAction": "Switched view to NOTIFICATIONS"
+      "lastAction": "Viewing dashboard"
     }
   },
   "liveActivities": [
+    {
+      "id": "act-1788572160926-cd1e",
+      "userId": "user-demo-001",
+      "userName": "User Account",
+      "userEmail": "user@hishabkhata.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to DASHBOARD",
+      "currentView": "dashboard",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-05T01:36:00.926Z"
+    },
     {
       "id": "act-1788427128728-9dd2",
       "userId": "user-demo-001",

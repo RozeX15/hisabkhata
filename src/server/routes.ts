@@ -89,19 +89,49 @@ export function logUserActivity(
 // 1. AUTHENTICATION & PROFILE
 // -------------------------------------------------------------
 
-router.post('/auth/register', (req, res) => {
-  const { name, email, password, preferredLanguage = 'en', preferredCurrency = 'BDT' } = req.body;
+function normalizeBDPhone(phone: string): string {
+  const digitsOnly = phone.replace(/[^\d+]/g, '');
+  if (digitsOnly.startsWith('+880')) {
+    return '0' + digitsOnly.slice(4);
+  }
+  if (digitsOnly.startsWith('880')) {
+    return '0' + digitsOnly.slice(3);
+  }
+  return digitsOnly;
+}
 
-  if (!name || !email || !password) {
-    res.status(400).json({ error: 'Name, email, and password are required' });
+function isPhoneNumber(val: string): boolean {
+  const clean = val.replace(/[\s\-\(\)]/g, '');
+  return !clean.includes('@') && /^\+?[0-9]{7,15}$/.test(clean);
+}
+
+router.post('/auth/register', (req, res) => {
+  const { name, email, phone, password, preferredLanguage = 'en', preferredCurrency = 'BDT' } = req.body;
+
+  const rawIdentifier = String(email || phone || '').trim();
+  if (!name || !rawIdentifier || !password) {
+    res.status(400).json({ error: 'Name, email or mobile number, and password are required' });
     return;
   }
 
-  const cleanEmail = String(email).trim().toLowerCase();
+  const isPhone = isPhoneNumber(rawIdentifier);
+  const normalizedPhone = isPhone ? normalizeBDPhone(rawIdentifier) : (phone ? normalizeBDPhone(String(phone).trim()) : undefined);
+  const cleanEmail = isPhone
+    ? `${normalizedPhone}@mobile.hishabkhata.com`
+    : rawIdentifier.toLowerCase();
+
   const db = getDb();
-  const existing = db.users.find(u => u.email.trim().toLowerCase() === cleanEmail);
+  const existing = db.users.find(u => {
+    const uEmail = u.email?.trim().toLowerCase();
+    const uPhone = u.phone ? normalizeBDPhone(u.phone) : '';
+    if (cleanEmail && uEmail === cleanEmail) return true;
+    if (normalizedPhone && uPhone && uPhone === normalizedPhone) return true;
+    if (isPhone && uEmail === `${normalizedPhone}@mobile.hishabkhata.com`) return true;
+    return false;
+  });
+
   if (existing) {
-    res.status(400).json({ error: 'An account with this email already exists. Please sign in instead.' });
+    res.status(400).json({ error: 'An account with this email or mobile number already exists. Please sign in instead.' });
     return;
   }
 
@@ -113,6 +143,7 @@ router.post('/auth/register', (req, res) => {
     id: userId,
     name: String(name).trim(),
     email: cleanEmail,
+    phone: normalizedPhone,
     role: 'user',
     preferredLanguage,
     preferredCurrency,
@@ -173,14 +204,18 @@ router.post('/auth/register', (req, res) => {
 });
 
 router.post('/auth/login', (req, res) => {
-  const { email, password } = req.body;
+  const { email, identifier, password } = req.body;
+  const rawIdentifier = String(identifier || email || '').trim();
 
-  if (!email || !password) {
-    res.status(400).json({ error: 'Email and password are required' });
+  if (!rawIdentifier || !password) {
+    res.status(400).json({ error: 'Email or mobile number and password are required' });
     return;
   }
 
-  let cleanEmail = String(email).trim().toLowerCase();
+  const isPhone = isPhoneNumber(rawIdentifier);
+  const normalizedPhone = isPhone ? normalizeBDPhone(rawIdentifier) : '';
+  let cleanEmail = rawIdentifier.toLowerCase();
+
   // Map common shorthand handles / usernames to the official admin/user accounts
   if (
     cleanEmail === 'admin' ||
@@ -201,7 +236,18 @@ router.post('/auth/login', (req, res) => {
   const rawPassword = String(password);
   const trimmedPassword = rawPassword.trim();
   const db = getDb();
-  let user = db.users.find(u => u.email.trim().toLowerCase() === cleanEmail);
+
+  let user = db.users.find(u => {
+    const uEmail = u.email?.trim().toLowerCase();
+    const uPhone = u.phone ? normalizeBDPhone(u.phone) : '';
+    if (uEmail === cleanEmail) return true;
+    if (isPhone && normalizedPhone) {
+      if (uPhone && uPhone === normalizedPhone) return true;
+      if (uEmail === `${normalizedPhone}@mobile.hishabkhata.com`) return true;
+    }
+    return false;
+  });
+
   const nowIso = new Date().toISOString();
 
   const isOwnerOrAdminEmail =
@@ -228,38 +274,35 @@ router.post('/auth/login', (req, res) => {
 
   // If user does not exist in the database yet:
   if (!user) {
-    const isSultanOrAdmin = isOwnerOrAdminEmail;
-
-    if (isSultanOrAdmin) {
-      const matchesAdminPassword =
-        VALID_ADMIN_PASSWORDS.includes(rawPassword) ||
-        VALID_ADMIN_PASSWORDS.includes(trimmedPassword);
-      if (!matchesAdminPassword) {
-        res.status(401).json({ error: 'Invalid admin credentials. Incorrect password.' });
-        return;
-      }
+    if (!isOwnerOrAdminEmail) {
+      res.status(401).json({
+        error: 'No account found with this email or mobile number. Please click "Sign Up" to create your account.'
+      });
+      return;
     }
 
-    const newUserId = isSultanOrAdmin ? (cleanEmail.includes('sultan') ? 'admin-sultan-001' : 'admin-demo-002') : `usr-${Date.now()}`;
-    const newRole: 'admin' | 'user' = isSultanOrAdmin ? 'admin' : 'user';
+    const matchesAdminPassword =
+      VALID_ADMIN_PASSWORDS.includes(rawPassword) ||
+      VALID_ADMIN_PASSWORDS.includes(trimmedPassword);
+    if (!matchesAdminPassword) {
+      res.status(401).json({ error: 'Invalid admin credentials. Incorrect password.' });
+      return;
+    }
 
+    const newUserId = cleanEmail.includes('sultan') ? 'admin-sultan-001' : 'admin-demo-002';
     const newUser: User = {
       id: newUserId,
       name: cleanEmail.includes('sultan')
         ? 'Sultan (Owner Admin)'
-        : isSultanOrAdmin
-        ? 'Sultan Admin'
-        : cleanEmail.split('@')[0],
+        : 'Sultan Admin',
       email: cleanEmail,
-      role: newRole,
+      role: 'admin',
       preferredLanguage: 'en',
       preferredCurrency: 'BDT',
       plan: 'pro',
       status: 'active',
       emailVerified: true,
-      avatarUrl: isSultanOrAdmin
-        ? 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80'
-        : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+      avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
       createdAt: nowIso,
       updatedAt: nowIso,
     };
@@ -295,22 +338,6 @@ router.post('/auth/login', (req, res) => {
         updatedAt: nowIso,
       }
     );
-
-    // Initial default savings goal
-    db.savingsGoals.push({
-      id: `goal-${newUserId}-01`,
-      userId: newUserId,
-      name: 'Emergency Buffer Vault',
-      targetAmount: 100000,
-      currentAmount: 35000,
-      targetDate: '2026-12-31',
-      deadline: '2026-12-31',
-      icon: 'ShieldCheck',
-      color: '#0F766E',
-      status: 'in_progress',
-      createdAt: nowIso,
-      updatedAt: nowIso,
-    });
 
     saveDb();
     const token = generateToken(newUser);
@@ -431,7 +458,7 @@ router.post('/auth/firebase-google', (req, res) => {
       role: isOwnerOrAdmin ? 'admin' : 'user',
       preferredLanguage,
       preferredCurrency,
-      plan: 'pro',
+      plan: isOwnerOrAdmin ? 'pro' : 'free',
       status: 'active',
       emailVerified: true,
       avatarUrl: avatarUrl || undefined,
@@ -532,6 +559,13 @@ router.put('/auth/password', authMiddleware, (req: AuthRequest, res) => {
 });
 
 router.post('/auth/upgrade-plan', authMiddleware, (req: AuthRequest, res) => {
+  if (req.user?.role !== 'admin') {
+    res.status(403).json({
+      error: 'Direct plan upgrade is not permitted. Please submit your payment verification (bKash, Nagad, Rocket, or Bank Transfer) for admin approval.'
+    });
+    return;
+  }
+
   const { plan = 'pro' } = req.body;
   const db = getDb();
   const user = db.users.find(u => u.id === req.user!.id);

@@ -63,7 +63,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setLoading(true);
     setError(null);
     try {
-      const res = await api.login({ email, password });
+      const res = await api.login({ identifier: email, email, password });
       setAuthToken(res.token);
       setTokenState(res.token);
       setUser(res.user);
@@ -151,7 +151,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const register = async (nameOrData: any, email?: string, password?: string): Promise<User> => {
     setLoading(true);
     setError(null);
-    const data = typeof nameOrData === 'string' ? { name: nameOrData, email, password } : nameOrData;
+    const data = typeof nameOrData === 'string'
+      ? {
+          name: nameOrData,
+          email,
+          phone: email && !email.includes('@') ? email : undefined,
+          password,
+        }
+      : nameOrData;
     try {
       const res = await api.register(data);
       setAuthToken(res.token);
