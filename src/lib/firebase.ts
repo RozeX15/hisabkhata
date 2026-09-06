@@ -42,10 +42,20 @@ const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 // Initialize Auth
 export const auth = getAuth(app);
 
-// Initialize Firestore (support named database if configured)
-export const firestore = firebaseConfigData.firestoreDatabaseId
-  ? getFirestore(app, firebaseConfigData.firestoreDatabaseId)
-  : getFirestore(app);
+// Initialize Firestore (support named database if configured with fallback to default)
+let firestoreInstance;
+try {
+  firestoreInstance =
+    firebaseConfigData.firestoreDatabaseId &&
+    firebaseConfigData.firestoreDatabaseId !== '(default)'
+      ? getFirestore(app, firebaseConfigData.firestoreDatabaseId)
+      : getFirestore(app);
+} catch (err) {
+  console.warn('Fallback to default Firestore database:', err);
+  firestoreInstance = getFirestore(app);
+}
+
+export const firestore = firestoreInstance;
 
 // Google Auth Provider
 export const googleProvider = new GoogleAuthProvider();

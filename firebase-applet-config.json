@@ -1,12 +1,12 @@
 {
-  "projectId": "pelagic-nebula-7jk7s",
-  "appId": "1:428525064469:web:bd4a2dfa1728f2a81a591c",
-  "apiKey": "AIzaSyD2gaZB4q33BdL78kEec_3arfUPQdCXCSM",
-  "authDomain": "pelagic-nebula-7jk7s.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-hishabkhata-fbe26cc2-dd75-4f5c-950d-f8c94bf7952a",
-  "storageBucket": "pelagic-nebula-7jk7s.firebasestorage.app",
-  "messagingSenderId": "428525064469",
+  "projectId": "hishabkhata-ef99b",
+  "appId": "1:774560660492:web:e43a3e4ddf31108ec60229",
+  "apiKey": "AIzaSyBFwMWarsepO7q3Pvsh9z9izw5AA3NUfe8",
+  "authDomain": "hishabkhata-ef99b.firebaseapp.com",
+  "firestoreDatabaseId": "(default)",
+  "storageBucket": "hishabkhata-ef99b.firebasestorage.app",
+  "messagingSenderId": "774560660492",
   "measurementId": "",
-  "oAuthClientId": "428525064469-uabg3he9tdgsbol4pgootsg34d41n5p6.apps.googleusercontent.com",
+  "oAuthClientId": "774560660492-ufm56o1puk743hrtllhbqf2r7o5ffg8t.apps.googleusercontent.com",
   "recaptchaSiteKey": ""
 }
