@@ -135,6 +135,13 @@ export function saveToLocalVault(account: PersistentAccount): void {
   }
 }
 
+function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
+  ]);
+}
+
 export async function saveAccountToCloud(
   user: User,
   rawPassword?: string,
@@ -145,7 +152,7 @@ export async function saveAccountToCloud(
     const cleanPhone = user.phone ? normalizeBDPhone(user.phone) : undefined;
     const lookupKeys = generateLookupKeys(cleanEmail, user.name, cleanPhone);
 
-    const hash = existingHash || (rawPassword ? bcrypt.hashSync(rawPassword, 10) : '');
+    const hash = existingHash || (rawPassword ? bcrypt.hashSync(rawPassword, 6) : '');
 
     const account: PersistentAccount = {
       id: user.id,
@@ -163,10 +170,10 @@ export async function saveAccountToCloud(
       updatedAt: new Date().toISOString(),
     };
 
-    // 1. Save to local device vault
+    // 1. Save to local device vault immediately (0ms)
     saveToLocalVault(account);
 
-    // 2. Save directly to Cloud Firestore `users` collection as primary source of truth
+    // 2. Save directly to Cloud Firestore in parallel (non-blocking)
     const userDocRef = doc(firestore, 'users', user.id);
     const userProfileData: Partial<User> & { lookupKeys: string[]; updatedAt: string } = {
       id: user.id,
@@ -182,20 +189,23 @@ export async function saveAccountToCloud(
       updatedAt: new Date().toISOString(),
       lookupKeys,
     };
-    await setDoc(userDocRef, userProfileData, { merge: true });
 
-    // 3. Save to Cloud Firestore `app_accounts` for credential verification
     const primaryKey = cleanEmail || cleanPhone || user.id;
     const docId = `acc_${sanitizeDocId(primaryKey)}`;
     const docRef = doc(firestore, 'app_accounts', docId);
-    await setDoc(docRef, account, { merge: true });
 
-    // Also index by phone docId if different from primary
+    const writePromises: Promise<any>[] = [
+      setDoc(userDocRef, userProfileData, { merge: true }),
+      setDoc(docRef, account, { merge: true }),
+    ];
+
     if (cleanPhone && cleanPhone !== cleanEmail) {
       const phoneDocId = `acc_${sanitizeDocId(cleanPhone)}`;
       const phoneRef = doc(firestore, 'app_accounts', phoneDocId);
-      await setDoc(phoneRef, account, { merge: true });
+      writePromises.push(setDoc(phoneRef, account, { merge: true }));
     }
+
+    Promise.allSettled(writePromises).catch(() => {});
   } catch (err) {
     console.warn('Could not sync account to cloud Firestore:', err);
   }
@@ -211,71 +221,62 @@ export async function findPersistentAccount(
   const digits = clean.replace(/\D/g, '');
   const normPhone = digits.length >= 7 ? normalizeBDPhone(digits) : '';
 
-  // 1. Check local vault first
+  // 1. Check local vault first (synchronous - 0ms!)
   const vault = getLocalVault();
   if (vault[clean]) return vault[clean];
   if (normPhone && vault[normPhone]) return vault[normPhone];
   if (digits && vault[digits]) return vault[digits];
 
-  // 2. Check Firestore direct doc lookup
-  try {
-    const docId = `acc_${sanitizeDocId(clean)}`;
-    const docSnap = await getDoc(doc(firestore, 'app_accounts', docId));
-    if (docSnap.exists()) {
-      const data = docSnap.data() as PersistentAccount;
-      saveToLocalVault(data);
-      return data;
-    }
+  // 2. Query Firestore in parallel with strict 1.8s timeout
+  const firestoreLookup = async (): Promise<PersistentAccount | null> => {
+    try {
+      const docLookups: Promise<any>[] = [
+        getDoc(doc(firestore, 'app_accounts', `acc_${sanitizeDocId(clean)}`)).catch(() => null),
+      ];
+      if (normPhone) {
+        docLookups.push(getDoc(doc(firestore, 'app_accounts', `acc_${sanitizeDocId(normPhone)}`)).catch(() => null));
+      }
 
-    if (normPhone) {
-      const phoneDocId = `acc_${sanitizeDocId(normPhone)}`;
-      const phoneSnap = await getDoc(doc(firestore, 'app_accounts', phoneDocId));
-      if (phoneSnap.exists()) {
-        const data = phoneSnap.data() as PersistentAccount;
+      const results = await Promise.all(docLookups);
+      for (const snap of results) {
+        if (snap && snap.exists && snap.exists()) {
+          const data = snap.data() as PersistentAccount;
+          saveToLocalVault(data);
+          return data;
+        }
+      }
+
+      // Query array contains in parallel
+      const qClean = query(collection(firestore, 'app_accounts'), where('lookupKeys', 'array-contains', clean));
+      const qSnap = await getDocs(qClean).catch(() => null);
+      if (qSnap && !qSnap.empty) {
+        const data = qSnap.docs[0].data() as PersistentAccount;
         saveToLocalVault(data);
         return data;
       }
-    }
-  } catch (e) {
-    console.warn('Firestore doc lookup error:', e);
-  }
 
-  // 3. Check Firestore array query
-  try {
-    const q = query(
-      collection(firestore, 'app_accounts'),
-      where('lookupKeys', 'array-contains', clean)
-    );
-    const qSnap = await getDocs(q);
-    if (!qSnap.empty) {
-      const data = qSnap.docs[0].data() as PersistentAccount;
-      saveToLocalVault(data);
-      return data;
-    }
-
-    if (normPhone) {
-      const qPhone = query(
-        collection(firestore, 'app_accounts'),
-        where('lookupKeys', 'array-contains', normPhone)
-      );
-      const qPhoneSnap = await getDocs(qPhone);
-      if (!qPhoneSnap.empty) {
-        const data = qPhoneSnap.docs[0].data() as PersistentAccount;
-        saveToLocalVault(data);
-        return data;
+      if (normPhone) {
+        const qPhone = query(collection(firestore, 'app_accounts'), where('lookupKeys', 'array-contains', normPhone));
+        const qPhoneSnap = await getDocs(qPhone).catch(() => null);
+        if (qPhoneSnap && !qPhoneSnap.empty) {
+          const data = qPhoneSnap.docs[0].data() as PersistentAccount;
+          saveToLocalVault(data);
+          return data;
+        }
       }
+    } catch {
+      // Non-blocking
     }
-  } catch (e) {
-    console.warn('Firestore query lookup error:', e);
-  }
+    return null;
+  };
 
-  return null;
+  return withTimeout(firestoreLookup(), 1800, null);
 }
 
 export const DEFAULT_SYSTEM_USERS: User[] = [
   {
     id: 'admin-sultan-001',
-    name: 'Sultan (Owner Admin)',
+    name: 'Nowroze (Owner Admin)',
     email: 'sultanitbangladesh@gmail.com',
     phone: '01700000001',
     role: 'admin',
@@ -372,78 +373,100 @@ export async function fetchAllUsersFromFirestore(): Promise<User[]> {
     if (cleanPhone) phoneToId.set(cleanPhone, canonicalId);
   };
 
-  // 1. Add default system users (only Owner Admin) as baseline
+  // 1. Read accounts from local vault immediately
+  try {
+    const vault = getLocalVault();
+    for (const acc of Object.values(vault)) {
+      if (acc && (acc.email || acc.name || acc.phone || acc.id)) {
+        registerOrMergeUser({
+          id: acc.id,
+          name: acc.name,
+          email: acc.email,
+          phone: acc.phone,
+          role: acc.role,
+          plan: acc.plan,
+          status: acc.status,
+          preferredLanguage: acc.preferredLanguage,
+          preferredCurrency: acc.preferredCurrency,
+          createdAt: acc.createdAt,
+          updatedAt: acc.updatedAt,
+        });
+      }
+    }
+  } catch (err) {
+    console.warn('Error reading local vault in fetchAllUsersFromFirestore:', err);
+  }
+
+  // 2. Add default system users (only Owner Admin) as baseline
   for (const u of DEFAULT_SYSTEM_USERS) {
     registerOrMergeUser(u);
   }
 
-  // 2. Query Firestore `users` collection directly
-  try {
-    const usersSnap = await getDocs(collection(firestore, 'users'));
-    for (const docSnap of usersSnap.docs) {
-      const data = docSnap.data() as Partial<User>;
-      const userEmail = (data.email || '').toLowerCase().trim();
-      if (userEmail && LEGACY_DUMMY_EMAILS.has(userEmail)) {
-        // Asynchronously delete legacy demo account from Firestore
-        deleteDoc(doc(firestore, 'users', docSnap.id)).catch(() => {});
-        continue;
-      }
-      if (data && (data.email || data.name || data.phone || docSnap.id)) {
-        registerOrMergeUser({
-          ...data,
-          id: data.id || docSnap.id,
-        });
-      }
-    }
-  } catch (err) {
-    console.warn('Could not read users collection from Firestore:', err);
-  }
+  // 2. Query Firestore collections and backend in parallel with 2500ms safety timeout
+  const runParallelFetches = async () => {
+    try {
+      const [usersSnapResult, accSnapResult, backendUsersResult] = await Promise.allSettled([
+        getDocs(collection(firestore, 'users')),
+        getDocs(collection(firestore, 'app_accounts')),
+        api.getAdminUsers(),
+      ]);
 
-  // 3. Query Firestore `app_accounts` collection directly
-  try {
-    const accSnap = await getDocs(collection(firestore, 'app_accounts'));
-    for (const docSnap of accSnap.docs) {
-      const data = docSnap.data() as Partial<PersistentAccount>;
-      const userEmail = (data.email || '').toLowerCase().trim();
-      if (userEmail && LEGACY_DUMMY_EMAILS.has(userEmail)) {
-        // Asynchronously delete legacy demo account from Firestore
-        deleteDoc(doc(firestore, 'app_accounts', docSnap.id)).catch(() => {});
-        continue;
-      }
-      if (data && (data.email || data.name || data.phone || docSnap.id)) {
-        registerOrMergeUser({
-          id: data.id || docSnap.id,
-          name: data.name,
-          email: data.email,
-          phone: data.phone,
-          role: data.role,
-          plan: data.plan,
-          status: data.status,
-          preferredLanguage: data.preferredLanguage,
-          preferredCurrency: data.preferredCurrency,
-          createdAt: data.createdAt,
-          updatedAt: data.updatedAt,
-        });
-      }
-    }
-  } catch (err) {
-    console.warn('Could not read app_accounts collection from Firestore:', err);
-  }
-
-  // 4. Query backend database if admin token is present and sync any newly registered to Firestore
-  try {
-    const backendUsers = await api.getAdminUsers();
-    if (Array.isArray(backendUsers)) {
-      for (const bUser of backendUsers) {
-        if (bUser && bUser.id) {
-          registerOrMergeUser(bUser);
-          saveAccountToCloud(bUser).catch(() => {});
+      if (usersSnapResult.status === 'fulfilled') {
+        for (const docSnap of usersSnapResult.value.docs) {
+          const data = docSnap.data() as Partial<User>;
+          const userEmail = (data.email || '').toLowerCase().trim();
+          if (userEmail && LEGACY_DUMMY_EMAILS.has(userEmail)) {
+            deleteDoc(doc(firestore, 'users', docSnap.id)).catch(() => {});
+            continue;
+          }
+          if (data && (data.email || data.name || data.phone || docSnap.id)) {
+            registerOrMergeUser({
+              ...data,
+              id: data.id || docSnap.id,
+            });
+          }
         }
       }
+
+      if (accSnapResult.status === 'fulfilled') {
+        for (const docSnap of accSnapResult.value.docs) {
+          const data = docSnap.data() as Partial<PersistentAccount>;
+          const userEmail = (data.email || '').toLowerCase().trim();
+          if (userEmail && LEGACY_DUMMY_EMAILS.has(userEmail)) {
+            deleteDoc(doc(firestore, 'app_accounts', docSnap.id)).catch(() => {});
+            continue;
+          }
+          if (data && (data.email || data.name || data.phone || docSnap.id)) {
+            registerOrMergeUser({
+              id: data.id || docSnap.id,
+              name: data.name,
+              email: data.email,
+              phone: data.phone,
+              role: data.role,
+              plan: data.plan,
+              status: data.status,
+              preferredLanguage: data.preferredLanguage,
+              preferredCurrency: data.preferredCurrency,
+              createdAt: data.createdAt,
+              updatedAt: data.updatedAt,
+            });
+          }
+        }
+      }
+
+      if (backendUsersResult.status === 'fulfilled' && Array.isArray(backendUsersResult.value)) {
+        for (const bUser of backendUsersResult.value) {
+          if (bUser && bUser.id) {
+            registerOrMergeUser(bUser);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Could not read users collection from Firestore:', err);
     }
-  } catch {
-    // Non-blocking if admin not logged in or backend unavailable
-  }
+  };
+
+  await withTimeout(runParallelFetches(), 2500, undefined);
 
   return Array.from(usersById.values());
 }
@@ -611,39 +634,43 @@ export async function recordUserPresenceInFirestore(presence: UserPresence): Pro
 }
 
 export async function fetchAllPresencesFromFirestore(): Promise<UserPresence[]> {
-  try {
-    if (!firestore) return [];
-    const presencesRef = collection(firestore, 'user_presences');
-    const snapshot = await getDocs(presencesRef);
-    const list: UserPresence[] = [];
-    const nowMs = Date.now();
-    snapshot.forEach((docSnap) => {
-      const data = docSnap.data();
-      if (data && data.userId) {
-        const lastActiveMs = new Date(data.lastActiveAt || data.updatedAt || 0).getTime();
-        // Online if active within last 90 seconds
-        const isOnline = (nowMs - lastActiveMs) < 90000;
-        list.push({
-          userId: data.userId,
-          userName: data.userName || 'User',
-          userEmail: data.userEmail || '',
-          avatarUrl: data.avatarUrl || '',
-          plan: data.plan || 'free',
-          role: data.role || 'user',
-          isOnline,
-          currentView: data.currentView || 'dashboard',
-          lastActiveAt: data.lastActiveAt || data.updatedAt || new Date().toISOString(),
-          deviceType: data.deviceType || 'desktop',
-          browser: data.browser || 'Web App',
-          lastAction: data.lastAction || 'Active',
-        });
-      }
-    });
-    return list;
-  } catch (err) {
-    console.warn('Failed to fetch presences from Firestore:', err);
-    return [];
-  }
+  const fetchTask = async (): Promise<UserPresence[]> => {
+    try {
+      if (!firestore) return [];
+      const presencesRef = collection(firestore, 'user_presences');
+      const snapshot = await getDocs(presencesRef);
+      const list: UserPresence[] = [];
+      const nowMs = Date.now();
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        if (data && data.userId) {
+          const lastActiveMs = new Date(data.lastActiveAt || data.updatedAt || 0).getTime();
+          // Online if active within last 90 seconds
+          const isOnline = (nowMs - lastActiveMs) < 90000;
+          list.push({
+            userId: data.userId,
+            userName: data.userName || 'User',
+            userEmail: data.userEmail || '',
+            avatarUrl: data.avatarUrl || '',
+            plan: data.plan || 'free',
+            role: data.role || 'user',
+            isOnline,
+            currentView: data.currentView || 'dashboard',
+            lastActiveAt: data.lastActiveAt || data.updatedAt || new Date().toISOString(),
+            deviceType: data.deviceType || 'desktop',
+            browser: data.browser || 'Web App',
+            lastAction: data.lastAction || 'Active',
+          });
+        }
+      });
+      return list;
+    } catch (err) {
+      console.warn('Failed to fetch presences from Firestore:', err);
+      return [];
+    }
+  };
+
+  return withTimeout(fetchTask(), 2000, []);
 }
 
 export function subscribeToFirestorePresences(

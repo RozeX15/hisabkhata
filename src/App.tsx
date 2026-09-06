@@ -218,11 +218,96 @@ const MainAppContent: React.FC = () => {
     safeStorage.setItem('hishab_dark_mode', String(isDarkMode));
   }, [isDarkMode]);
 
-  // Load All User Financial Data
+  // Load All User Financial Data with high-performance single-request bootstrap
   const loadAllData = useCallback(async () => {
     if (!token) return;
-    setLoadingData(true);
+
+    // 1. Check cached snapshot for instant visual load (0ms white-screen elimination)
     try {
+      const cached = safeStorage.getItem(`hk_app_bootstrap_${user?.id}`);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed?.data) {
+          const d = parsed.data;
+          if (d.summary) setSummary(d.summary);
+          if (Array.isArray(d.wallets) && d.wallets.length > 0) setWallets(d.wallets);
+          if (Array.isArray(d.categories) && d.categories.length > 0) setCategories(d.categories);
+          if (Array.isArray(d.transactions)) setTransactions(d.transactions);
+          if (Array.isArray(d.budgets)) setBudgets(d.budgets);
+          if (Array.isArray(d.savingsGoals)) setSavingsGoals(d.savingsGoals);
+          if (Array.isArray(d.loans)) setLoans(d.loans);
+          if (Array.isArray(d.notifications)) {
+            setNotifications(d.notifications);
+            setUnreadNotifsCount(d.notifications.filter((n: any) => !n.isRead).length);
+          }
+          // Do not block screen if we have recent valid cached data
+          setLoadingData(false);
+        }
+      } else {
+        setLoadingData(true);
+      }
+    } catch {
+      setLoadingData(true);
+    }
+
+    try {
+      // 2. High-speed consolidated bootstrap endpoint (Single round-trip for all 8 datasets!)
+      const bootstrap = await api.getAppBootstrap().catch(() => null);
+
+      if (bootstrap && bootstrap.summary) {
+        setSummary(bootstrap.summary);
+        if (Array.isArray(bootstrap.wallets) && bootstrap.wallets.length > 0) {
+          setWallets(bootstrap.wallets);
+        } else {
+          setWallets(prev => prev.length > 0 ? prev : [{
+            id: 'w-cash-default',
+            userId: user?.id || '',
+            name: 'Cash / Main Account (নগদ হিসাব)',
+            type: 'cash',
+            balance: 0,
+            currency: currency || 'BDT',
+            color: '#10B981',
+            isDefault: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          }]);
+        }
+
+        if (Array.isArray(bootstrap.categories) && bootstrap.categories.length > 0) {
+          setCategories(bootstrap.categories);
+        } else {
+          setCategories(prev => prev.length > 0 ? prev : DEFAULT_CATEGORIES);
+        }
+
+        if (Array.isArray(bootstrap.transactions)) {
+          setTransactions(bootstrap.transactions);
+        }
+        if (Array.isArray(bootstrap.budgets)) {
+          setBudgets(bootstrap.budgets);
+        }
+        if (Array.isArray(bootstrap.savingsGoals)) {
+          setSavingsGoals(bootstrap.savingsGoals);
+        }
+        if (Array.isArray(bootstrap.loans)) {
+          setLoans(bootstrap.loans);
+        }
+        if (Array.isArray(bootstrap.notifications)) {
+          setNotifications(bootstrap.notifications);
+          setUnreadNotifsCount(bootstrap.notifications.filter((n: any) => !n.isRead).length);
+          bootstrap.notifications.forEach(n => knownNotificationIds.current.add(n.id));
+        }
+
+        // Cache snapshot locally for next instant load
+        if (user?.id) {
+          safeStorage.setItem(`hk_app_bootstrap_${user.id}`, JSON.stringify({
+            data: bootstrap,
+            time: Date.now(),
+          }));
+        }
+        return;
+      }
+
+      // 3. Fallback: parallel individual endpoints if bootstrap unavailable
       const [
         summaryRes,
         walletsRes,
@@ -302,7 +387,7 @@ const MainAppContent: React.FC = () => {
     } finally {
       setLoadingData(false);
     }
-  }, [token]);
+  }, [token, user?.id, currency]);
 
   useEffect(() => {
     if (user && token) {

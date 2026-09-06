@@ -163,7 +163,7 @@ function getSeedData(): DatabaseSchema {
   const users: User[] = [
     {
       id: 'admin-sultan-001',
-      name: 'Sultan (Owner Admin)',
+      name: 'Nowroze (Owner Admin)',
       email: 'sultanitbangladesh@gmail.com',
       role: 'admin',
       preferredLanguage: 'en',
@@ -411,6 +411,13 @@ export function getDb(): DatabaseSchema {
   ]);
   const initialLength = inMemoryDb.users.length;
   inMemoryDb.users = inMemoryDb.users.filter(u => !legacyDemoEmails.has((u.email || '').toLowerCase().trim()));
+  
+  // Guarantee Owner Admin display name is strictly Nowroze
+  const ownerAccount = inMemoryDb.users.find(u => (u.email || '').toLowerCase().trim() === 'sultanitbangladesh@gmail.com');
+  if (ownerAccount) {
+    ownerAccount.name = 'Nowroze (Owner Admin)';
+  }
+
   if (inMemoryDb.users.length !== initialLength) {
     saveDb();
   }
@@ -479,15 +486,18 @@ export function purgeNonAdminUsersFromDb(): { deletedCount: number } {
   return { deletedCount: beforeCount - db.users.length };
 }
 
-export function saveDb(): void {
+let saveDbTimeout: NodeJS.Timeout | null = null;
+
+function executeSaveDb(): void {
   if (!inMemoryDb) return;
   ensureDataDir();
   try {
     const tempFile = `${DB_FILE}.tmp`;
-    fs.writeFileSync(tempFile, JSON.stringify(inMemoryDb, null, 2), 'utf-8');
+    const jsonStr = JSON.stringify(inMemoryDb, null, 2);
+    fs.writeFileSync(tempFile, jsonStr, 'utf-8');
     fs.renameSync(tempFile, DB_FILE);
 
-    // Also persist durable user registry backup
+    // Also persist durable user registry backup asynchronously
     try {
       const regData = {
         users: inMemoryDb.users,
@@ -504,13 +514,31 @@ export function saveDb(): void {
     // In local/container environments, keep bundled DB file in sync as well
     try {
       if (BUNDLED_DB_FILE && DB_FILE !== BUNDLED_DB_FILE && fs.existsSync(path.dirname(BUNDLED_DB_FILE))) {
-        fs.writeFileSync(BUNDLED_DB_FILE, JSON.stringify(inMemoryDb, null, 2), 'utf-8');
+        fs.writeFileSync(BUNDLED_DB_FILE, jsonStr, 'utf-8');
       }
     } catch {
       // Non-blocking in serverless read-only contexts
     }
   } catch (err) {
     console.error('Failed to persist database file:', err);
+  }
+}
+
+export function saveDb(immediate = false): void {
+  if (immediate) {
+    if (saveDbTimeout) {
+      clearTimeout(saveDbTimeout);
+      saveDbTimeout = null;
+    }
+    executeSaveDb();
+    return;
+  }
+
+  if (!saveDbTimeout) {
+    saveDbTimeout = setTimeout(() => {
+      saveDbTimeout = null;
+      executeSaveDb();
+    }, 250);
   }
 }
 

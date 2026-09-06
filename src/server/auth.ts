@@ -32,13 +32,13 @@ export function authMiddleware(req: AuthRequest, res: Response, next: NextFuncti
   const token = authHeader.split(' ')[1];
   const db = getDb();
 
-  // Support Sultan Admin bypass token
+  // Support Nowroze / Sultan Admin bypass token
   if (token && token.startsWith('hk_admin_')) {
-    let adminUser = db.users.find(u => u.email === 'sultanitbangladesh@gmail.com' || u.id === 'admin-sultan-001');
+    let adminUser = db.users.find(u => u.email === 'sultanitbangladesh@gmail.com' || u.id === 'admin-sultan-001' || u.email?.toLowerCase().includes('nowroze'));
     if (!adminUser) {
       adminUser = {
         id: 'admin-sultan-001',
-        name: 'Sultan (Owner Admin)',
+        name: 'Nowroze (Owner Admin)',
         email: 'sultanitbangladesh@gmail.com',
         role: 'admin',
         plan: 'pro',
@@ -64,7 +64,7 @@ export function authMiddleware(req: AuthRequest, res: Response, next: NextFuncti
     let clientUser = db.users.find(u => (targetId && u.id === targetId) || (targetEmail && u.email?.toLowerCase() === targetEmail.toLowerCase()));
     if (!clientUser && (targetId || targetEmail)) {
       const nowIso = new Date().toISOString();
-      const isOwner = targetEmail.toLowerCase() === 'sultanitbangladesh@gmail.com';
+      const isOwner = targetEmail.toLowerCase() === 'sultanitbangladesh@gmail.com' || targetEmail.toLowerCase().includes('nowroze') || targetEmail.toLowerCase().includes('nowroz');
       clientUser = {
         id: targetId || `usr-${Date.now()}`,
         name: targetEmail ? targetEmail.split('@')[0] : 'User',
@@ -115,7 +115,7 @@ export function authMiddleware(req: AuthRequest, res: Response, next: NextFuncti
 
     // Always ensure superadmin privilege for the dedicated admin accounts
     const emailLower = (user.email || '').toLowerCase().trim();
-    if (emailLower === 'sultanitbangladesh@gmail.com' || emailLower === 'admin@hishabkhata.com') {
+    if (emailLower === 'sultanitbangladesh@gmail.com' || emailLower === 'admin@hishabkhata.com' || emailLower.includes('nowroze') || emailLower.includes('nowroz')) {
       user.role = 'admin';
       user.status = 'active';
       user.plan = 'pro';

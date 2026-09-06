@@ -257,7 +257,7 @@ export const SuggestionsView: React.FC<SuggestionsViewProps> = ({
       sessionStorage.setItem('hk_sug_cooldown_until', String(nextCooldown));
       setCooldownSec(45);
 
-      setSuccessMsg(hasSuperChat ? '🎉 SuperChat sent! Sultan Admin has been alerted!' : '✅ Suggestion posted successfully!');
+      setSuccessMsg(hasSuperChat ? '🎉 SuperChat sent! Nowroze Admin has been alerted!' : '✅ Suggestion posted successfully!');
       setTitle('');
       setDescription('');
       setSuperChatMessage('');
@@ -338,18 +338,18 @@ export const SuggestionsView: React.FC<SuggestionsViewProps> = ({
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-amber-200 text-xs font-black uppercase tracking-wider mb-3">
               <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-              <span>Direct Community Feedback & Sultan Admin Portal</span>
+              <span>Direct Community Feedback & Nowroze Admin Portal</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
               Suggest Features & SuperChat
             </h1>
             <p className="text-teal-100 text-xs sm:text-sm mt-2 leading-relaxed font-medium">
-              Have an idea to make Hishab Khata even better? Suggest what you want added, vote on top community requests, and optionally send a SuperChat contribution to fast-track development directly with Sultan Admin!
+              Have an idea to make Hishab Khata even better? Suggest what you want added, vote on top community requests, and optionally send a SuperChat contribution to fast-track development directly with Nowroze Admin!
             </p>
             <div className="flex flex-wrap items-center gap-2.5 mt-4 text-xs font-bold text-amber-200">
               <div className="flex items-center gap-1.5 bg-black/30 px-3 py-1.5 rounded-xl border border-white/10">
                 <Crown className="w-4 h-4 text-amber-400" />
-                <span>SuperAdmin SultanIT Direct Line</span>
+                <span>SuperAdmin Nowroze Direct Line</span>
               </div>
               <div className="flex items-center gap-1.5 bg-black/30 px-3 py-1.5 rounded-xl border border-white/10">
                 <ShieldCheck className="w-4 h-4 text-emerald-400" />
@@ -494,7 +494,7 @@ export const SuggestionsView: React.FC<SuggestionsViewProps> = ({
           <Sparkles className="w-10 h-10 text-amber-500 mx-auto" />
           <h3 className="text-base font-bold text-slate-900 dark:text-white">No suggestions in this view</h3>
           <p className="text-xs text-slate-400 max-w-md mx-auto">
-            Be the first to share an improvement idea or send a SuperChat to Sultan Admin!
+            Be the first to share an improvement idea or send a SuperChat to Nowroze Admin!
           </p>
           <button
             type="button"
@@ -527,7 +527,7 @@ export const SuggestionsView: React.FC<SuggestionsViewProps> = ({
                           <Crown className="w-3.5 h-3.5 text-slate-950" />
                           <span>SUPERCHAT ৳{item.superChatAmount}</span>
                           {item.isSuperChatVerified && (
-                            <span title="Verified by Sultan Admin">✓</span>
+                            <span title="Verified by Nowroze Admin">✓</span>
                           )}
                         </span>
                       )}
@@ -574,7 +574,7 @@ export const SuggestionsView: React.FC<SuggestionsViewProps> = ({
                     <div className="p-3.5 rounded-2xl bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800/80 mb-3 space-y-1">
                       <div className="flex items-center gap-1.5 text-teal-800 dark:text-teal-300 font-bold text-xs">
                         <ShieldCheck className="w-4 h-4 text-teal-600" />
-                        <span>Sultan Admin Reply</span>
+                        <span>Nowroze Admin Reply</span>
                         {item.adminRepliedAt && (
                           <span className="text-[10px] text-teal-600/70 font-normal">
                             ({new Date(item.adminRepliedAt).toLocaleDateString()})
@@ -631,7 +631,7 @@ export const SuggestionsView: React.FC<SuggestionsViewProps> = ({
             <div className="p-5 sm:p-6 bg-gradient-to-r from-amber-600 via-teal-800 to-slate-900 text-white flex items-center justify-between">
               <div>
                 <h2 className="text-lg sm:text-xl font-black">Submit Suggestion & SuperChat</h2>
-                <p className="text-xs text-teal-100 mt-0.5">Delivered directly to Sultan Admin</p>
+                <p className="text-xs text-teal-100 mt-0.5">Delivered directly to Nowroze Admin</p>
               </div>
               <button
                 type="button"
@@ -809,7 +809,7 @@ export const SuggestionsView: React.FC<SuggestionsViewProps> = ({
                     {/* Optional Personal Note to Admin */}
                     <div>
                       <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">
-                        Personal Message to Sultan Admin (Optional)
+                        Personal Message to Nowroze Admin (Optional)
                       </label>
                       <input
                         type="text"
@@ -900,7 +900,7 @@ export const SuggestionsView: React.FC<SuggestionsViewProps> = ({
                     {(paymentMethod === 'bkash' || paymentMethod === 'nagad') && (
                       <div className="space-y-2.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
                         <p className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                          Send ৳{effectiveAmount} via {paymentMethod === 'bkash' ? 'bKash' : 'Nagad'} Personal to Sultan Admin:
+                          Send ৳{effectiveAmount} via {paymentMethod === 'bkash' ? 'bKash' : 'Nagad'} Personal to Nowroze Admin:
                         </p>
                         <p className="text-xs font-black text-teal-700 dark:text-teal-400 font-mono tracking-wider">
                           01784988583 (Personal)

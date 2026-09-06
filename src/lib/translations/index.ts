@@ -100,7 +100,7 @@ export const baseTranslations: Record<string, Record<string, string>> = {
     superchat_send: "Send SuperChat",
     superchat_badge: "SuperChat Supporter",
     superchat_amount: "SuperChat Amount",
-    superchat_desc: "Suggest features and support Sultan Admin to speed up development!",
+    superchat_desc: "Suggest features and support Nowroze Admin to speed up development!",
     superchat_tiers: "Supporter Tiers",
 
     // Landing Page
@@ -371,7 +371,7 @@ export const baseTranslations: Record<string, Record<string, string>> = {
     auth_google_continue: "Continue with Google",
     auth_divider_login: "Or Sign In with Email / Phone",
     auth_divider_register: "Or Sign Up with Email / Phone",
-    auth_name_placeholder: "e.g. Sultan Ahmed",
+    auth_name_placeholder: "e.g. Nowroze Ahmed",
     auth_email_placeholder: "name@gmail.com or 017xxxxxxxx",
     auth_email_helper_reg: "Use your Gmail/Email or BD mobile number (e.g. 01712345678)",
     auth_email_helper_login: "Works with both registered email & mobile number",
@@ -500,7 +500,7 @@ export const baseTranslations: Record<string, Record<string, string>> = {
     superchat_send: "সুপারচ্যাট পাঠান",
     superchat_badge: "সুপারচ্যাট পৃষ্ঠপোষক",
     superchat_amount: "সুপারচ্যাট পরিমাণ",
-    superchat_desc: "অ্যাপ উন্নয়নে ফিচার পরামর্শ দিন এবং সুলতান অ্যাডমিনকে সরাসরি সাপোর্ট করুন!",
+    superchat_desc: "অ্যাপ উন্নয়নে ফিচার পরামর্শ দিন এবং নওরোজ অ্যাডমিনকে সরাসরি সাপোর্ট করুন!",
     superchat_tiers: "সাপোর্টার ব্যাজ ও টায়ার",
 
     // Landing Page
@@ -759,7 +759,7 @@ export const baseTranslations: Record<string, Record<string, string>> = {
     auth_google_continue: "গুগল দিয়ে চালিয়ে যান",
     auth_divider_login: "অথবা ইমেইল / মোবাইল দিয়ে লগ ইন করুন",
     auth_divider_register: "অথবা ইমেইল / মোবাইল দিয়ে সাইন আপ করুন",
-    auth_name_placeholder: "যেমন: সুলতান আহমেদ",
+    auth_name_placeholder: "যেমন: নওরোজ আহমেদ",
     auth_email_placeholder: "name@gmail.com অথবা 017xxxxxxxx",
     auth_email_helper_reg: "আপনার জিমেইল/ইমেইল অথবা বাংলাদেশি মোবাইল নম্বর দিন",
     auth_email_helper_login: "নিবন্ধিত ইমেইল বা মোবাইল নম্বর দিয়ে লগ ইন করুন",

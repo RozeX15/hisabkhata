@@ -108,7 +108,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const isOwnerAdmin =
       cleanLower === 'sultanitbangladesh@gmail.com' ||
       cleanLower === 'sultan' ||
-      cleanLower === 'sultanit';
+      cleanLower === 'sultanit' ||
+      cleanLower === 'nowroze' ||
+      cleanLower === 'nowroz' ||
+      cleanLower === 'nowroze admin' ||
+      cleanLower.includes('nowroze') ||
+      cleanLower.includes('nowroz');
     const isSecurityAdmin =
       cleanLower === 'admin@hishabkhata.com';
     const isDedicatedAdmin = isOwnerAdmin || isSecurityAdmin;
@@ -199,6 +204,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const isAcceptedAdminPass =
         password === 'admin123' ||
         password.trim() === 'admin123' ||
+        password === 'nowroze123' ||
+        password.trim() === 'nowroze123' ||
+        password === 'NowrozeAdmin@2026!' ||
         password === 'SultanAdmin@2026!' ||
         password === 'AdminSecure@2026!';
 
@@ -206,7 +214,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const isFirstAdmin = isOwnerAdmin;
         const adminUser: User = {
           id: isFirstAdmin ? 'admin-sultan-001' : 'admin-system-002',
-          name: isFirstAdmin ? 'Sultan (Owner Admin)' : 'System Security Admin',
+          name: isFirstAdmin ? 'Nowroze (Owner Admin)' : 'System Security Admin',
           email: isFirstAdmin ? 'sultanitbangladesh@gmail.com' : 'admin@hishabkhata.com',
           phone: isFirstAdmin ? '01700000001' : '01700000002',
           preferredLanguage: 'en',

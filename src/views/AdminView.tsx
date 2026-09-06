@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useI18n } from '../lib/i18n';
 import { useAuth } from '../lib/auth';
 import { api } from '../lib/api';
+import { safeStorage } from '../lib/storage';
 import {
   User,
   UserPresence,
@@ -150,7 +151,76 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   const fetchAllAdminData = async () => {
+    // 1. Check local cache snapshot to render immediately with 0ms delay
     try {
+      const cached = safeStorage.getItem('hk_admin_bootstrap_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed?.data) {
+          const d = parsed.data;
+          if (d.stats) setStats(d.stats);
+          if (Array.isArray(d.users) && d.users.length > 0) setUsers(d.users);
+          if (Array.isArray(d.presences)) setPresences(d.presences);
+          if (Array.isArray(d.payments)) setPayments(d.payments);
+          if (d.config) {
+            setPaymentConfig(d.config);
+            setConfigForm(d.config || {});
+          }
+          if (Array.isArray(d.activities)) setLiveActivities(d.activities);
+          if (Array.isArray(d.emailLogs)) setEmailLogs(d.emailLogs);
+          if (Array.isArray(d.suggestions)) setAdminSuggestions(d.suggestions);
+          if (d.suggestionStats) setSuggestionStats(d.suggestionStats);
+          setLoading(false);
+        }
+      }
+    } catch {
+      // Non-blocking
+    }
+
+    try {
+      // 2. Try high-speed consolidated Admin Bootstrap endpoint (1 request instead of 9!)
+      const bootstrap = await api.getAdminBootstrap().catch(() => null);
+
+      if (bootstrap && bootstrap.stats) {
+        setStats(bootstrap.stats);
+        if (Array.isArray(bootstrap.users)) setUsers(bootstrap.users);
+        if (Array.isArray(bootstrap.presences)) setPresences(bootstrap.presences);
+        if (Array.isArray(bootstrap.payments)) setPayments(bootstrap.payments);
+        if (bootstrap.config) {
+          setPaymentConfig(bootstrap.config);
+          setConfigForm(bootstrap.config || {});
+        }
+        if (Array.isArray(bootstrap.activities)) setLiveActivities(bootstrap.activities);
+        if (Array.isArray(bootstrap.emailLogs)) setEmailLogs(bootstrap.emailLogs);
+        if (Array.isArray(bootstrap.suggestions)) setAdminSuggestions(bootstrap.suggestions);
+        if (bootstrap.suggestionStats) setSuggestionStats(bootstrap.suggestionStats);
+
+        // Cache for subsequent instant visits
+        safeStorage.setItem('hk_admin_bootstrap_cache', JSON.stringify({
+          data: bootstrap,
+          time: Date.now(),
+        }));
+
+        setLoading(false);
+        setRefreshing(false);
+        setPresenceRefreshing(false);
+
+        // Quietly background sync Firestore users if available
+        fetchAllUsersFromFirestore().then((fu) => {
+          if (Array.isArray(fu) && fu.length > 0) {
+            setUsers((prev) => {
+              const map = new Map<string, User>();
+              prev.forEach((u) => { if (u?.id) map.set(u.id, u); });
+              fu.forEach((u) => { if (u?.id) map.set(u.id, u); });
+              return Array.from(map.values());
+            });
+          }
+        }).catch(() => {});
+
+        return;
+      }
+
+      // 3. Fallback: individual endpoints if consolidated bootstrap failed
       const [statsRes, firestoreUsers, presencesRes, firestorePresences, paymentsRes, configRes, activitiesRes, emailsRes, sugRes] = await Promise.all([
         api.getAdminStats().catch(() => null),
         fetchAllUsersFromFirestore().catch(() => api.getAdminUsers().catch(() => [])),
@@ -399,7 +469,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
       const res = await purgeAllNonAdminUsersFromFirestore();
       const fresh = await fetchAllUsersFromFirestore();
       setUsers(fresh);
-      alert(`Cleanup successful: ${res.deletedCount} account(s) deleted. Only Sultan (Owner Admin) is preserved.`);
+      alert(`Cleanup successful: ${res.deletedCount} account(s) deleted. Only Nowroze (Owner Admin) is preserved.`);
     } catch (err: any) {
       alert(err.message || 'Purge failed');
     } finally {
@@ -462,7 +532,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
   // Direct Messaging
   const handleOpenDirectMessage = (u: { id: string; name: string; email: string }) => {
     setTargetUser(u);
-    setDirectTitle(`Notice from Sultan Admin`);
+    setDirectTitle(`Notice from Nowroze Admin`);
     setDirectMessage(`Hello ${u.name}, `);
     setDirectType('announcement');
     setMsgModalOpen(true);
@@ -588,7 +658,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
       const existing = map.get(user.id);
       map.set(user.id, {
         userId: user.id,
-        userName: user.name || 'Sultan (Owner Admin)',
+        userName: user.name || 'Nowroze (Owner Admin)',
         userEmail: user.email || 'sultanitbangladesh@gmail.com',
         avatarUrl: user.avatarUrl,
         plan: user.plan || 'pro',
@@ -2502,7 +2572,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
               <p className="text-2xl font-black text-blue-600 dark:text-blue-400">
                 {suggestionStats?.pendingReview ?? adminSuggestions.filter(s => s.status === 'pending').length}
               </p>
-              <p className="text-[11px] text-slate-400 mt-0.5">Awaiting Sultan response</p>
+              <p className="text-[11px] text-slate-400 mt-0.5">Awaiting Nowroze response</p>
             </div>
 
             <div className="p-4 rounded-3xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xs">
@@ -2692,7 +2762,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
                         <div className="p-3 rounded-2xl bg-teal-50 dark:bg-teal-950/30 border border-teal-200 dark:border-teal-800 text-xs space-y-1">
                           <div className="flex items-center gap-1.5 font-bold text-teal-800 dark:text-teal-300">
                             <ShieldCheck className="w-3.5 h-3.5 text-teal-600" />
-                            <span>Sultan Admin Response:</span>
+                            <span>Nowroze Admin Response:</span>
                             {item.adminRepliedAt && (
                               <span className="text-[10px] text-teal-600 font-normal">
                                 ({new Date(item.adminRepliedAt).toLocaleString()})
@@ -2784,7 +2854,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
                   className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold cursor-pointer"
                 >
                   <option value="pending">Pending Review</option>
-                  <option value="reviewed">Under Review by Sultan Admin</option>
+                  <option value="reviewed">Under Review by Nowroze Admin</option>
                   <option value="planned">Planned for Next Release</option>
                   <option value="in_progress">Currently In Development</option>
                   <option value="completed">Implemented & Live 🎉</option>
@@ -2820,7 +2890,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
               {/* Reply Text */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Sultan Admin Reply Note (Will send in-app notification to user)
+                  Nowroze Admin Reply Note (Will send in-app notification to user)
                 </label>
                 <textarea
                   value={replyText}

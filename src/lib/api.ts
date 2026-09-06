@@ -20,22 +20,38 @@ import {
   SuggestionSuperChat
 } from '../types';
 
-export const CLOUD_RUN_API_BASE = 'https://ais-pre-3lbuz3ql6wcqsxqebf5pug-282407494880.asia-east1.run.app/api';
+export const CLOUD_RUN_API_BASE = 'https://ais-dev-3lbuz3ql6wcqsxqebf5pug-282407494880.asia-east1.run.app/api';
 
 export function getApiBase(): string {
   if (typeof window === 'undefined') return '/api';
-  const hostname = window.location.hostname;
-  // If running directly on the Cloud Run domain itself or local development
-  if (
-    hostname.endsWith('.run.app') ||
-    hostname === 'localhost' ||
-    hostname === '127.0.0.1' ||
-    hostname === '0.0.0.0'
-  ) {
-    return '/api';
+
+  // Support manual custom override if configured
+  try {
+    const override = safeStorage.getItem('hk_api_base_url');
+    if (override && override.trim()) {
+      return override.trim().replace(/\/+$/, '');
+    }
+  } catch {}
+
+  const hostname = (window.location.hostname || '').toLowerCase();
+  const protocol = window.location.protocol;
+
+  // External static-only hosts without integrated Node.js server (e.g. cPanel, file://, custom domains)
+  const isExternalStaticHost =
+    protocol === 'file:' ||
+    hostname.includes('hishabkhata.site') ||
+    hostname.includes('site.je') ||
+    hostname.includes('000webhost') ||
+    hostname.includes('infinityfree') ||
+    hostname.includes('github.io');
+
+  if (isExternalStaticHost) {
+    return CLOUD_RUN_API_BASE;
   }
-  // When running on any custom domain or external static hosting (e.g. hishabkhata.site, hishabkhata.site.je, cPanel)
-  return CLOUD_RUN_API_BASE;
+
+  // In all normal contexts (AI Studio preview, Google Cloud Run, localhost, iframe embeds),
+  // always use relative '/api' for instantaneous 0ms local container routing
+  return '/api';
 }
 
 export function getAuthToken(): string | null {
@@ -73,13 +89,24 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
 
   const baseUrl = getApiBase();
   let response: Response;
+
+  // 6-second safety timeout so network issues never hang the UI
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 6000);
+
   try {
     response = await fetch(`${baseUrl}${endpoint}`, {
       ...options,
       headers,
+      signal: options.signal || controller.signal,
     });
   } catch (networkError: any) {
+    if (networkError.name === 'AbortError') {
+      throw new Error('Request timed out. Please try again.');
+    }
     throw new Error('Unable to connect to the server. Please check your network connection.');
+  } finally {
+    clearTimeout(timeoutId);
   }
 
   if (!response.ok) {
@@ -143,8 +170,19 @@ export const api = {
   },
   upgradePlan: (plan: string = 'pro') => request<{ user: User; message: string }>('/auth/upgrade-plan', { method: 'POST', body: JSON.stringify({ plan }) }),
 
-  // Dashboard
+  // Dashboard & Bootstrap
   getDashboardSummary: () => request<DashboardSummary>('/dashboard/summary'),
+  getAppBootstrap: () => request<{
+    user: User;
+    summary: DashboardSummary;
+    wallets: Wallet[];
+    categories: any[];
+    transactions: Transaction[];
+    budgets: BudgetProgress[];
+    savingsGoals: SavingsGoal[];
+    loans: Loan[];
+    notifications: AppNotification[];
+  }>('/app/bootstrap'),
 
   // Wallets
   getWallets: () => request<Wallet[]>('/wallets'),
@@ -242,6 +280,17 @@ export const api = {
     request<{ success: boolean; notification: AppNotification }>('/admin/notify-user', { method: 'POST', body: JSON.stringify(data) }),
 
   // Admin
+  getAdminBootstrap: () => request<{
+    stats: AdminStats;
+    users: any[];
+    presences: UserPresence[];
+    payments: SubscriptionPayment[];
+    config: AdminPaymentConfig;
+    activities: LiveUserActivity[];
+    emailLogs: EmailLogEntry[];
+    suggestions: SuggestionSuperChat[];
+    suggestionStats: any;
+  }>('/admin/bootstrap'),
   getAdminStats: () => request<AdminStats>('/admin/stats'),
   getAdminUsers: () => request<any[]>('/admin/users'),
   updateUserStatus: (id: string, status: string) => request<any>(`/admin/users/${id}/status`, { method: 'PUT', body: JSON.stringify({ status }) }),

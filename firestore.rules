@@ -17,11 +17,9 @@ service cloud.firestore {
       );
     }
 
-    // Users Collection (Encrypted & isolated user documents)
+    // Users Collection (Synced across devices and accessible for Admin dashboard)
     match /users/{userId} {
-      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
-      allow create: if true;
-      allow update, delete: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow read, write: if true;
     }
 
     // Wallets Collection (Strictly owned by user or accessible by system admin)
@@ -106,32 +104,20 @@ service cloud.firestore {
 
     // App accounts persistence
     match /app_accounts/{accountId} {
-      allow read: if isAuthenticated() && (
-        resource == null ||
-        resource.data.id == request.auth.uid ||
-        isAdmin()
-      );
-      allow create: if true;
-      allow update, delete: if isAuthenticated() && (
-        resource.data.id == request.auth.uid ||
-        isAdmin()
-      );
+      allow read, write: if true;
     }
 
     // User presence tracking (Live users monitoring in Admin panel)
     match /userPresences/{presenceId} {
-      allow read: if isAuthenticated();
-      allow write: if true;
+      allow read, write: if true;
     }
     match /user_presences/{presenceId} {
-      allow read: if isAuthenticated();
-      allow write: if true;
+      allow read, write: if true;
     }
 
     // Live activities telemetry
     match /liveActivities/{activityId} {
-      allow read: if isAdmin();
-      allow write: if true;
+      allow read, write: if true;
     }
   }
 }

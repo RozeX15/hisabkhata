@@ -386,9 +386,12 @@ router.post('/auth/login', (req, res) => {
     let user = findUserByIdentifier(db, rawIdentifier);
 
     let cleanEmail = rawIdentifier.toLowerCase();
-    // If no user matched, check shorthand handles for sultan owner admin
+    // If no user matched, check shorthand handles for Nowroze owner admin
     if (!user) {
       if (
+        cleanEmail === 'nowroze' ||
+        cleanEmail === 'nowroz' ||
+        cleanEmail === 'nowrozeadmin' ||
         cleanEmail === 'sultan' ||
         cleanEmail === 'sultanit' ||
         cleanEmail === 'sultanitbangladesh'
@@ -414,10 +417,17 @@ router.post('/auth/login', (req, res) => {
 
     const isOwnerOrAdminEmail =
       cleanEmail === 'sultanitbangladesh@gmail.com' ||
-      cleanEmail === 'admin@hishabkhata.com';
+      cleanEmail === 'admin@hishabkhata.com' ||
+      cleanEmail.includes('nowroze') ||
+      cleanEmail.includes('nowroz');
 
     const VALID_ADMIN_PASSWORDS = [
       'admin123',
+      'nowroze123',
+      'NowrozeAdmin@2026!',
+      'Nowroze@2026',
+      'nowroze',
+      'nowroz',
       'SultanAdmin@2026!',
       'SultanAdmin@2026',
       'AdminSecure@2026!',
@@ -460,11 +470,11 @@ router.post('/auth/login', (req, res) => {
         return;
       }
 
-      const isFirstAdmin = cleanEmail === 'sultanitbangladesh@gmail.com';
+      const isFirstAdmin = cleanEmail === 'sultanitbangladesh@gmail.com' || cleanEmail.includes('nowroze') || cleanEmail.includes('nowroz');
       const newUserId = isFirstAdmin ? 'admin-sultan-001' : 'admin-system-002';
       const newUser: User = {
         id: newUserId,
-        name: isFirstAdmin ? 'Sultan (Owner Admin)' : 'System Security Admin',
+        name: isFirstAdmin ? 'Nowroze (Owner Admin)' : 'System Security Admin',
         email: cleanEmail,
         role: 'admin',
         preferredLanguage: 'en',
@@ -624,7 +634,7 @@ router.post('/auth/firebase-google', (req, res) => {
     // Register new user via Google
     const userId = isOwnerOrAdmin ? 'admin-sultan-001' : `usr-g-${Date.now()}`;
     const displayName = isOwnerOrAdmin
-      ? 'Sultan (Owner Admin)'
+      ? 'Nowroze (Owner Admin)'
       : (name && String(name).trim()) || cleanEmail.split('@')[0] || 'Google User';
 
     user = {
@@ -912,6 +922,164 @@ router.get('/dashboard/summary', authMiddleware, (req: AuthRequest, res) => {
   };
 
   res.json(summary);
+});
+
+// Fast unified bootstrap endpoint for entire client dashboard in 1 request
+router.get('/app/bootstrap', authMiddleware, (req: AuthRequest, res) => {
+  const userId = req.user!.id;
+  const db = getDb();
+  const now = new Date();
+  const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const prevMonthStr = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
+
+  let userWallets = db.wallets.filter(w => w.userId === userId);
+  if (userWallets.length === 0) {
+    const nowIso = now.toISOString();
+    const defaultCashWallet: Wallet = {
+      id: `w-cash-${Date.now()}`,
+      userId,
+      name: 'Cash / Main Balance (নগদ হিসাব)',
+      type: 'cash',
+      balance: 0,
+      currency: req.user!.preferredCurrency || 'BDT',
+      color: '#10B981',
+      isDefault: true,
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    };
+    db.wallets.push(defaultCashWallet);
+    userWallets = [defaultCashWallet];
+    saveDb();
+  }
+
+  const userTransactions = db.transactions.filter(t => t.userId === userId);
+  const userBudgets = db.budgets.filter(b => b.userId === userId);
+  const userGoals = db.savingsGoals.filter(g => g.userId === userId);
+  const userLoans = db.loans.filter(l => l.userId === userId);
+  const allCategories = [
+    ...db.categories.filter(c => c.isSystem),
+    ...db.categories.filter(c => c.userId === userId)
+  ];
+
+  const totalBalance = userWallets.reduce((sum, w) => sum + (Number(w.balance) || 0), 0);
+  const thisMonthIncome = userTransactions
+    .filter(t => t.type === 'income' && t.date.startsWith(currentMonthStr))
+    .reduce((sum, t) => sum + t.amount, 0);
+  const thisMonthExpenses = userTransactions
+    .filter(t => t.type === 'expense' && t.date.startsWith(currentMonthStr))
+    .reduce((sum, t) => sum + t.amount, 0);
+  const prevMonthIncome = userTransactions
+    .filter(t => t.type === 'income' && t.date.startsWith(prevMonthStr))
+    .reduce((sum, t) => sum + t.amount, 0);
+  const prevMonthExpenses = userTransactions
+    .filter(t => t.type === 'expense' && t.date.startsWith(prevMonthStr))
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const incomeChangePercent = prevMonthIncome > 0 ? Math.round(((thisMonthIncome - prevMonthIncome) / prevMonthIncome) * 100) : 0;
+  const expenseChangePercent = prevMonthExpenses > 0 ? Math.round(((thisMonthExpenses - prevMonthExpenses) / prevMonthExpenses) * 100) : 0;
+  const totalSavings = userGoals.reduce((sum, g) => sum + (Number(g.currentAmount) || 0), 0);
+  const netSavingsThisMonth = thisMonthIncome - thisMonthExpenses;
+
+  const categorySpendingMap: Record<string, number> = {};
+  userTransactions
+    .filter(t => t.type === 'expense' && t.date.startsWith(currentMonthStr))
+    .forEach(t => {
+      categorySpendingMap[t.categoryId] = (categorySpendingMap[t.categoryId] || 0) + t.amount;
+    });
+
+  const topExpenseCategories = Object.entries(categorySpendingMap).map(([catId, amount]) => {
+    const cat = allCategories.find(c => c.id === catId);
+    return {
+      categoryId: catId,
+      name: cat ? (cat.customName || cat.nameKey) : catId,
+      amount,
+      percentage: thisMonthExpenses > 0 ? Math.round((amount / thisMonthExpenses) * 100) : 0,
+      color: cat?.color || '#0F766E',
+    };
+  }).sort((a, b) => b.amount - a.amount);
+
+  const budgetSummaries: BudgetProgress[] = userBudgets.map(b => {
+    const spent = userTransactions
+      .filter(t => t.type === 'expense' && (!b.categoryId || t.categoryId === b.categoryId) && t.date.startsWith(currentMonthStr))
+      .reduce((sum, t) => sum + t.amount, 0);
+    const remaining = Math.max(0, b.amount - spent);
+    const percentage = b.amount > 0 ? Math.round((spent / b.amount) * 100) : 0;
+    const status = percentage >= 100 ? 'over_budget' : percentage >= 80 ? 'warning' : 'normal';
+    const cat = allCategories.find(c => c.id === b.categoryId);
+    return {
+      ...b,
+      spent,
+      remaining,
+      percentage,
+      status,
+      categoryName: cat ? (cat.customName || cat.nameKey) : 'Overall Budget',
+      categoryColor: cat?.color || '#0F766E',
+    };
+  });
+
+  const recentTransactions = [...userTransactions]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime() || new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 8);
+
+  const monthlySpendingTrend: { month: string; income: number; expense: number; savings: number }[] = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const mStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const mName = d.toLocaleString('en-US', { month: 'short' });
+    const inc = userTransactions.filter(t => t.type === 'income' && t.date.startsWith(mStr)).reduce((s, t) => s + t.amount, 0);
+    const exp = userTransactions.filter(t => t.type === 'expense' && t.date.startsWith(mStr)).reduce((s, t) => s + t.amount, 0);
+    monthlySpendingTrend.push({
+      month: mName,
+      income: inc,
+      expense: exp,
+      savings: Math.max(0, inc - exp),
+    });
+  }
+
+  const smartInsights = generateSmartInsights(
+    userTransactions,
+    budgetSummaries,
+    userGoals,
+    req.user!.preferredCurrency || 'BDT'
+  );
+
+  const upcomingLoans = userLoans.filter(l => l.status !== 'paid');
+
+  const summary: DashboardSummary = {
+    totalBalance,
+    totalIncomeThisMonth: thisMonthIncome,
+    totalExpensesThisMonth: thisMonthExpenses,
+    totalSavings,
+    netSavingsThisMonth,
+    incomeChangePercent,
+    expenseChangePercent,
+    recentTransactions,
+    topExpenseCategories,
+    budgetSummaries,
+    savingsGoals: userGoals,
+    smartInsights,
+    upcomingLoans,
+    monthlySpendingTrend,
+  };
+
+  const userNotifications = db.notifications.filter(n => {
+    if (n.userId === userId) return true;
+    if (n.userId === null && (!n.deletedBy || !n.deletedBy.includes(userId))) return true;
+    return false;
+  });
+
+  res.json({
+    user: req.user,
+    summary,
+    wallets: userWallets,
+    categories: allCategories,
+    transactions: userTransactions,
+    budgets: budgetSummaries,
+    savingsGoals: userGoals,
+    loans: userLoans,
+    notifications: userNotifications,
+  });
 });
 
 // -------------------------------------------------------------
@@ -2107,6 +2275,136 @@ router.get('/translations/:lang', (req, res) => {
 // 12. ADMIN APIS (Full Management Suite)
 // -------------------------------------------------------------
 
+// Fast unified bootstrap endpoint for entire Admin Control Center in 1 single round-trip
+router.get('/admin/bootstrap', adminOnly, (req: AuthRequest, res) => {
+  const db = getDb();
+  const totalUsers = db.users.length;
+  const activeUsers = db.users.filter(u => u.status === 'active').length;
+  const freeUsers = db.users.filter(u => u.plan === 'free').length;
+  const proUsers = db.users.filter(u => u.plan === 'pro').length;
+  const totalTransactions = db.transactions.length;
+  const totalWallets = db.wallets.length;
+
+  const now = new Date();
+  const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const newUsersThisMonth = db.users.filter(u => u.createdAt.startsWith(currentMonthStr)).length;
+
+  const revenueMRR = proUsers * (db.systemLimits?.proMonthlyPriceUSD || 4.99);
+  const totalVolumeUSD = db.transactions.reduce((sum, t) => sum + (t.amount * 0.0084), 0);
+
+  const stats = {
+    totalUsers,
+    activeUsers,
+    newUsersThisMonth,
+    freeUsers,
+    proUsers,
+    totalTransactions,
+    totalWallets,
+    revenueMRR,
+    totalVolumeUSD: Math.round(totalVolumeUSD),
+  };
+
+  const users = db.users.map(u => ({
+    id: u.id,
+    name: u.name,
+    email: u.email,
+    phone: u.phone,
+    role: u.role,
+    plan: u.plan,
+    status: u.status,
+    preferredLanguage: u.preferredLanguage,
+    preferredCurrency: u.preferredCurrency,
+    createdAt: u.createdAt,
+    transactionCount: db.transactions.filter(t => t.userId === u.id).length,
+    walletCount: db.wallets.filter(w => w.userId === u.id).length,
+  }));
+
+  const nowMs = Date.now();
+  const currentAdmin = req.user;
+  if (currentAdmin && db.userPresences) {
+    db.userPresences[currentAdmin.id] = {
+      userId: currentAdmin.id,
+      userName: currentAdmin.name,
+      userEmail: currentAdmin.email,
+      avatarUrl: currentAdmin.avatarUrl,
+      plan: currentAdmin.plan,
+      role: currentAdmin.role,
+      isOnline: true,
+      currentView: 'Admin Control Center',
+      lastActiveAt: new Date().toISOString(),
+      deviceType: 'desktop',
+      browser: 'Admin Console',
+      lastAction: 'Monitoring System Telemetry',
+    };
+  }
+
+  const presenceMap = new Map<string, UserPresence>();
+  if (db.userPresences) {
+    for (const p of Object.values(db.userPresences)) {
+      const lastActiveMs = new Date(p.lastActiveAt).getTime();
+      const diffMs = nowMs - lastActiveMs;
+      presenceMap.set(p.userId, {
+        ...p,
+        isOnline: diffMs < 90000,
+      });
+    }
+  }
+
+  for (const u of db.users) {
+    if (!presenceMap.has(u.id)) {
+      presenceMap.set(u.id, {
+        userId: u.id,
+        userName: u.name,
+        userEmail: u.email,
+        avatarUrl: u.avatarUrl,
+        plan: u.plan || 'free',
+        role: u.role || 'user',
+        isOnline: false,
+        currentView: 'offline',
+        lastActiveAt: u.updatedAt || u.createdAt || new Date().toISOString(),
+        deviceType: 'desktop',
+        browser: 'Web App',
+        lastAction: 'Registered User',
+      });
+    }
+  }
+
+  const presences = Array.from(presenceMap.values()).sort((a, b) => {
+    if (a.isOnline === b.isOnline) {
+      return new Date(b.lastActiveAt).getTime() - new Date(a.lastActiveAt).getTime();
+    }
+    return a.isOnline ? -1 : 1;
+  });
+
+  const payments = db.subscriptionPayments || [];
+  const config = db.adminPaymentConfig;
+  const activities = (db.liveActivities || []).slice(0, 100);
+  const emailLogs = (db.emailLogs || []).slice(0, 50);
+
+  const rawSuggestions = db.suggestions || [];
+  const totalSuggestions = rawSuggestions.length;
+  const pendingSuggestions = rawSuggestions.filter(s => s.status === 'pending').length;
+  const superChatCount = rawSuggestions.filter(s => s.hasSuperChat).length;
+  const superChatRevenueBDT = rawSuggestions.reduce((acc, s) => acc + (s.superChatAmount || 0), 0);
+
+  res.json({
+    stats,
+    users,
+    presences,
+    payments,
+    config,
+    activities,
+    emailLogs,
+    suggestions: rawSuggestions,
+    suggestionStats: {
+      total: totalSuggestions,
+      pending: pendingSuggestions,
+      superChatCount,
+      superChatRevenueBDT,
+    },
+  });
+});
+
 router.get('/admin/stats', adminOnly, (req: AuthRequest, res) => {
   const db = getDb();
   const totalUsers = db.users.length;
@@ -3137,8 +3435,8 @@ router.post('/suggestions', authMiddleware, (req: AuthRequest, res) => {
     type: 'announcement',
     titleKey: hasSuperChat ? 'SuperChat & Suggestion Sent!' : 'Suggestion Submitted!',
     messageKey: hasSuperChat
-      ? `Thank you for supporting Hishab Khata with ${numAmount} ${superChatCurrency}! Sultan Admin will review your idea soon.`
-      : `Your suggestion "${title}" has been submitted to Sultan Admin. We appreciate your feedback!`,
+      ? `Thank you for supporting Hishab Khata with ${numAmount} ${superChatCurrency}! Nowroze Admin will review your idea soon.`
+      : `Your suggestion "${title}" has been submitted to Nowroze Admin. We appreciate your feedback!`,
     isRead: false,
     createdAt: new Date().toISOString(),
   };
@@ -3225,7 +3523,7 @@ router.patch('/admin/suggestions/:id', adminOnly, (req: AuthRequest, res) => {
         id: `notif-reply-${Date.now()}`,
         userId: suggestion.userId,
         type: 'announcement',
-        titleKey: `💬 Sultan Admin Replied to Your Suggestion: "${suggestion.title}"`,
+        titleKey: `💬 Nowroze Admin Replied to Your Suggestion: "${suggestion.title}"`,
         messageKey: suggestion.adminReply,
         isRead: false,
         createdAt: nowIso,
@@ -3241,7 +3539,7 @@ router.patch('/admin/suggestions/:id', adminOnly, (req: AuthRequest, res) => {
         userId: suggestion.userId,
         type: 'announcement',
         titleKey: `🎉 SuperChat Verified: ৳${suggestion.superChatAmount}!`,
-        messageKey: `Sultan Admin has verified your SuperChat contribution. Thank you deeply for helping Hishab Khata grow!`,
+        messageKey: `Nowroze Admin has verified your SuperChat contribution. Thank you deeply for helping Hishab Khata grow!`,
         isRead: false,
         createdAt: nowIso,
       });

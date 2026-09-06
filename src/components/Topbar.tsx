@@ -201,7 +201,7 @@ export const Topbar: React.FC<TopbarProps> = ({
                 ? 'bg-amber-500 text-slate-950 font-black'
                 : 'bg-amber-50 dark:bg-amber-950/50 hover:bg-amber-100 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60'
             }`}
-            title="Suggest features or send SuperChat to Sultan Admin"
+            title="Suggest features or send SuperChat to Nowroze Admin"
           >
             <Sparkles className="w-3.5 h-3.5 text-amber-500" />
             <span>SuperChat</span>

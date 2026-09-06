@@ -336,7 +336,7 @@ export const LegalViews: React.FC<LegalViewProps> = ({
 
               <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3">
                 <p className="text-[11px] text-slate-500">
-                  Crafted with passion for financial sovereignty by Sultan IT Bangladesh.
+                  Crafted with passion for financial sovereignty by Nowroze.
                 </p>
                 <div className="flex items-center gap-2">
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold border border-emerald-300 dark:border-emerald-800">
