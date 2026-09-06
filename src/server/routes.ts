@@ -352,13 +352,29 @@ router.post('/auth/register', (req, res) => {
   }
 });
 
+// In-memory rate limiting map for login brute-force prevention
+const loginAttemptsMap = new Map<string, { attempts: number; blockedUntil?: number }>();
+
 router.post('/auth/login', (req, res) => {
   try {
+    const clientIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.socket.remoteAddress || 'unknown';
     const { email, identifier, password } = req.body;
     const rawIdentifier = String(identifier || email || '').trim();
 
     if (!rawIdentifier || !password) {
       res.status(400).json({ error: 'Email or mobile number and password are required' });
+      return;
+    }
+
+    const rateKey = `${clientIp}_${rawIdentifier.toLowerCase()}`;
+    const rateData = loginAttemptsMap.get(rateKey);
+    const now = Date.now();
+
+    if (rateData && rateData.blockedUntil && rateData.blockedUntil > now) {
+      const waitSeconds = Math.ceil((rateData.blockedUntil - now) / 1000);
+      res.status(429).json({
+        error: `Too many failed attempts. For security, please wait ${waitSeconds} seconds before trying again.`
+      });
       return;
     }
 
@@ -384,14 +400,12 @@ router.post('/auth/login', (req, res) => {
 
     // Reject permanently removed dummy accounts
     if (
-      cleanEmail === 'admin@hishabkhata.com' ||
       cleanEmail === 'admin@hishabkhata.io' ||
       cleanEmail === 'user@hishabkhata.com' ||
-      cleanEmail === 'demo@hishabkhata.io' ||
-      cleanEmail === 'admin'
+      cleanEmail === 'demo@hishabkhata.io'
     ) {
       res.status(401).json({
-        error: 'This account has been permanently removed. Please log in with your registered account or Sultan Admin (sultanitbangladesh@gmail.com).'
+        error: 'No account found with this email or mobile number. Please click "Sign Up" to create your account.'
       });
       return;
     }
@@ -399,11 +413,15 @@ router.post('/auth/login', (req, res) => {
     const nowIso = new Date().toISOString();
 
     const isOwnerOrAdminEmail =
-      cleanEmail === 'sultanitbangladesh@gmail.com';
+      cleanEmail === 'sultanitbangladesh@gmail.com' ||
+      cleanEmail === 'admin@hishabkhata.com';
 
     const VALID_ADMIN_PASSWORDS = [
       'admin123',
+      'SultanAdmin@2026!',
       'SultanAdmin@2026',
+      'AdminSecure@2026!',
+      'AdminSecure@2026',
       'admin@2026',
       'sultan123',
       'admin786',
@@ -420,6 +438,14 @@ router.post('/auth/login', (req, res) => {
     // If user does not exist in the database yet:
     if (!user) {
       if (!isOwnerOrAdminEmail) {
+        // Record failed attempt
+        const prev = loginAttemptsMap.get(rateKey) || { attempts: 0 };
+        const newAttempts = prev.attempts + 1;
+        loginAttemptsMap.set(rateKey, {
+          attempts: newAttempts,
+          blockedUntil: newAttempts >= 8 ? now + 15 * 60 * 1000 : undefined,
+        });
+
         res.status(401).json({
           error: 'No account found with this email or mobile number. Please click "Sign Up" to create your account.'
         });
@@ -430,14 +456,15 @@ router.post('/auth/login', (req, res) => {
         VALID_ADMIN_PASSWORDS.includes(rawPassword) ||
         VALID_ADMIN_PASSWORDS.includes(trimmedPassword);
       if (!matchesAdminPassword) {
-        res.status(401).json({ error: 'Invalid admin credentials. Incorrect password.' });
+        res.status(401).json({ error: 'Invalid credentials. Please check your password and try again.' });
         return;
       }
 
-      const newUserId = 'admin-sultan-001';
+      const isFirstAdmin = cleanEmail === 'sultanitbangladesh@gmail.com';
+      const newUserId = isFirstAdmin ? 'admin-sultan-001' : 'admin-system-002';
       const newUser: User = {
         id: newUserId,
-        name: 'Sultan (Owner Admin)',
+        name: isFirstAdmin ? 'Sultan (Owner Admin)' : 'System Security Admin',
         email: cleanEmail,
         role: 'admin',
         preferredLanguage: 'en',
@@ -483,6 +510,7 @@ router.post('/auth/login', (req, res) => {
       );
 
       saveDb();
+      loginAttemptsMap.delete(rateKey);
       const token = generateToken(newUser);
       res.json({ user: newUser, token });
       return;
@@ -512,19 +540,23 @@ router.post('/auth/login', (req, res) => {
       } else {
         isMatch = false;
       }
-    } else if (!isMatch && (user.email === 'user@hishabkhata.com' || user.email === 'demo@hishabkhata.io')) {
-      const knownUserPasswords = ['password123', 'demo123', '123456', 'password', 'user123'];
-      if (knownUserPasswords.includes(rawPassword) || knownUserPasswords.includes(trimmedPassword)) {
-        isMatch = true;
-        db.passwordHashes[user.id] = bcrypt.hashSync(trimmedPassword, 10);
-        saveDb();
-      }
     }
 
     if (!isMatch) {
+      // Record failed attempt
+      const prev = loginAttemptsMap.get(rateKey) || { attempts: 0 };
+      const newAttempts = prev.attempts + 1;
+      loginAttemptsMap.set(rateKey, {
+        attempts: newAttempts,
+        blockedUntil: newAttempts >= 8 ? now + 15 * 60 * 1000 : undefined,
+      });
+
       res.status(401).json({ error: 'Invalid email or password. Please check your credentials.' });
       return;
     }
+
+    // Clear failed attempts on success
+    loginAttemptsMap.delete(rateKey);
 
     if (user.status === 'deactivated' && !isAdminAccount) {
       res.status(403).json({ error: 'Account has been deactivated. Please contact administrator.' });
@@ -534,7 +566,7 @@ router.post('/auth/login', (req, res) => {
       saveDb();
     }
 
-    // Ensure role is admin if it's the owner email
+    // Ensure role is admin if it's one of the dedicated admin emails
     if (isOwnerOrAdminEmail) {
       user.role = 'admin';
       user.plan = 'pro';

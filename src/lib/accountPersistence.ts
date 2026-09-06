@@ -7,7 +7,6 @@ import bcrypt from 'bcryptjs';
 
 export const LEGACY_DUMMY_EMAILS = new Set([
   'user@hishabkhata.com',
-  'admin@hishabkhata.com',
   'admin@hishabkhata.io',
   'demo@hishabkhata.io',
 ]);
@@ -286,6 +285,21 @@ export const DEFAULT_SYSTEM_USERS: User[] = [
     status: 'active',
     emailVerified: true,
     avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+  },
+  {
+    id: 'admin-system-002',
+    name: 'System Security Admin',
+    email: 'admin@hishabkhata.com',
+    phone: '01700000002',
+    role: 'admin',
+    preferredLanguage: 'en',
+    preferredCurrency: 'BDT',
+    plan: 'pro',
+    status: 'active',
+    emailVerified: true,
+    avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z',
   },

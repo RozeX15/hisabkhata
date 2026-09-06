@@ -369,7 +369,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding, 
                         className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs rounded-lg transition cursor-pointer shadow-sm"
                       >
                         <Sparkles className="w-3.5 h-3.5" />
-                        <span>Click here to Sign Up with this ID</span>
+                        <span>{t('auth_click_signup') || 'Click here to Sign Up with this ID'}</span>
                       </button>
                     )}
                   {mode === 'register' && (activeError.includes('longer than usual') || activeError.includes('server')) && (
@@ -383,7 +383,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding, 
                       className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs rounded-lg transition cursor-pointer shadow-sm"
                     >
                       <Sparkles className="w-3.5 h-3.5" />
-                      <span>Continue & Complete Account Setup</span>
+                      <span>{t('auth_continue_setup') || 'Continue & Complete Account Setup'}</span>
                     </button>
                   )}
                   {mode === 'register' && activeError.includes('already exists') && (
@@ -397,7 +397,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding, 
                       className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs rounded-lg transition cursor-pointer"
                     >
                       <KeyRound className="w-3.5 h-3.5" />
-                      <span>Click here to Sign In instead</span>
+                      <span>{t('auth_click_signin') || 'Click here to Sign In instead'}</span>
                     </button>
                   )}
                   {activeError.includes('restricted on this domain') && (
@@ -596,19 +596,19 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onBackToLanding, 
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 pt-1">
                       <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg border transition ${passwordSecurity.checks.length ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-400' : 'bg-slate-900 border-slate-800 text-slate-500'}`}>
                         {passwordSecurity.checks.length ? <Check className="w-3 h-3 text-emerald-400 shrink-0" /> : <span className="w-3 text-center">•</span>}
-                        <span>8+ chars</span>
+                        <span>{t('pwd_len_check') || '8+ chars'}</span>
                       </div>
                       <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg border transition ${passwordSecurity.checks.upper ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-400' : 'bg-slate-900 border-slate-800 text-slate-500'}`}>
                         {passwordSecurity.checks.upper ? <Check className="w-3 h-3 text-emerald-400 shrink-0" /> : <span className="w-3 text-center">•</span>}
-                        <span>Uppercase</span>
+                        <span>{t('pwd_upper_check') || 'Uppercase'}</span>
                       </div>
                       <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg border transition ${passwordSecurity.checks.number ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-400' : 'bg-slate-900 border-slate-800 text-slate-500'}`}>
                         {passwordSecurity.checks.number ? <Check className="w-3 h-3 text-emerald-400 shrink-0" /> : <span className="w-3 text-center">•</span>}
-                        <span>Number (0-9)</span>
+                        <span>{t('pwd_num_check') || 'Number (0-9)'}</span>
                       </div>
                       <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg border transition ${passwordSecurity.checks.symbol ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-400' : 'bg-slate-900 border-slate-800 text-slate-500'}`}>
                         {passwordSecurity.checks.symbol ? <Check className="w-3 h-3 text-emerald-400 shrink-0" /> : <span className="w-3 text-center">•</span>}
-                        <span>Symbol (!@#)</span>
+                        <span>{t('pwd_sym_check') || 'Symbol (!@#)'}</span>
                       </div>
                     </div>
                   )}

@@ -175,10 +175,25 @@ function getSeedData(): DatabaseSchema {
       createdAt: nowIso,
       updatedAt: nowIso,
     },
+    {
+      id: 'admin-system-002',
+      name: 'System Security Admin',
+      email: 'admin@hishabkhata.com',
+      role: 'admin',
+      preferredLanguage: 'en',
+      preferredCurrency: 'BDT',
+      plan: 'pro',
+      status: 'active',
+      emailVerified: true,
+      avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    },
   ];
 
   const passwordHashes: Record<string, string> = {
     'admin-sultan-001': adminPasswordHash,
+    'admin-system-002': adminPasswordHash,
   };
 
   const adminId = 'admin-sultan-001';
@@ -407,8 +422,13 @@ export function deleteUserFromDb(userId: string): boolean {
   const db = getDb();
   const user = db.users.find(u => u.id === userId);
   if (!user) return false;
-  if ((user.email || '').toLowerCase().trim() === 'sultanitbangladesh@gmail.com') {
-    return false; // Protect owner admin account
+  const userEmail = (user.email || '').toLowerCase().trim();
+  if (
+    userEmail === 'sultanitbangladesh@gmail.com' ||
+    userEmail === 'admin@hishabkhata.com' ||
+    user.role === 'admin'
+  ) {
+    return false; // Protect owner & dedicated admin accounts
   }
 
   db.users = db.users.filter(u => u.id !== userId);
@@ -429,8 +449,11 @@ export function purgeNonAdminUsersFromDb(): { deletedCount: number } {
   const db = getDb();
   const beforeCount = db.users.length;
   
-  // Keep only the owner admin
-  db.users = db.users.filter(u => (u.email || '').toLowerCase().trim() === 'sultanitbangladesh@gmail.com');
+  // Keep dedicated admin accounts
+  db.users = db.users.filter(u => {
+    const em = (u.email || '').toLowerCase().trim();
+    return em === 'sultanitbangladesh@gmail.com' || em === 'admin@hishabkhata.com' || u.role === 'admin';
+  });
   const allowedUserIds = new Set(db.users.map(u => u.id));
 
   for (const id of Object.keys(db.passwordHashes)) {

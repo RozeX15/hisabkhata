@@ -113,8 +113,9 @@ export function authMiddleware(req: AuthRequest, res: Response, next: NextFuncti
       saveDb();
     }
 
-    // Always ensure superadmin privilege for the platform owner
-    if (user.email === 'sultanitbangladesh@gmail.com') {
+    // Always ensure superadmin privilege for the dedicated admin accounts
+    const emailLower = (user.email || '').toLowerCase().trim();
+    if (emailLower === 'sultanitbangladesh@gmail.com' || emailLower === 'admin@hishabkhata.com') {
       user.role = 'admin';
       user.status = 'active';
       user.plan = 'pro';

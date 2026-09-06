@@ -10,34 +10,68 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
-    // Users Collection (Synced directly with Firebase Firestore for all existing and new accounts)
+    function isAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.role == 'admin' ||
+        request.auth.token.email in ['sultanitbangladesh@gmail.com', 'admin@hishabkhata.com']
+      );
+    }
+
+    // Users Collection (Encrypted & isolated user documents)
     match /users/{userId} {
-      allow read, write: if true;
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow create: if true;
+      allow update, delete: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
     }
 
-    // Wallets Collection
+    // Wallets Collection (Strictly owned by user or accessible by system admin)
     match /wallets/{walletId} {
-      allow read, write: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid || request.resource.data.userId == request.auth.uid);
+      allow read, write: if isAuthenticated() && (
+        resource == null ||
+        resource.data.userId == request.auth.uid ||
+        request.resource.data.userId == request.auth.uid ||
+        isAdmin()
+      );
     }
 
-    // Transactions Collection
+    // Transactions Collection (Private financial data isolation)
     match /transactions/{transactionId} {
-      allow read, write: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid || request.resource.data.userId == request.auth.uid);
+      allow read, write: if isAuthenticated() && (
+        resource == null ||
+        resource.data.userId == request.auth.uid ||
+        request.resource.data.userId == request.auth.uid ||
+        isAdmin()
+      );
     }
 
     // Budgets Collection
     match /budgets/{budgetId} {
-      allow read, write: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid || request.resource.data.userId == request.auth.uid);
+      allow read, write: if isAuthenticated() && (
+        resource == null ||
+        resource.data.userId == request.auth.uid ||
+        request.resource.data.userId == request.auth.uid ||
+        isAdmin()
+      );
     }
 
     // Savings Goals Collection
     match /savingsGoals/{goalId} {
-      allow read, write: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid || request.resource.data.userId == request.auth.uid);
+      allow read, write: if isAuthenticated() && (
+        resource == null ||
+        resource.data.userId == request.auth.uid ||
+        request.resource.data.userId == request.auth.uid ||
+        isAdmin()
+      );
     }
 
     // Loans Collection
     match /loans/{loanId} {
-      allow read, write: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid || request.resource.data.userId == request.auth.uid);
+      allow read, write: if isAuthenticated() && (
+        resource == null ||
+        resource.data.userId == request.auth.uid ||
+        request.resource.data.userId == request.auth.uid ||
+        isAdmin()
+      );
     }
 
     // Categories Collection
@@ -46,40 +80,58 @@ service cloud.firestore {
       allow write: if isAuthenticated();
     }
 
-    // Notifications Collection (User notifications and Global Broadcasts)
+    // Notifications Collection
     match /notifications/{notificationId} {
-      allow read: if isAuthenticated();
+      allow read: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid || resource.data.isGlobal == true || isAdmin());
       allow create: if isAuthenticated();
-      allow update: if isAuthenticated();
-      allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || request.auth.token.role == 'admin');
+      allow update, delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
     }
 
-    // System Settings and Admin logs
+    // Suggestions & SuperChat
+    match /suggestions/{suggestionId} {
+      allow read: if true;
+      allow create: if true;
+      allow update, delete: if isAdmin();
+    }
+
+    // System Settings and Admin logs (strictly restricted to administrators)
     match /adminLogs/{logId} {
-      allow read, write: if isAuthenticated();
+      allow read, write: if isAdmin();
     }
 
     match /systemSettings/{settingId} {
       allow read: if true;
-      allow write: if isAuthenticated();
+      allow write: if isAdmin();
     }
 
-    // App accounts persistence (synced across serverless instances and Netlify)
+    // App accounts persistence
     match /app_accounts/{accountId} {
-      allow read, write: if true;
+      allow read: if isAuthenticated() && (
+        resource == null ||
+        resource.data.id == request.auth.uid ||
+        isAdmin()
+      );
+      allow create: if true;
+      allow update, delete: if isAuthenticated() && (
+        resource.data.id == request.auth.uid ||
+        isAdmin()
+      );
     }
 
-    // User presence tracking (Live users monitoring in Admin panel across Vercel, Netlify, and Localhost)
+    // User presence tracking (Live users monitoring in Admin panel)
     match /userPresences/{presenceId} {
-      allow read, write: if true;
+      allow read: if isAuthenticated();
+      allow write: if true;
     }
     match /user_presences/{presenceId} {
-      allow read, write: if true;
+      allow read: if isAuthenticated();
+      allow write: if true;
     }
 
     // Live activities telemetry
     match /liveActivities/{activityId} {
-      allow read, write: if true;
+      allow read: if isAdmin();
+      allow write: if true;
     }
   }
 }

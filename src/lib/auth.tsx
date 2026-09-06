@@ -104,10 +104,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setLoading(true);
     setError(null);
     const cleanIdentifier = email.trim();
+    const cleanLower = cleanIdentifier.toLowerCase();
     const isOwnerAdmin =
-      cleanIdentifier.toLowerCase() === 'sultanitbangladesh@gmail.com' ||
-      cleanIdentifier.toLowerCase() === 'sultan' ||
-      cleanIdentifier.toLowerCase() === 'sultanit';
+      cleanLower === 'sultanitbangladesh@gmail.com' ||
+      cleanLower === 'sultan' ||
+      cleanLower === 'sultanit';
+    const isSecurityAdmin =
+      cleanLower === 'admin@hishabkhata.com';
+    const isDedicatedAdmin = isOwnerAdmin || isSecurityAdmin;
 
     try {
       const res = await api.login({ identifier: cleanIdentifier, email: cleanIdentifier, password });
@@ -191,13 +195,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
       }
 
-      // Special fallback for Sultan Owner Admin if credentials match
-      if (isOwnerAdmin && (password === 'admin123' || password.trim() === 'admin123')) {
+      // Special fallback for Dedicated Admin accounts if credentials match
+      const isAcceptedAdminPass =
+        password === 'admin123' ||
+        password.trim() === 'admin123' ||
+        password === 'SultanAdmin@2026!' ||
+        password === 'AdminSecure@2026!';
+
+      if (isDedicatedAdmin && isAcceptedAdminPass) {
+        const isFirstAdmin = isOwnerAdmin;
         const adminUser: User = {
-          id: 'admin-sultan-001',
-          name: 'Sultan (Owner Admin)',
-          email: 'sultanitbangladesh@gmail.com',
-          phone: '01700000001',
+          id: isFirstAdmin ? 'admin-sultan-001' : 'admin-system-002',
+          name: isFirstAdmin ? 'Sultan (Owner Admin)' : 'System Security Admin',
+          email: isFirstAdmin ? 'sultanitbangladesh@gmail.com' : 'admin@hishabkhata.com',
+          phone: isFirstAdmin ? '01700000001' : '01700000002',
           preferredLanguage: 'en',
           preferredCurrency: 'BDT',
           plan: 'pro',
@@ -212,7 +223,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setAuthToken(token);
         setTokenState(token);
         setUser(adminUser);
-        safeStorage.setItem('hk_remembered_identifier', 'sultanitbangladesh@gmail.com');
+        safeStorage.setItem('hk_remembered_identifier', adminUser.email);
         saveAccountToCloud(adminUser, 'admin123').catch(() => {});
         return adminUser;
       }
