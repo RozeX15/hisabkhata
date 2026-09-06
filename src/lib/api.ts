@@ -20,7 +20,23 @@ import {
   SuggestionSuperChat
 } from '../types';
 
-const API_BASE = '/api';
+export const CLOUD_RUN_API_BASE = 'https://ais-pre-3lbuz3ql6wcqsxqebf5pug-282407494880.asia-east1.run.app/api';
+
+export function getApiBase(): string {
+  if (typeof window === 'undefined') return '/api';
+  const hostname = window.location.hostname;
+  // If running directly on the Cloud Run domain itself or local development
+  if (
+    hostname.endsWith('.run.app') ||
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1' ||
+    hostname === '0.0.0.0'
+  ) {
+    return '/api';
+  }
+  // When running on any custom domain or external static hosting (e.g. hishabkhata.site, hishabkhata.site.je, cPanel)
+  return CLOUD_RUN_API_BASE;
+}
 
 export function getAuthToken(): string | null {
   return safeStorage.getItem('hk_auth_token');
@@ -55,9 +71,10 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     }
   } catch {}
 
+  const baseUrl = getApiBase();
   let response: Response;
   try {
-    response = await fetch(`${API_BASE}${endpoint}`, {
+    response = await fetch(`${baseUrl}${endpoint}`, {
       ...options,
       headers,
     });

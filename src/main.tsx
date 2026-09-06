@@ -34,30 +34,31 @@ if (typeof window !== 'undefined') {
     const msg = (event.message || '').toLowerCase();
     if (
       msg.includes('dynamically imported module') ||
-      msg.includes('loading chunk') ||
-      msg.includes('unexpected token') ||
-      msg.includes('failed to fetch')
+      msg.includes('loading chunk')
     ) {
-      console.warn('[Hishab Khata] Detected stale asset or script error, recovering:', msg);
+      console.warn('[Hishab Khata] Detected stale asset chunk error, recovering:', msg);
       autoRecoverStaleAssets();
     }
   });
 
   window.addEventListener('unhandledrejection', (event) => {
-    const reason = String(event.reason || '').toLowerCase();
+    const reason = String(event.reason?.message || event.reason || '').toLowerCase();
     if (
       reason.includes('dynamically imported module') ||
-      reason.includes('loading chunk') ||
-      reason.includes('failed to fetch')
+      reason.includes('loading chunk')
     ) {
-      console.warn('[Hishab Khata] Detected unhandled promise rejection with chunk error:', reason);
+      console.warn('[Hishab Khata] Detected unhandled chunk rejection, recovering:', reason);
       autoRecoverStaleAssets();
     }
   });
 }
 
-// Register PWA Service Worker with auto-update
-if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+// Register PWA Service Worker with auto-update (only on secure HTTPS or localhost)
+if (
+  typeof window !== 'undefined' &&
+  'serviceWorker' in navigator &&
+  (window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+) {
   let refreshing = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (!refreshing) {
@@ -68,7 +69,7 @@ if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
 
   window.addEventListener('load', () => {
     navigator.serviceWorker
-      .register('/sw.js')
+      .register('./sw.js')
       .then((reg) => {
         // Immediately check for updates from server
         try {
