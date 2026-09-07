@@ -3,7 +3,7 @@
     {
       "id": "admin-sultan-001",
       "name": "Nowroze (Owner Admin)",
-      "email": "nowrozebangladesh@gmail.com",
+      "email": "sultanitbangladesh@gmail.com",
       "role": "admin",
       "preferredLanguage": "en",
       "preferredCurrency": "BDT",
@@ -12,7 +12,7 @@
       "emailVerified": true,
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "createdAt": "2026-09-03T06:43:20.562Z",
-      "updatedAt": "2026-09-06T10:06:01.160Z"
+      "updatedAt": "2026-09-06T10:10:46.430Z"
     },
     {
       "id": "usr-1788594159081",
@@ -92,16 +92,45 @@
       "emailVerified": true,
       "createdAt": "2026-09-05T09:51:10.750Z",
       "updatedAt": "2026-09-06T07:50:02.069Z"
+    },
+    {
+      "id": "admin-system-002",
+      "name": "System Security Admin",
+      "email": "admin@hishabkhata.com",
+      "role": "admin",
+      "preferredLanguage": "en",
+      "preferredCurrency": "BDT",
+      "plan": "pro",
+      "status": "active",
+      "emailVerified": true,
+      "avatarUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
+      "createdAt": "2026-09-06T10:13:59.560Z",
+      "updatedAt": "2026-09-06T10:13:59.560Z"
+    },
+    {
+      "id": "usr-1788689700190",
+      "name": "Test User",
+      "email": "user_test_1788689700112@gmail.com",
+      "role": "user",
+      "preferredLanguage": "en",
+      "preferredCurrency": "BDT",
+      "plan": "free",
+      "status": "active",
+      "emailVerified": true,
+      "createdAt": "2026-09-06T10:15:00.190Z",
+      "updatedAt": "2026-09-06T10:15:00.190Z"
     }
   ],
   "passwordHashes": {
-    "admin-sultan-001": "$2b$10$96cp5f6QmOIG/giWEZz/xujWl2ZW3UATKcW0Nk/FTTHzxi2Kf7QLy",
+    "admin-sultan-001": "$2b$10$0L03uYW3cB1rLXrR7RAmi.BsahqpSC21Gd2i6r7Sw1g/CHmxeXD8e",
     "usr-1788594159081": "$2b$10$W5FlHuSN8XKNNCu13fllseSEFYCfXRFVTjmYB.C41m4bx7NjvuMlu",
     "usr-1788599633823": "$2b$10$Encq1V3DZ.zt6Oc2ph0VC.lf54LdSDWBrL1rK9rTWZYsNCRJ4j/XO",
     "usr-1788600863223": "$2b$10$mB2gCRzzZ/XBr.O5XokTXulaEyDSsH4LAwAZZ.2H2wHf6FCI0q63a",
     "usr-1788601476086": "$2b$10$F.pToGsEMvlYJZqFy8pFTeDLbhbRzMatHcKOcUDkN19n4f.X3Ykf.",
     "usr-1788601482138": "$2b$10$ogJbECLVjDlUeUFMCkqcJ.9eJBv0l22923Xu1p490kbDR.jPxBQ3O",
-    "usr-1788601870750": "$2b$10$2OVYb8qJtxa./c4qs9uQae.8WRC29KkTZplwv5mIngU9TyMbHmmAW"
+    "usr-1788601870750": "$2b$10$2OVYb8qJtxa./c4qs9uQae.8WRC29KkTZplwv5mIngU9TyMbHmmAW",
+    "admin-system-002": "$2b$10$sfL.7zo0urI1UUnlB0//8e8HY1xG9i6lLg9dzhqgr6x7BqGDRrc/y",
+    "usr-1788689700190": "$2b$10$UFUMV23BGlNQOxEVi.Ijb.Net7bugqV9yoro0Tv5KNJMrV6vHzqPm"
   },
   "wallets": [
     {
@@ -272,6 +301,55 @@
       "isDefault": false,
       "createdAt": "2026-09-06T07:50:02.069Z",
       "updatedAt": "2026-09-06T07:50:02.069Z"
+    },
+    {
+      "id": "w-admin-system-002-cash",
+      "userId": "admin-system-002",
+      "name": "Cash Wallet",
+      "type": "cash",
+      "balance": 10000,
+      "currency": "BDT",
+      "color": "#10B981",
+      "isDefault": true,
+      "createdAt": "2026-09-06T10:13:59.560Z",
+      "updatedAt": "2026-09-06T10:13:59.560Z"
+    },
+    {
+      "id": "w-admin-system-002-bkash",
+      "userId": "admin-system-002",
+      "name": "bKash Wallet",
+      "type": "bkash",
+      "balance": 25000,
+      "currency": "BDT",
+      "color": "#E2136E",
+      "isDefault": false,
+      "accountNumber": "01712-345678",
+      "createdAt": "2026-09-06T10:13:59.560Z",
+      "updatedAt": "2026-09-06T10:13:59.560Z"
+    },
+    {
+      "id": "w-cash-1788689700276",
+      "userId": "usr-1788689700190",
+      "name": "Cash Wallet",
+      "type": "cash",
+      "balance": -450,
+      "currency": "BDT",
+      "color": "#10B981",
+      "isDefault": true,
+      "createdAt": "2026-09-06T10:15:00.190Z",
+      "updatedAt": "2026-09-06T10:15:00.293Z"
+    },
+    {
+      "id": "w-bank-1788689700276",
+      "userId": "usr-1788689700190",
+      "name": "Main Bank Account",
+      "type": "bank",
+      "balance": 0,
+      "currency": "BDT",
+      "color": "#0F766E",
+      "isDefault": false,
+      "createdAt": "2026-09-06T10:15:00.190Z",
+      "updatedAt": "2026-09-06T10:15:00.190Z"
     }
   ],
   "categories": [
@@ -412,6 +490,21 @@
     }
   ],
   "transactions": [
+    {
+      "id": "tx-1788689700294",
+      "userId": "usr-1788689700190",
+      "walletId": "w-cash-1788689700276",
+      "toWalletId": null,
+      "type": "expense",
+      "amount": 450,
+      "currency": "BDT",
+      "categoryId": "cat-oex",
+      "date": "2026-09-06",
+      "description": "Groceries",
+      "isRecurring": false,
+      "createdAt": "2026-09-06T10:15:00.293Z",
+      "updatedAt": "2026-09-06T10:15:00.293Z"
+    },
     {
       "id": "tx-1788683385334",
       "userId": "usr-1788601870750",
@@ -617,6 +710,15 @@
       "messageKey": "Your financial workspace is ready. Add your first income or expense to get started.",
       "isRead": false,
       "createdAt": "2026-09-05T09:44:42.138Z"
+    },
+    {
+      "id": "notif-1788689700276",
+      "userId": "usr-1788689700190",
+      "type": "system",
+      "titleKey": "Welcome to Hishab Khata!",
+      "messageKey": "Your financial workspace is ready. Add your first income or expense to get started.",
+      "isRead": false,
+      "createdAt": "2026-09-06T10:15:00.190Z"
     }
   ],
   "languages": [
@@ -2121,7 +2223,7 @@
     {
       "id": "log-1788601328945",
       "adminId": "admin-sultan-001",
-      "adminEmail": "nowrozebangladesh@gmail.com",
+      "adminEmail": "sultanitbangladesh@gmail.com",
       "action": "REJECT_SUBSCRIPTION_PAYMENT",
       "targetType": "PAYMENT",
       "targetId": "pay-1788599879362",
@@ -2161,7 +2263,7 @@
     {
       "id": "log-1788425297345",
       "adminId": "admin-sultan-001",
-      "adminEmail": "nowrozebangladesh@gmail.com",
+      "adminEmail": "sultanitbangladesh@gmail.com",
       "action": "UPDATE_SUGGESTION",
       "targetType": "SUGGESTION",
       "targetId": "sug-001",
@@ -2171,7 +2273,7 @@
     {
       "id": "log-1788421335659",
       "adminId": "admin-sultan-001",
-      "adminEmail": "nowrozebangladesh@gmail.com",
+      "adminEmail": "sultanitbangladesh@gmail.com",
       "action": "SEND_NOTIFICATION",
       "targetType": "NOTIFICATION",
       "targetId": "notif-1788421335659",
@@ -2181,7 +2283,7 @@
     {
       "id": "log-1788420734197",
       "adminId": "admin-sultan-001",
-      "adminEmail": "nowrozebangladesh@gmail.com",
+      "adminEmail": "sultanitbangladesh@gmail.com",
       "action": "REJECT_SUBSCRIPTION_PAYMENT",
       "targetType": "PAYMENT",
       "targetId": "pay-1788419484958",
@@ -2245,7 +2347,7 @@
       "createdAt": "2026-09-05T09:17:59.362Z",
       "adminNotes": "Transaction ID not verified or amount mismatch.i f u try to span it again,u will ban for ever",
       "reviewedAt": "2026-09-05T09:42:08.945Z",
-      "reviewedBy": "nowrozebangladesh@gmail.com"
+      "reviewedBy": "sultanitbangladesh@gmail.com"
     },
     {
       "id": "pay-1788427096010",
@@ -2281,7 +2383,7 @@
       "createdAt": "2026-09-03T07:11:24.958Z",
       "adminNotes": "Transaction ID not verified or amount mismatch.",
       "reviewedAt": "2026-09-03T07:32:14.197Z",
-      "reviewedBy": "nowrozebangladesh@gmail.com"
+      "reviewedBy": "sultanitbangladesh@gmail.com"
     },
     {
       "id": "pay-1788417039285",
@@ -2354,13 +2456,13 @@
     "admin-sultan-001": {
       "userId": "admin-sultan-001",
       "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "plan": "pro",
       "role": "admin",
       "isOnline": true,
       "currentView": "Admin Control Center",
-      "lastActiveAt": "2026-09-05T09:42:34.084Z",
+      "lastActiveAt": "2026-09-06T10:08:37.101Z",
       "deviceType": "desktop",
       "browser": "Admin Console",
       "lastAction": "Monitoring System Telemetry"
@@ -2400,13 +2502,105 @@
       "role": "user",
       "isOnline": true,
       "currentView": "dashboard",
-      "lastActiveAt": "2026-09-06T10:06:39.915Z",
+      "lastActiveAt": "2026-09-06T10:13:48.436Z",
       "deviceType": "desktop",
       "browser": "Chrome",
       "lastAction": "Viewing dashboard"
+    },
+    "admin-system-002": {
+      "userId": "admin-system-002",
+      "userName": "System Security Admin",
+      "userEmail": "admin@hishabkhata.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
+      "plan": "pro",
+      "role": "admin",
+      "isOnline": true,
+      "currentView": "Admin Control Center",
+      "lastActiveAt": "2026-09-06T10:14:59.963Z",
+      "deviceType": "desktop",
+      "browser": "Admin Console",
+      "lastAction": "Monitoring System Telemetry"
     }
   },
   "liveActivities": [
+    {
+      "id": "act-1788689699941-1gow",
+      "userId": "admin-system-002",
+      "userName": "System Security Admin",
+      "userEmail": "admin@hishabkhata.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to ADMIN",
+      "currentView": "admin",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-06T10:14:59.941Z"
+    },
+    {
+      "id": "act-1788689684937-4il7",
+      "userId": "admin-system-002",
+      "userName": "System Security Admin",
+      "userEmail": "admin@hishabkhata.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to ADMIN",
+      "currentView": "admin",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-06T10:14:44.937Z"
+    },
+    {
+      "id": "act-1788689669940-5vs7",
+      "userId": "admin-system-002",
+      "userName": "System Security Admin",
+      "userEmail": "admin@hishabkhata.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to ADMIN",
+      "currentView": "admin",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-06T10:14:29.940Z"
+    },
+    {
+      "id": "act-1788689654948-l72i",
+      "userId": "admin-system-002",
+      "userName": "System Security Admin",
+      "userEmail": "admin@hishabkhata.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to ADMIN",
+      "currentView": "admin",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-06T10:14:14.948Z"
+    },
+    {
+      "id": "act-1788689645432-mx5n",
+      "userId": "admin-system-002",
+      "userName": "System Security Admin",
+      "userEmail": "admin@hishabkhata.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to ADMIN",
+      "currentView": "admin",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-06T10:14:05.432Z"
+    },
+    {
+      "id": "act-1788689639967-9fr4",
+      "userId": "admin-system-002",
+      "userName": "System Security Admin",
+      "userEmail": "admin@hishabkhata.com",
+      "avatarUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to ADMIN",
+      "currentView": "admin",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-06T10:13:59.967Z"
+    },
     {
       "id": "act-1788681002402-xv32",
       "userId": "usr-1788601870750",
@@ -2446,8 +2640,8 @@
     {
       "id": "act-1788601350395-6irg",
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "action": "NAVIGATE",
       "category": "NAVIGATION",
@@ -2459,8 +2653,8 @@
     {
       "id": "act-1788601344071-4n2t",
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "action": "NAVIGATE",
       "category": "NAVIGATION",
@@ -2472,8 +2666,8 @@
     {
       "id": "act-1788601332767-vg9o",
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "action": "NAVIGATE",
       "category": "NAVIGATION",
@@ -2485,8 +2679,8 @@
     {
       "id": "act-1788601317764-ldwx",
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "action": "NAVIGATE",
       "category": "NAVIGATION",
@@ -2498,8 +2692,8 @@
     {
       "id": "act-1788601302769-7w8q",
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "action": "NAVIGATE",
       "category": "NAVIGATION",
@@ -2511,8 +2705,8 @@
     {
       "id": "act-1788601287763-pn9v",
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "action": "NAVIGATE",
       "category": "NAVIGATION",
@@ -2524,8 +2718,8 @@
     {
       "id": "act-1788601272869-0qny",
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "action": "NAVIGATE",
       "category": "NAVIGATION",
@@ -2573,8 +2767,8 @@
     {
       "id": "act-1788599811975-b5sn",
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "action": "NAVIGATE",
       "category": "NAVIGATION",
@@ -2586,8 +2780,8 @@
     {
       "id": "act-1788599715614-vpbd",
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "action": "NAVIGATE",
       "category": "NAVIGATION",
@@ -2599,8 +2793,8 @@
     {
       "id": "act-1788599702020-4gcx",
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "action": "NAVIGATE",
       "category": "NAVIGATION",
@@ -2612,8 +2806,8 @@
     {
       "id": "act-1788599288630-ghlw",
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "action": "NAVIGATE",
       "category": "NAVIGATION",
@@ -2625,8 +2819,8 @@
     {
       "id": "act-1788599285434-rkfn",
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "action": "NAVIGATE",
       "category": "NAVIGATION",
@@ -2638,8 +2832,8 @@
     {
       "id": "act-1788597923117-8ngj",
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "action": "NAVIGATE",
       "category": "NAVIGATION",
@@ -2651,8 +2845,8 @@
     {
       "id": "act-1788597172783-7yy7",
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "action": "NAVIGATE",
       "category": "NAVIGATION",
@@ -2664,8 +2858,8 @@
     {
       "id": "act-1788596244396-f4j4",
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "action": "NAVIGATE",
       "category": "NAVIGATION",
@@ -2677,8 +2871,8 @@
     {
       "id": "act-1788594836766-o5qi",
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "action": "NAVIGATE",
       "category": "NAVIGATION",
@@ -2690,8 +2884,8 @@
     {
       "id": "act-1788594831924-iv9t",
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "action": "NAVIGATE",
       "category": "NAVIGATION",
@@ -2703,8 +2897,8 @@
     {
       "id": "act-1788594827657-4ej2",
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "action": "NAVIGATE",
       "category": "NAVIGATION",
@@ -2716,8 +2910,8 @@
     {
       "id": "act-1788594756552-jmcq",
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "action": "NAVIGATE",
       "category": "NAVIGATION",
@@ -2729,8 +2923,8 @@
     {
       "id": "act-1788594749210-zc4x",
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "action": "NAVIGATE",
       "category": "NAVIGATION",
@@ -2742,8 +2936,8 @@
     {
       "id": "act-1788594193127-vldc",
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "action": "NAVIGATE",
       "category": "NAVIGATION",
@@ -2767,8 +2961,8 @@
     {
       "id": "act-1788594111794-2uoe",
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "action": "NAVIGATE",
       "category": "NAVIGATION",
@@ -3208,8 +3402,8 @@
     {
       "id": "act-1788425530864-py0d",
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "action": "NAVIGATE",
       "category": "NAVIGATION",
@@ -3403,8 +3597,8 @@
     {
       "id": "act-1788425302473-p4dj",
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "action": "NAVIGATE",
       "category": "NAVIGATION",
@@ -3455,8 +3649,8 @@
     {
       "id": "act-1788421233971-e9fk",
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "action": "NAVIGATE",
       "category": "NAVIGATION",
@@ -3468,8 +3662,8 @@
     {
       "id": "act-1788421228733-dhrj",
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "action": "NAVIGATE",
       "category": "NAVIGATION",
@@ -3481,8 +3675,8 @@
     {
       "id": "act-1788421168907-0sfk",
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "action": "NAVIGATE",
       "category": "NAVIGATION",
@@ -3494,8 +3688,8 @@
     {
       "id": "act-1788421167828-0cf0",
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "action": "NAVIGATE",
       "category": "NAVIGATION",
@@ -3507,8 +3701,8 @@
     {
       "id": "act-1788421167110-mtd5",
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "action": "NAVIGATE",
       "category": "NAVIGATION",
@@ -3520,8 +3714,8 @@
     {
       "id": "act-1788421155807-h7he",
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "action": "NAVIGATE",
       "category": "NAVIGATION",
@@ -3533,8 +3727,8 @@
     {
       "id": "act-1788420947329-if0d",
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "action": "NAVIGATE",
       "category": "NAVIGATION",
@@ -3546,8 +3740,8 @@
     {
       "id": "act-1788420923248-7d44",
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "action": "NAVIGATE",
       "category": "NAVIGATION",
@@ -3559,8 +3753,8 @@
     {
       "id": "act-1788420815277-6071",
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "action": "NAVIGATE",
       "category": "NAVIGATION",
@@ -3572,8 +3766,8 @@
     {
       "id": "act-1788420800540-ak2a",
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "action": "NAVIGATE",
       "category": "NAVIGATION",
@@ -3585,8 +3779,8 @@
     {
       "id": "act-1788420794712-m7k5",
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "action": "NAVIGATE",
       "category": "NAVIGATION",
@@ -3598,8 +3792,8 @@
     {
       "id": "act-1788420771092-ev0l",
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "action": "NAVIGATE",
       "category": "NAVIGATION",
@@ -3611,8 +3805,8 @@
     {
       "id": "act-1788420769260-hf9n",
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "action": "NAVIGATE",
       "category": "NAVIGATION",
@@ -3624,8 +3818,8 @@
     {
       "id": "act-1788420711156-u9e1",
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "action": "NAVIGATE",
       "category": "NAVIGATION",
@@ -3637,8 +3831,8 @@
     {
       "id": "act-1788420705848-thgh",
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "action": "NAVIGATE",
       "category": "NAVIGATION",
@@ -3650,8 +3844,8 @@
     {
       "id": "act-1788420691655-qsvu",
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "action": "NAVIGATE",
       "category": "NAVIGATION",
@@ -3663,8 +3857,8 @@
     {
       "id": "act-1788420688657-i2mw",
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "action": "NAVIGATE",
       "category": "NAVIGATION",
@@ -3676,8 +3870,8 @@
     {
       "id": "act-1788420672930-grej",
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "action": "NAVIGATE",
       "category": "NAVIGATION",
@@ -3689,8 +3883,8 @@
     {
       "id": "act-1788420495906-xqiz",
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "action": "NAVIGATE",
       "category": "NAVIGATION",
@@ -3702,8 +3896,8 @@
     {
       "id": "act-1788420469249-bls0",
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "action": "NAVIGATE",
       "category": "NAVIGATION",
@@ -3715,8 +3909,8 @@
     {
       "id": "act-1788420197444-7i01",
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "action": "NAVIGATE",
       "category": "NAVIGATION",
@@ -3728,8 +3922,8 @@
     {
       "id": "act-1788420187781-qeuo",
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "action": "NAVIGATE",
       "category": "NAVIGATION",
@@ -3975,8 +4169,8 @@
     {
       "id": "act-1788419682673-h538",
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "action": "NAVIGATE",
       "category": "NAVIGATION",
@@ -3988,8 +4182,8 @@
     {
       "id": "act-1788419645240-fh26",
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
-      "userEmail": "nowrozebangladesh@gmail.com",
+      "userName": "Sultan (Owner Admin)",
+      "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "action": "NAVIGATE",
       "category": "NAVIGATION",
@@ -5417,7 +5611,7 @@
     },
     {
       "id": "eml-admin-1788599879362-0",
-      "to": "nowrozebangladesh@gmail.com",
+      "to": "sultanitbangladesh@gmail.com",
       "from": "billing@hishabkhata.io",
       "subject": "🔔 [PRO Upgrade Alert] New BKASH Payment (4999 BDT) from Numerical",
       "type": "admin_subscription_alert",
@@ -5457,7 +5651,7 @@
     },
     {
       "id": "eml-admin-1788427096010-0",
-      "to": "nowrozebangladesh@gmail.com",
+      "to": "sultanitbangladesh@gmail.com",
       "from": "billing@hishabkhata.io",
       "subject": "🔔 [PRO Upgrade Alert] New BKASH Payment (4999 BDT) from User Account",
       "type": "admin_subscription_alert",
@@ -5541,7 +5735,7 @@
     },
     {
       "id": "eml-admin-1788419484958-0",
-      "to": "nowrozebangladesh@gmail.com",
+      "to": "sultanitbangladesh@gmail.com",
       "from": "billing@hishabkhata.io",
       "subject": "🔔 [PRO Upgrade Alert] New BKASH Payment (4999 BDT) from yixinbd@gmail.com",
       "type": "admin_subscription_alert",
@@ -5625,7 +5819,7 @@
     },
     {
       "id": "eml-admin-1788417039285-0",
-      "to": "nowrozebangladesh@gmail.com",
+      "to": "sultanitbangladesh@gmail.com",
       "from": "billing@hishabkhata.io",
       "subject": "🔔 [PRO Upgrade Alert] New BKASH Payment (4999 BDT) from yixinbd@gmail.com",
       "type": "admin_subscription_alert",

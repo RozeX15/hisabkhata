@@ -2,7 +2,7 @@
   "users": [
     {
       "id": "admin-sultan-001",
-      "name": "Sultan (Owner Admin)",
+      "name": "Nowroze (Owner Admin)",
       "email": "sultanitbangladesh@gmail.com",
       "role": "admin",
       "preferredLanguage": "en",
@@ -12,7 +12,7 @@
       "emailVerified": true,
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "createdAt": "2026-09-03T06:43:20.562Z",
-      "updatedAt": "2026-09-06T10:06:01.160Z"
+      "updatedAt": "2026-09-06T10:10:46.430Z"
     },
     {
       "id": "usr-1788594159081",
@@ -92,16 +92,45 @@
       "emailVerified": true,
       "createdAt": "2026-09-05T09:51:10.750Z",
       "updatedAt": "2026-09-06T07:50:02.069Z"
+    },
+    {
+      "id": "admin-system-002",
+      "name": "System Security Admin",
+      "email": "admin@hishabkhata.com",
+      "role": "admin",
+      "preferredLanguage": "en",
+      "preferredCurrency": "BDT",
+      "plan": "pro",
+      "status": "active",
+      "emailVerified": true,
+      "avatarUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
+      "createdAt": "2026-09-06T10:13:59.560Z",
+      "updatedAt": "2026-09-06T10:13:59.560Z"
+    },
+    {
+      "id": "usr-1788689700190",
+      "name": "Test User",
+      "email": "user_test_1788689700112@gmail.com",
+      "role": "user",
+      "preferredLanguage": "en",
+      "preferredCurrency": "BDT",
+      "plan": "free",
+      "status": "active",
+      "emailVerified": true,
+      "createdAt": "2026-09-06T10:15:00.190Z",
+      "updatedAt": "2026-09-06T10:15:00.190Z"
     }
   ],
   "passwordHashes": {
-    "admin-sultan-001": "$2b$10$96cp5f6QmOIG/giWEZz/xujWl2ZW3UATKcW0Nk/FTTHzxi2Kf7QLy",
+    "admin-sultan-001": "$2b$10$0L03uYW3cB1rLXrR7RAmi.BsahqpSC21Gd2i6r7Sw1g/CHmxeXD8e",
     "usr-1788594159081": "$2b$10$W5FlHuSN8XKNNCu13fllseSEFYCfXRFVTjmYB.C41m4bx7NjvuMlu",
     "usr-1788599633823": "$2b$10$Encq1V3DZ.zt6Oc2ph0VC.lf54LdSDWBrL1rK9rTWZYsNCRJ4j/XO",
     "usr-1788600863223": "$2b$10$mB2gCRzzZ/XBr.O5XokTXulaEyDSsH4LAwAZZ.2H2wHf6FCI0q63a",
     "usr-1788601476086": "$2b$10$F.pToGsEMvlYJZqFy8pFTeDLbhbRzMatHcKOcUDkN19n4f.X3Ykf.",
     "usr-1788601482138": "$2b$10$ogJbECLVjDlUeUFMCkqcJ.9eJBv0l22923Xu1p490kbDR.jPxBQ3O",
-    "usr-1788601870750": "$2b$10$2OVYb8qJtxa./c4qs9uQae.8WRC29KkTZplwv5mIngU9TyMbHmmAW"
+    "usr-1788601870750": "$2b$10$2OVYb8qJtxa./c4qs9uQae.8WRC29KkTZplwv5mIngU9TyMbHmmAW",
+    "admin-system-002": "$2b$10$sfL.7zo0urI1UUnlB0//8e8HY1xG9i6lLg9dzhqgr6x7BqGDRrc/y",
+    "usr-1788689700190": "$2b$10$UFUMV23BGlNQOxEVi.Ijb.Net7bugqV9yoro0Tv5KNJMrV6vHzqPm"
   },
-  "updatedAt": "2026-09-06T10:06:55.169Z"
+  "updatedAt": "2026-09-06T10:15:00.547Z"
 }
