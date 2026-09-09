@@ -65,15 +65,19 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
     return true;
   });
 
-  const totalIncome = filteredTxs.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-  const totalExpense = filteredTxs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+  const totalIncome = filteredTxs
+    .filter(t => t.type === 'income')
+    .reduce((s, t) => s + (Number(t.amount) || 0), 0);
+  const totalExpense = filteredTxs
+    .filter(t => t.type === 'expense')
+    .reduce((s, t) => s + (Number(t.amount) || 0), 0);
   const netSavings = totalIncome - totalExpense;
   const savingsRate = totalIncome > 0 ? Math.max(0, Math.round((netSavings / totalIncome) * 100)) : 0;
 
   // Category breakdown for filtered transactions
   const catTotals: Record<string, number> = {};
   filteredTxs.filter(t => t.type === 'expense').forEach((tx) => {
-    catTotals[tx.categoryId] = (catTotals[tx.categoryId] || 0) + tx.amount;
+    catTotals[tx.categoryId] = (catTotals[tx.categoryId] || 0) + (Number(tx.amount) || 0);
   });
 
   const catPieData = Object.entries(catTotals).map(([catId, amount]) => {

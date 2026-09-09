@@ -15,26 +15,32 @@ export function generateSmartInsights(
   const prevMonthStr = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
 
   // 1. Current month vs Prev month spending by category
-  const currExpenses = transactions.filter(t => t.type === 'expense' && t.date.startsWith(currentMonthStr));
-  const prevExpenses = transactions.filter(t => t.type === 'expense' && t.date.startsWith(prevMonthStr));
+  const currExpenses = transactions.filter(t => t.type === 'expense' && t.date && t.date.startsWith(currentMonthStr));
+  const prevExpenses = transactions.filter(t => t.type === 'expense' && t.date && t.date.startsWith(prevMonthStr));
 
-  const currTotalExp = currExpenses.reduce((sum, t) => sum + t.amount, 0);
-  const prevTotalExp = prevExpenses.reduce((sum, t) => sum + t.amount, 0);
+  const currTotalExp = currExpenses.reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+  const prevTotalExp = prevExpenses.reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
 
-  const currIncome = transactions.filter(t => t.type === 'income' && t.date.startsWith(currentMonthStr)).reduce((sum, t) => sum + t.amount, 0);
-  const prevIncome = transactions.filter(t => t.type === 'income' && t.date.startsWith(prevMonthStr)).reduce((sum, t) => sum + t.amount, 0);
+  const currIncome = transactions
+    .filter(t => t.type === 'income' && t.date && t.date.startsWith(currentMonthStr))
+    .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+  const prevIncome = transactions
+    .filter(t => t.type === 'income' && t.date && t.date.startsWith(prevMonthStr))
+    .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
 
   // Group by category
   const currCatTotals: Record<string, number> = {};
   const currCatCounts: Record<string, number> = {};
   currExpenses.forEach(t => {
-    currCatTotals[t.categoryId] = (currCatTotals[t.categoryId] || 0) + t.amount;
+    const amt = Number(t.amount) || 0;
+    currCatTotals[t.categoryId] = (currCatTotals[t.categoryId] || 0) + amt;
     currCatCounts[t.categoryId] = (currCatCounts[t.categoryId] || 0) + 1;
   });
 
   const prevCatTotals: Record<string, number> = {};
   prevExpenses.forEach(t => {
-    prevCatTotals[t.categoryId] = (prevCatTotals[t.categoryId] || 0) + t.amount;
+    const amt = Number(t.amount) || 0;
+    prevCatTotals[t.categoryId] = (prevCatTotals[t.categoryId] || 0) + amt;
   });
 
   // Check top expense category
@@ -82,18 +88,19 @@ export function generateSmartInsights(
   // 2. UNUSUAL SPENDING DETECTION (Outlier single transactions)
   currExpenses.forEach((tx) => {
     const count = currCatCounts[tx.categoryId] || 1;
-    const catTotal = currCatTotals[tx.categoryId] || tx.amount;
+    const catTotal = currCatTotals[tx.categoryId] || (Number(tx.amount) || 0);
     const catAvg = catTotal / Math.max(1, count);
+    const txAmount = Number(tx.amount) || 0;
 
     // If single purchase is more than 2.5x the average for this category and is at least 1500
-    if (count >= 3 && tx.amount >= catAvg * 2.5 && tx.amount >= 1500) {
+    if (count >= 3 && txAmount >= catAvg * 2.5 && txAmount >= 1500) {
       insights.push({
         id: `insight-outlier-${tx.id}`,
         type: 'spending_spike',
         severity: 'warning',
         titleKey: 'Unusual Large Expense Detected',
-        descriptionKey: `Single outflow of ${currency} ${tx.amount.toLocaleString()} (${tx.description || tx.categoryId}) is 2.5x higher than your typical category average.`,
-        params: { amount: tx.amount },
+        descriptionKey: `Single outflow of ${currency} ${txAmount.toLocaleString()} (${tx.description || tx.categoryId}) is 2.5x higher than your typical category average.`,
+        params: { amount: txAmount },
         actionTextKey: 'Audit transaction details',
       });
     }
@@ -127,24 +134,25 @@ export function generateSmartInsights(
 
   // 4. Budget Alerts
   budgets.forEach(b => {
-    if (b.percentage >= 100) {
+    const pct = Number(b.percentage) || 0;
+    if (pct >= 100) {
       insights.push({
         id: `insight-budget-over-${b.id}`,
         type: 'budget_alert',
         severity: 'danger',
         titleKey: 'insight_budget_alert_title',
-        descriptionKey: `Budget exceeded by ${Math.round(b.percentage - 100)}%! Immediate attention recommended.`,
-        params: { percent: Math.round(b.percentage) },
+        descriptionKey: `Budget exceeded by ${Math.round(pct - 100)}%! Immediate attention recommended.`,
+        params: { percent: Math.round(pct) },
         actionTextKey: 'Adjust or rebalance budget',
       });
-    } else if (b.percentage >= 80) {
+    } else if (pct >= 80) {
       insights.push({
         id: `insight-budget-warn-${b.id}`,
         type: 'budget_alert',
         severity: 'warning',
         titleKey: 'insight_budget_alert_title',
-        descriptionKey: `You have used ${Math.round(b.percentage)}% of your allocated budget for this period.`,
-        params: { percent: Math.round(b.percentage) },
+        descriptionKey: `You have used ${Math.round(pct)}% of your allocated budget for this period.`,
+        params: { percent: Math.round(pct) },
         actionTextKey: 'Slow down discretionary spend',
       });
     }
@@ -152,7 +160,9 @@ export function generateSmartInsights(
 
   // 5. Savings Goal Projections
   goals.filter(g => g.status === 'in_progress').forEach(g => {
-    const remaining = Math.max(0, g.targetAmount - g.currentAmount);
+    const target = Number(g.targetAmount) || 0;
+    const current = Number(g.currentAmount) || 0;
+    const remaining = Math.max(0, target - current);
     if (remaining > 0) {
       const dailySave100 = 100;
       const daysNeeded = Math.ceil(remaining / dailySave100);
@@ -193,6 +203,16 @@ export function generateSmartInsights(
         actionTextKey: 'Freeze non-essential outlays',
       });
     }
+  } else if (currTotalExp > 0) {
+    insights.push({
+      id: 'insight-health-deficit-no-income',
+      type: 'spending_spike',
+      severity: 'danger',
+      titleKey: 'insight_budget_alert_title',
+      descriptionKey: `Cash flow deficit alert: Outflows of ${currency} ${currTotalExp.toLocaleString()} recorded with zero registered income this month.`,
+      params: { percent: 100 },
+      actionTextKey: 'Record monthly income or pause outflows',
+    });
   }
 
   return insights;

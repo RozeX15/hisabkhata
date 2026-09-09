@@ -198,63 +198,227 @@ export function analyzeUserIncome(
     ? Math.round(totalIncome / incomeTxs.length)
     : 0;
 
-  // 5. Recurring Income Detection
-  // Check transactions marked isRecurring OR repeating description / category
+  // 5. Conservative Recurring Income Detection
+  // Rule 1: Never classify an income stream as recurring just because it appears twice.
+  // Rule 2: Explicitly marked isRecurring is honored with priority.
+  // Rule 3: For unmarked transactions, require >= 3 occurrences, consistent intervals (e.g. weekly, bi-weekly, monthly),
+  //         similar transaction amounts (<= 20% variance), and spans across multiple time periods.
   const recurringStreams: RecurringIncomeStream[] = [];
-  const descGroup: Record<string, { total: number; count: number; lastDate: string; catId: string }> = {};
+
+  interface TxGroup {
+    key: string;
+    sourceName: string;
+    catId: string;
+    txs: Transaction[];
+  }
+  const sourceGroups: Record<string, TxGroup> = {};
 
   incomeTxs.forEach((tx) => {
-    const rawDesc = (tx.description || tx.categoryId || 'Income').trim().toLowerCase();
-    const key = rawDesc.length > 3 ? rawDesc : tx.categoryId;
-    if (!descGroup[key]) {
-      descGroup[key] = { total: 0, count: 0, lastDate: tx.date, catId: tx.categoryId };
+    const rawDesc = (tx.description || '').trim();
+    // Normalize key to group similar stream descriptions or categories
+    const normalizedKey = rawDesc.length >= 3
+      ? rawDesc.toLowerCase()
+      : (tx.categoryId || 'other-income');
+
+    if (!sourceGroups[normalizedKey]) {
+      const cat = categoryMap.get(tx.categoryId);
+      const catName = cat?.customName || cat?.nameKey || 'Income';
+      const cleanName = rawDesc.length >= 3 ? rawDesc : catName;
+      sourceGroups[normalizedKey] = {
+        key: normalizedKey,
+        sourceName: cleanName.charAt(0).toUpperCase() + cleanName.slice(1),
+        catId: tx.categoryId,
+        txs: [],
+      };
     }
-    descGroup[key].total += Number(tx.amount) || 0;
-    descGroup[key].count += 1;
-    if (new Date(tx.date).getTime() > new Date(descGroup[key].lastDate).getTime()) {
-      descGroup[key].lastDate = tx.date;
-    }
+    sourceGroups[normalizedKey].txs.push(tx);
   });
 
-  Object.entries(descGroup).forEach(([key, val], idx) => {
-    const cat = categoryMap.get(val.catId);
-    const catName = cat?.customName || cat?.nameKey || 'Income Stream';
-    const isSalaryOrRent = /salary|payroll|rent|freelance|retainer|মাসিক|বেতন/i.test(key) || val.count >= 2;
+  let streamIndex = 0;
+  for (const group of Object.values(sourceGroups)) {
+    const txList = group.txs;
+    const explicitRecurringTxs = txList.filter((t) => t.isRecurring === true);
+    const hasExplicitRecurring = explicitRecurringTxs.length > 0;
 
-    if (isSalaryOrRent || val.count >= 2) {
-      const avg = Math.round(val.total / Math.max(1, Math.min(6, val.count)));
+    // Path A: Explicitly tagged isRecurring by user
+    if (hasExplicitRecurring) {
+      const relevantTxs = explicitRecurringTxs;
+      const amounts = relevantTxs.map((t) => Number(t.amount) || 0).filter((a) => a > 0);
+      const avgAmount = amounts.length > 0 ? Math.round(amounts.reduce((a, b) => a + b, 0) / amounts.length) : 0;
+
+      const sortedTxs = [...relevantTxs].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      const lastDate = sortedTxs[sortedTxs.length - 1].date;
+
+      let freq: 'monthly' | 'bi-weekly' | 'weekly' | 'irregular' = 'monthly';
+      if (sortedTxs.length >= 2) {
+        const intervals: number[] = [];
+        for (let i = 1; i < sortedTxs.length; i++) {
+          const diffDays = Math.round(
+            (new Date(sortedTxs[i].date).getTime() - new Date(sortedTxs[i - 1].date).getTime()) / (1000 * 3600 * 24)
+          );
+          if (diffDays > 0) intervals.push(diffDays);
+        }
+        if (intervals.length > 0) {
+          const avgInterval = intervals.reduce((s, i) => s + i, 0) / intervals.length;
+          if (avgInterval >= 5 && avgInterval <= 10) freq = 'weekly';
+          else if (avgInterval >= 11 && avgInterval <= 18) freq = 'bi-weekly';
+          else if (avgInterval >= 22 && avgInterval <= 38) freq = 'monthly';
+        }
+      }
+
+      const estimatedMonthlyAmount = freq === 'weekly'
+        ? Math.round(avgAmount * 4.33)
+        : freq === 'bi-weekly'
+        ? Math.round(avgAmount * 2.16)
+        : avgAmount;
+
+      if (estimatedMonthlyAmount > 0) {
+        recurringStreams.push({
+          id: `recurring-inc-${streamIndex++}`,
+          sourceName: group.sourceName,
+          estimatedMonthlyAmount,
+          frequency: freq,
+          lastReceivedDate: lastDate,
+          confidence: 'high',
+        });
+      }
+      continue;
+    }
+
+    // Path B: Conservative Heuristic Recurring Detection
+    // Strict requirement: Never classify as recurring just because it appears twice. Must have >= 3 transactions.
+    if (txList.length < 3) {
+      continue;
+    }
+
+    const amounts = txList.map((t) => Number(t.amount) || 0).filter((a) => a > 0);
+    if (amounts.length < 3) continue;
+
+    const avgAmount = amounts.reduce((a, b) => a + b, 0) / amounts.length;
+    const minAmount = Math.min(...amounts);
+    const maxAmount = Math.max(...amounts);
+
+    // Similar amounts requirement: deviation from mean must be within 20%
+    const maxDeviation = Math.max(Math.abs(maxAmount - avgAmount), Math.abs(avgAmount - minAmount));
+    const amountVariationRatio = avgAmount > 0 ? maxDeviation / avgAmount : 1;
+    if (amountVariationRatio > 0.20) {
+      continue;
+    }
+
+    // Transaction dates & frequency consistency check
+    const sortedTxs = [...txList].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const intervals: number[] = [];
+    for (let i = 1; i < sortedTxs.length; i++) {
+      const diffDays = Math.round(
+        (new Date(sortedTxs[i].date).getTime() - new Date(sortedTxs[i - 1].date).getTime()) / (1000 * 3600 * 24)
+      );
+      if (diffDays > 0) intervals.push(diffDays);
+    }
+
+    // Must have at least 2 distinct interval gaps (3 transactions)
+    if (intervals.length < 2) {
+      continue;
+    }
+
+    const avgInterval = intervals.reduce((s, i) => s + i, 0) / intervals.length;
+
+    // Interval consistency: no individual interval may deviate wildly (>40% from avg or >8 days)
+    const isIntervalConsistent = intervals.every(
+      (inv) => Math.abs(inv - avgInterval) <= Math.max(7, avgInterval * 0.40)
+    );
+    if (!isIntervalConsistent) {
+      continue;
+    }
+
+    let detectedFreq: 'monthly' | 'bi-weekly' | 'weekly' | null = null;
+    if (avgInterval >= 5 && avgInterval <= 10) {
+      detectedFreq = 'weekly';
+    } else if (avgInterval >= 11 && avgInterval <= 18) {
+      detectedFreq = 'bi-weekly';
+    } else if (avgInterval >= 24 && avgInterval <= 38) {
+      detectedFreq = 'monthly';
+    }
+
+    if (!detectedFreq) {
+      continue;
+    }
+
+    // Ensure transactions span across at least 2 distinct calendar months for monthly,
+    // or at least 2 distinct weeks for weekly/bi-weekly
+    const distinctMonths = new Set(sortedTxs.map((t) => (t.date || '').substring(0, 7)).filter(Boolean));
+    if (detectedFreq === 'monthly' && distinctMonths.size < 2) {
+      continue;
+    }
+
+    const estimatedMonthlyAmount = detectedFreq === 'weekly'
+      ? Math.round(avgAmount * 4.33)
+      : detectedFreq === 'bi-weekly'
+      ? Math.round(avgAmount * 2.16)
+      : Math.round(avgAmount);
+
+    const isSalaryOrContract = /salary|payroll|rent|retainer|মাসিক|বেতন/i.test(group.sourceName);
+    const confidence: 'high' | 'medium' = (txList.length >= 4 && amountVariationRatio <= 0.10) || (isSalaryOrContract && txList.length >= 3)
+      ? 'high'
+      : 'medium';
+
+    if (estimatedMonthlyAmount > 0) {
       recurringStreams.push({
-        id: `recurring-inc-${idx}`,
-        sourceName: key.charAt(0).toUpperCase() + key.slice(1),
-        estimatedMonthlyAmount: avg,
-        frequency: val.count >= 4 ? 'weekly' : 'monthly',
-        lastReceivedDate: val.lastDate,
-        confidence: val.count >= 2 ? 'high' : 'medium',
+        id: `recurring-inc-${streamIndex++}`,
+        sourceName: group.sourceName,
+        estimatedMonthlyAmount,
+        frequency: detectedFreq,
+        lastReceivedDate: sortedTxs[sortedTxs.length - 1].date,
+        confidence,
       });
     }
-  });
+  }
 
   const recurringTotalMonthly = recurringStreams.reduce((s, r) => s + r.estimatedMonthlyAmount, 0);
   const recurringPercentage = totalIncome > 0
     ? Math.min(100, Math.round((recurringTotalMonthly / Math.max(1, monthlyAverageIncome || totalIncome)) * 100))
     : 0;
 
-  // 6. Simple Income Forecast for Next Month
-  // Uses weighted average: 60% recurring base + 40% trailing 3-month average
+  // 6. Reliable Income Forecast for Next Month (Estimate)
+  // Must NOT depend on incorrectly detected recurring income
+  // Uses validated recurring baseline + historical 3-month trailing velocity
   const last3Months = monthlyTrends.slice(-3);
   const last3Avg = last3Months.length > 0
-    ? last3Months.reduce((s, m) => s + m.income, 0) / last3Months.length
+    ? Math.round(last3Months.reduce((s, m) => s + m.income, 0) / last3Months.length)
     : monthlyAverageIncome;
 
-  const baselineFloor = Math.round(Math.max(recurringTotalMonthly, last3Avg * 0.8));
-  const projectedAmount = Math.round(
-    recurringTotalMonthly > 0
-      ? recurringTotalMonthly * 0.6 + last3Avg * 0.4
-      : last3Avg > 0
-      ? last3Avg
-      : totalIncome
-  );
-  const optimisticCeiling = Math.round(Math.max(projectedAmount * 1.2, baselineFloor * 1.3));
+  let projectedAmount = 0;
+  let baselineFloor = 0;
+  let optimisticCeiling = 0;
+  let methodDescription = '';
+
+  if (recurringTotalMonthly > 0) {
+    // Validated conservative recurring income exists
+    const variableAverage = Math.max(0, last3Avg - recurringTotalMonthly);
+    // Estimated projection = guaranteed recurring base + conservative 80% variable velocity
+    projectedAmount = Math.round(recurringTotalMonthly + variableAverage * 0.80);
+    // Conservative floor is at least the confirmed recurring baseline
+    baselineFloor = Math.round(recurringTotalMonthly);
+    // Optimistic ceiling accounts for variable acceleration
+    optimisticCeiling = Math.round(recurringTotalMonthly + Math.max(variableAverage * 1.25, recurringTotalMonthly * 0.15));
+    methodDescription = `Estimate based on validated recurring baseline (${recurringStreams.length} stream${recurringStreams.length > 1 ? 's' : ''}) + 3-month variable income history`;
+  } else if (last3Avg > 0) {
+    // No recurring contracts: estimate based strictly on rolling 3-month moving average
+    projectedAmount = Math.round(last3Avg);
+    baselineFloor = Math.round(last3Avg * 0.75); // 25% conservative haircut
+    optimisticCeiling = Math.round(last3Avg * 1.20); // 20% upside scenario
+    methodDescription = 'Estimate based on 3-month rolling income moving average (No verified recurring streams detected)';
+  } else if (totalIncome > 0) {
+    // Limited history
+    projectedAmount = Math.round(monthlyAverageIncome || totalIncome);
+    baselineFloor = Math.round(projectedAmount * 0.70);
+    optimisticCeiling = Math.round(projectedAmount * 1.25);
+    methodDescription = 'Preliminary estimate based on available historical inflow (Limited sample size)';
+  } else {
+    projectedAmount = 0;
+    baselineFloor = 0;
+    optimisticCeiling = 0;
+    methodDescription = 'Insufficient income history to generate forecast estimate';
+  }
 
   return {
     totalIncome,
@@ -275,9 +439,7 @@ export function analyzeUserIncome(
       projectedAmount,
       baselineFloor,
       optimisticCeiling,
-      methodDescription: recurringTotalMonthly > 0
-        ? 'Based on validated recurring income contracts and 3-month trailing velocity'
-        : 'Based on rolling 3-month moving inflow average',
+      methodDescription,
     },
   };
 }

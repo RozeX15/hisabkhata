@@ -559,13 +559,16 @@ export const AdvancedIncomeAnalysis: React.FC<AdvancedIncomeAnalysisProps> = ({
             <div className="flex items-center gap-2 mb-1">
               <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 text-[10px] font-black uppercase tracking-wider flex items-center gap-1">
                 <Zap className="w-3 h-3" />
-                Predictive Cashflow Modeling
+                Forecast Model
+              </span>
+              <span className="px-2 py-0.5 rounded-md bg-sky-100 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300 text-[10px] font-black uppercase tracking-wider">
+                Statistical Estimate
               </span>
             </div>
             <h4 className="font-black text-slate-900 dark:text-white text-base">
-              Simple Next-Month Inflow Forecast
+              Next-Month Inflow Forecast (Estimate)
             </h4>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
               {analysis.simpleForecastNextMonth.methodDescription}
             </p>
           </div>
@@ -574,7 +577,7 @@ export const AdvancedIncomeAnalysis: React.FC<AdvancedIncomeAnalysisProps> = ({
             {/* Conservative Floor */}
             <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
               <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                Conservative Floor
+                Conservative Floor (Estimate)
               </span>
               <p className="text-2xl font-black text-slate-700 dark:text-slate-300">
                 {formatCurrency(analysis.simpleForecastNextMonth.baselineFloor, currency)}
@@ -587,20 +590,20 @@ export const AdvancedIncomeAnalysis: React.FC<AdvancedIncomeAnalysisProps> = ({
             {/* Expected Projection */}
             <div className="p-5 rounded-2xl bg-gradient-to-br from-teal-50 to-emerald-50 dark:from-teal-950/30 dark:to-emerald-950/30 border-2 border-teal-500/40 shadow-xs">
               <span className="text-xs font-black text-teal-800 dark:text-teal-300 uppercase tracking-wider block mb-1">
-                Expected Inflow Target
+                Expected Inflow (Estimated Target)
               </span>
               <p className="text-3xl font-black text-teal-700 dark:text-teal-300">
                 {formatCurrency(analysis.simpleForecastNextMonth.projectedAmount, currency)}
               </p>
               <p className="text-xs text-teal-800/80 dark:text-teal-200/80 mt-2 font-medium">
-                Weighted combination of recurring base + 3-month velocity
+                Weighted combination of verified recurring base + 3-month velocity
               </p>
             </div>
 
             {/* Optimistic Ceiling */}
             <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
               <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                Optimistic Upper Bound
+                Optimistic Upper Bound (Estimate)
               </span>
               <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
                 {formatCurrency(analysis.simpleForecastNextMonth.optimisticCeiling, currency)}

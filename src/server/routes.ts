@@ -1929,25 +1929,25 @@ router.post('/ai/advisor', authMiddleware, async (req: AuthRequest, res) => {
   const userGoals = db.savingsGoals.filter(g => g.userId === userId);
   const userLoans = (db.loans || []).filter(l => l.userId === userId);
 
-  const totalBalance = userWallets.reduce((s, w) => s + w.balance, 0);
+  const totalBalance = userWallets.reduce((s, w) => s + (Number(w.balance) || 0), 0);
   const now = new Date();
   const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   
   const thisMonthIncome = userTransactions
-    .filter(t => t.type === 'income' && t.date.startsWith(currentMonthStr))
-    .reduce((s, t) => s + t.amount, 0);
+    .filter(t => t.type === 'income' && t.date && t.date.startsWith(currentMonthStr))
+    .reduce((s, t) => s + (Number(t.amount) || 0), 0);
 
   const thisMonthExpenses = userTransactions
-    .filter(t => t.type === 'expense' && t.date.startsWith(currentMonthStr))
-    .reduce((s, t) => s + t.amount, 0);
+    .filter(t => t.type === 'expense' && t.date && t.date.startsWith(currentMonthStr))
+    .reduce((s, t) => s + (Number(t.amount) || 0), 0);
 
   const allTimeIncome = userTransactions
     .filter(t => t.type === 'income')
-    .reduce((s, t) => s + t.amount, 0);
+    .reduce((s, t) => s + (Number(t.amount) || 0), 0);
 
   const allTimeExpenses = userTransactions
     .filter(t => t.type === 'expense')
-    .reduce((s, t) => s + t.amount, 0);
+    .reduce((s, t) => s + (Number(t.amount) || 0), 0);
 
   const recentTransactions = [...userTransactions]
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
@@ -1959,7 +1959,7 @@ router.post('/ai/advisor', authMiddleware, async (req: AuthRequest, res) => {
     .filter(t => t.type === 'expense')
     .forEach(t => {
       const catKey = t.category || t.categoryId || 'General';
-      categoryExpenseMap[catKey] = (categoryExpenseMap[catKey] || 0) + t.amount;
+      categoryExpenseMap[catKey] = (categoryExpenseMap[catKey] || 0) + (Number(t.amount) || 0);
     });
 
   const preferredCurrency = req.user!.preferredCurrency || 'BDT';
@@ -1983,39 +1983,41 @@ USER REAL FINANCIAL DATA:
 - Currency: ${preferredCurrency}
 - User Name: ${req.user!.name}
 - Total Net Balance across all Wallets: ${preferredCurrency} ${totalBalance.toLocaleString()}
-- Wallets: ${userWallets.map(w => `${w.name} (${w.type}): ${preferredCurrency} ${w.balance.toLocaleString()}`).join(', ') || 'None'}
+- Wallets: ${userWallets.map(w => `${w.name} (${w.type}): ${preferredCurrency} ${(Number(w.balance) || 0).toLocaleString()}`).join(', ') || 'None'}
 - Current Month (${currentMonthStr}) Income: ${preferredCurrency} ${thisMonthIncome.toLocaleString()}
 - Current Month (${currentMonthStr}) Expenses: ${preferredCurrency} ${thisMonthExpenses.toLocaleString()}
 - Current Month Net Cashflow: ${preferredCurrency} ${(thisMonthIncome - thisMonthExpenses).toLocaleString()}
 - All-Time Total Income: ${preferredCurrency} ${allTimeIncome.toLocaleString()}
 - All-Time Total Expenses: ${preferredCurrency} ${allTimeExpenses.toLocaleString()}
 - All-Time Net Savings: ${preferredCurrency} ${(allTimeIncome - allTimeExpenses).toLocaleString()}
-- Financial Health Score: ${health.overallScore}/100 (Grade ${health.grade} - ${health.statusLabel})
+- Financial Health Score: ${health.isInsufficientData ? 'Insufficient Data (No transaction history available yet)' : `${health.overallScore}/100 (Grade ${health.grade} - ${health.statusLabel})`}
 - Financial Health Pillars:
   * Savings: ${health.pillars.savings.score}/${health.pillars.savings.maxScore} (${health.pillars.savings.summary})
   * Budget Control: ${health.pillars.budget.score}/${health.pillars.budget.maxScore} (${health.pillars.budget.summary})
   * Debt Burden: ${health.pillars.debt.score}/${health.pillars.debt.maxScore} (${health.pillars.debt.summary})
-  * Emergency Runway: ${health.pillars.emergency.score}/${health.pillars.emergency.maxScore} (${health.metrics.emergencyMonthsRunway} months buffer)
+  * Emergency Runway: ${health.pillars.emergency.score}/${health.pillars.emergency.maxScore} (${health.metrics.monthlyBurnRate === 0 ? 'No expense history' : `${health.metrics.emergencyMonthsRunway} months buffer`})
 - Income Breakdown:
   * Top Sources: ${incomeAnalysis.incomeBySource.slice(0, 4).map(s => `${s.categoryName}: ${preferredCurrency} ${s.totalAmount.toLocaleString()} (${s.percentage}%)`).join(', ') || 'None'}
-  * Recurring Monthly Inflow: ${preferredCurrency} ${incomeAnalysis.recurringTotalMonthly.toLocaleString()} (${incomeAnalysis.recurringPercentage}% of total)
+  * Recurring Monthly Inflow (Verified): ${preferredCurrency} ${incomeAnalysis.recurringTotalMonthly.toLocaleString()} (${incomeAnalysis.recurringPercentage}% of total)
   * Month-over-Month Growth: ${incomeAnalysis.momGrowthPercent}%
-  * Next Month Projected Inflow: ${preferredCurrency} ${incomeAnalysis.simpleForecastNextMonth.projectedAmount.toLocaleString()}
+  * Next Month Inflow Forecast (Estimate): ${preferredCurrency} ${incomeAnalysis.simpleForecastNextMonth.projectedAmount.toLocaleString()}
 - Total Logged Transactions: ${userTransactions.length}
-- Recent Transactions: ${recentTransactions.map(t => `${t.date}: ${t.type.toUpperCase()} ${preferredCurrency} ${t.amount} (${t.description || t.categoryId || 'General'})`).join('; ') || 'No transactions logged yet'}
-- Active Savings Goals: ${userGoals.map(g => `${g.name}: ${preferredCurrency} ${g.currentAmount.toLocaleString()} / ${preferredCurrency} ${g.targetAmount.toLocaleString()} (${Math.round((g.currentAmount / (g.targetAmount || 1)) * 100)}%)`).join(', ') || 'No active goals'}
+- Recent Transactions: ${recentTransactions.map(t => `${t.date}: ${t.type.toUpperCase()} ${preferredCurrency} ${Number(t.amount) || 0} (${t.description || t.categoryId || 'General'})`).join('; ') || 'No transactions logged yet'}
+- Active Savings Goals: ${userGoals.map(g => `${g.name}: ${preferredCurrency} ${(Number(g.currentAmount) || 0).toLocaleString()} / ${preferredCurrency} ${(Number(g.targetAmount) || 0).toLocaleString()} (${Math.round(((Number(g.currentAmount) || 0) / (Number(g.targetAmount) || 1)) * 100)}%)`).join(', ') || 'No active goals'}
 - Category Expenses: ${Object.entries(categoryExpenseMap).map(([c, a]) => `${c}: ${preferredCurrency} ${a.toLocaleString()}`).join(', ') || 'No expenses logged'}
-- Budgets: ${userBudgets.map(b => `${b.category || b.categoryId || 'Budget'}: limit ${preferredCurrency} ${b.amount}`).join(', ') || 'No active budgets'}
-- Active Loans/Debts: ${userLoans.map(l => `${l.type === 'owe_me' ? 'Lent to' : 'Borrowed from'} ${l.personName}: ${preferredCurrency} ${l.amount - l.paidAmount} remaining`).join(', ') || 'No loans'}
+- Budgets: ${userBudgets.map(b => `${b.category || b.categoryId || 'Budget'}: limit ${preferredCurrency} ${Number(b.amount) || 0}`).join(', ') || 'No active budgets'}
+- Active Loans/Debts: ${userLoans.map(l => `${l.type === 'owe_me' ? 'Lent to' : 'Borrowed from'} ${l.personName}: ${preferredCurrency} ${(Number(l.amount) || 0) - (Number(l.paidAmount) || 0)} remaining`).join(', ') || 'No loans'}
 
 USER'S EXACT QUESTION:
 "${userQuestion || (isBengali ? 'আমার বর্তমান ব্যালেন্স ও ক্যাশফ্লো বিশ্লেষণ করে বাস্তবসম্মত পরামর্শ দিন।' : 'Please analyze my financial health and give me 3 actionable steps to grow my net balance.')}"
 
 CRITICAL INSTRUCTIONS:
 1. ANSWER THE USER'S QUESTION DIRECTLY and IMMEDIATELY with precision. Citing their exact numbers in ${preferredCurrency}.
-2. ACCURACY: If monthly income/expense is 0, note that no transactions were logged for ${currentMonthStr}, cite their Total Net Balance (${preferredCurrency} ${totalBalance.toLocaleString()}) and all-time totals, and give practical advice.
-3. LANGUAGE: ${isBengali ? 'Respond in fluent, clear, natural Bengali (বাংলায়).' : 'Respond in clear, professional, engaging English.'}
-4. FORMAT: Use clear Markdown with bold headers, bullet points, and clean math calculations. Keep it concise, friendly, and practical.
+2. ACCURACY: If monthly income/expense is 0, note that no transactions were logged for ${currentMonthStr}, cite their Total Net Balance (${preferredCurrency} ${totalBalance.toLocaleString()}) and all-time totals, and give practical advice. Never invent fictional transaction history.
+3. INSUFFICIENT DATA: If Financial Health Score is labeled as "Insufficient Data", explain that they need to record real income and expense transactions before a full health score can be determined, rather than inventing an arbitrary score.
+4. ESTIMATES: Make sure any forecasts are clearly stated as estimates based on verified transaction trends.
+5. LANGUAGE: ${isBengali ? 'Respond in fluent, clear, natural Bengali (বাংলায়).' : 'Respond in clear, professional, engaging English.'}
+6. FORMAT: Use clear Markdown with bold headers, bullet points, and clean math calculations. Keep it concise, friendly, and practical.
 `;
 
   try {

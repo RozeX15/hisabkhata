@@ -73,6 +73,8 @@ export const FinancialHealthCard: React.FC<FinancialHealthCardProps> = ({
         return 'bg-teal-100 text-teal-800 dark:bg-teal-950/70 dark:text-teal-300 border-teal-300 dark:border-teal-700';
       case 'C':
         return 'bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300 border-amber-300 dark:border-amber-700';
+      case 'N/A':
+        return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-300 dark:border-slate-600';
       default:
         return 'bg-rose-100 text-rose-800 dark:bg-rose-950/70 dark:text-rose-300 border-rose-300 dark:border-rose-700';
     }
@@ -95,7 +97,9 @@ export const FinancialHealthCard: React.FC<FinancialHealthCardProps> = ({
               />
               <path
                 className={
-                  health.overallScore >= 75
+                  health.isInsufficientData
+                    ? 'text-slate-300 dark:text-slate-600'
+                    : health.overallScore >= 75
                     ? 'text-emerald-500'
                     : health.overallScore >= 55
                     ? 'text-teal-500'
@@ -103,7 +107,7 @@ export const FinancialHealthCard: React.FC<FinancialHealthCardProps> = ({
                     ? 'text-amber-500'
                     : 'text-rose-500'
                 }
-                strokeDasharray={`${health.overallScore}, 100`}
+                strokeDasharray={`${health.isInsufficientData ? 0 : health.overallScore}, 100`}
                 strokeWidth="3.5"
                 strokeLinecap="round"
                 stroke="currentColor"
@@ -113,9 +117,11 @@ export const FinancialHealthCard: React.FC<FinancialHealthCardProps> = ({
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
               <span className="text-lg font-black text-slate-900 dark:text-white leading-none">
-                {health.overallScore}
+                {health.isInsufficientData ? '--' : health.overallScore}
               </span>
-              <span className="text-[9px] font-bold text-slate-400 leading-none mt-0.5">/100</span>
+              <span className="text-[9px] font-bold text-slate-400 leading-none mt-0.5">
+                {health.isInsufficientData ? 'Pending' : '/100'}
+              </span>
             </div>
           </div>
 
@@ -125,7 +131,7 @@ export const FinancialHealthCard: React.FC<FinancialHealthCardProps> = ({
                 Financial Health Score
               </h3>
               <span className={`px-2 py-0.5 rounded-md text-xs font-black border ${getGradeBadge(health.grade)}`}>
-                Grade {health.grade}
+                {health.grade === 'N/A' ? 'Insufficient Data' : `Grade ${health.grade}`}
               </span>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -133,7 +139,7 @@ export const FinancialHealthCard: React.FC<FinancialHealthCardProps> = ({
               <strong className="text-slate-900 dark:text-slate-200">
                 {health.statusLabel}
               </strong>{' '}
-              • Evaluated across 4 liquidity and wealth resilience pillars
+              • {health.headlineSummary}
             </p>
           </div>
         </div>
@@ -250,7 +256,9 @@ export const FinancialHealthCard: React.FC<FinancialHealthCardProps> = ({
             />
           </div>
           <p className="text-[11px] text-slate-600 dark:text-slate-300 line-clamp-2">
-            {health.metrics.emergencyMonthsRunway} months runway buffer
+            {health.metrics.monthlyBurnRate === 0
+              ? 'No living expenses logged'
+              : `${health.metrics.emergencyMonthsRunway} months runway buffer`}
           </p>
         </div>
       </div>

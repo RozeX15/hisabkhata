@@ -1,4 +1,5 @@
 import { Transaction, BudgetProgress, Loan, Wallet, DashboardSummary } from '../types';
+import { formatCurrency } from './currencies';
 
 export interface HealthPillar {
   name: string;
@@ -21,10 +22,11 @@ export interface FinancialHealthRecommendation {
 
 export interface FinancialHealthEvaluation {
   overallScore: number; // 0 to 100
-  grade: 'A+' | 'A' | 'B' | 'C' | 'D';
+  grade: 'A+' | 'A' | 'B' | 'C' | 'D' | 'N/A';
   status: 'excellent' | 'good' | 'fair' | 'needs_attention';
   statusLabel: string;
   headlineSummary: string;
+  isInsufficientData?: boolean;
   pillars: {
     savings: HealthPillar;
     budget: HealthPillar;
@@ -44,7 +46,9 @@ export interface FinancialHealthEvaluation {
 }
 
 /**
- * Evaluates comprehensive financial health across 4 core pillars
+ * Evaluates comprehensive financial health across 4 core pillars.
+ * Uses strictly real transaction history and wallet balances.
+ * Never invents income or expenses from wallet balance.
  */
 export function evaluateFinancialHealth(
   wallets: Wallet[],
@@ -56,38 +60,30 @@ export function evaluateFinancialHealth(
   const now = new Date();
   const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
-  // 1. Total liquid balance
-  const totalBalance = wallets.reduce((s, w) => s + (Number(w.balance) || 0), 0);
+  // 1. Total liquid balance across wallets (safely handle numbers/strings)
+  const totalBalance = (wallets || []).reduce((s, w) => s + (Number(w.balance) || 0), 0);
 
-  // 2. Current Month Cashflow & Monthly Burn Rate
-  const currentMonthIncomes = transactions
-    .filter((t) => t.type === 'income' && t.date && t.date.startsWith(currentMonthStr))
+  // 2. Real Transaction Audit
+  const incomeTxs = (transactions || []).filter((t) => t.type === 'income');
+  const expenseTxs = (transactions || []).filter((t) => t.type === 'expense');
+
+  const currentMonthIncomes = incomeTxs
+    .filter((t) => t.date && t.date.startsWith(currentMonthStr))
     .reduce((s, t) => s + (Number(t.amount) || 0), 0);
 
-  const currentMonthExpenses = transactions
-    .filter((t) => t.type === 'expense' && t.date && t.date.startsWith(currentMonthStr))
+  const currentMonthExpenses = expenseTxs
+    .filter((t) => t.date && t.date.startsWith(currentMonthStr))
     .reduce((s, t) => s + (Number(t.amount) || 0), 0);
 
-  // Fallback to all-time averages if current month has low activity
-  const allIncomes = transactions.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-  const allExpenses = transactions.filter((t) => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+  const allIncomes = incomeTxs.reduce((s, t) => s + (Number(t.amount) || 0), 0);
+  const allExpenses = expenseTxs.reduce((s, t) => s + (Number(t.amount) || 0), 0);
 
-  const effectiveIncome = currentMonthIncomes > 0 ? currentMonthIncomes : (allIncomes > 0 ? allIncomes : totalBalance * 0.2);
-  const effectiveExpense = currentMonthExpenses > 0 ? currentMonthExpenses : (allExpenses > 0 ? allExpenses : totalBalance * 0.1);
-
-  // Savings rate percentage
-  const savingsRate = effectiveIncome > 0
-    ? Math.max(-100, Math.min(100, Math.round(((effectiveIncome - effectiveExpense) / effectiveIncome) * 100)))
-    : 0;
-
-  // Monthly burn rate for runway calculation
-  const monthlyBurnRate = Math.max(1, effectiveExpense);
-  const emergencyMonthsRunway = totalBalance > 0
-    ? parseFloat((totalBalance / monthlyBurnRate).toFixed(1))
-    : 0;
+  const hasRealIncomeHistory = allIncomes > 0;
+  const hasRealExpenseHistory = allExpenses > 0;
+  const hasTransactionData = hasRealIncomeHistory || hasRealExpenseHistory;
 
   // 3. Debt Analysis: Loans user owes to others
-  const totalDebtOwed = loans
+  const totalDebtOwed = (loans || [])
     .filter((l) => l.type === 'i_owe' && l.status !== 'paid')
     .reduce((s, l) => s + Math.max(0, (Number(l.amount) || 0) - (Number(l.paidAmount) || 0)), 0);
 
@@ -100,14 +96,125 @@ export function evaluateFinancialHealth(
   let budgetsExceededCount = 0;
   let budgetsWarningCount = 0;
 
-  if (budgets.length > 0) {
+  if (budgets && budgets.length > 0) {
     budgets.forEach((b) => {
-      if (b.percentage > 100) budgetsExceededCount++;
-      else if (b.percentage >= 80) budgetsWarningCount++;
+      const pct = Number(b.percentage) || 0;
+      if (pct > 100) budgetsExceededCount++;
+      else if (pct >= 80) budgetsWarningCount++;
     });
     const onTrackBudgets = budgets.length - budgetsExceededCount;
     budgetAdherencePercent = Math.round((onTrackBudgets / budgets.length) * 100);
   }
+
+  // -------------------------------------------------------------
+  // INSUFFICIENT DATA CASE: NEVER INVENT DATA FROM WALLET BALANCE
+  // -------------------------------------------------------------
+  if (!hasTransactionData) {
+    return {
+      overallScore: 0,
+      grade: 'N/A',
+      status: 'needs_attention',
+      statusLabel: 'Insufficient Data',
+      headlineSummary: 'Insufficient transaction history to evaluate financial health. Add your income and living expenses to calculate your Financial Health Score.',
+      isInsufficientData: true,
+      pillars: {
+        savings: {
+          name: 'Savings Performance',
+          score: 0,
+          maxScore: 30,
+          rating: 'fair',
+          summary: 'Insufficient data: No income or expense transactions recorded yet',
+          impactDescription: 'Measures capital velocity and your ability to retain surplus earnings each month.',
+        },
+        budget: {
+          name: 'Budget Discipline',
+          score: (budgets || []).length > 0 ? 20 : 0,
+          maxScore: 25,
+          rating: 'fair',
+          summary: (budgets || []).length > 0 ? `${budgets.length} budget(s) active, awaiting expense tracking` : 'No active category budgets configured',
+          impactDescription: 'Assesses cost control and whether discretionary spending remains within your targets.',
+        },
+        debt: {
+          name: 'Debt & Loan Burden',
+          score: totalDebtOwed === 0 ? 25 : (debtToAssetRatio <= 25 ? 20 : 10),
+          maxScore: 25,
+          rating: totalDebtOwed === 0 ? 'excellent' : (debtToAssetRatio <= 25 ? 'good' : 'fair'),
+          summary: totalDebtOwed === 0 ? 'Zero debt obligations (100% debt-free leverage)' : `Payable debt is ${debtToAssetRatio}% of current liquid balance`,
+          impactDescription: 'Evaluates your exposure to borrowed capital and repayment solvency risks.',
+        },
+        emergency: {
+          name: 'Emergency Buffer',
+          score: 0,
+          maxScore: 20,
+          rating: 'fair',
+          summary: 'Insufficient data: Record your living expenses to calculate monthly burn rate',
+          impactDescription: 'Number of months your current balances can sustain living expenses with zero income.',
+        },
+      },
+      metrics: {
+        savingsRate: 0,
+        emergencyMonthsRunway: 0,
+        budgetAdherencePercent: (budgets || []).length > 0 ? 100 : 0,
+        debtToAssetRatio,
+        totalBalance,
+        totalDebtOwed,
+        monthlyBurnRate: 0,
+      },
+      recommendations: [
+        {
+          id: 'rec-log-transactions',
+          category: 'savings',
+          priority: 'high',
+          title: 'Log Income & Expenses',
+          description: 'Record your real transactions so Hishab Khata can calculate your true savings rate, monthly burn rate, and runway resilience.',
+          actionLabel: 'Add Transaction',
+          actionView: 'dashboard',
+        },
+        ...((budgets || []).length === 0 ? [{
+          id: 'rec-set-budgets',
+          category: 'budget' as const,
+          priority: 'medium' as const,
+          title: 'Establish Category Spending Limits',
+          description: 'Track top expenses with monthly budget guardrails to prevent overspending.',
+          actionLabel: 'Create Monthly Budget',
+          actionView: 'budgets',
+        }] : []),
+      ],
+    };
+  }
+
+  // -------------------------------------------------------------
+  // REAL TRANSACTION CALCULATION (NO INVENTED DATA)
+  // -------------------------------------------------------------
+  const distinctIncomeMonths = new Set(
+    incomeTxs.map((t) => (t.date || '').substring(0, 7)).filter(Boolean)
+  ).size || 1;
+  const distinctExpenseMonths = new Set(
+    expenseTxs.map((t) => (t.date || '').substring(0, 7)).filter(Boolean)
+  ).size || 1;
+
+  const historicalMonthlyIncome = hasRealIncomeHistory ? Math.round(allIncomes / distinctIncomeMonths) : 0;
+  const historicalMonthlyExpense = hasRealExpenseHistory ? Math.round(allExpenses / distinctExpenseMonths) : 0;
+
+  // Use current month if active; otherwise fall back strictly to real historical averages
+  const effectiveIncome = currentMonthIncomes > 0 ? currentMonthIncomes : historicalMonthlyIncome;
+  const effectiveExpense = currentMonthExpenses > 0 ? currentMonthExpenses : historicalMonthlyExpense;
+
+  // Real Savings Rate
+  let savingsRate = 0;
+  if (effectiveIncome > 0) {
+    savingsRate = Math.max(-100, Math.min(100, Math.round(((effectiveIncome - effectiveExpense) / effectiveIncome) * 100)));
+  } else if (effectiveExpense > 0) {
+    savingsRate = -100; // Outflows without income = 100% cashflow deficit
+  } else {
+    savingsRate = 0;
+  }
+
+  // Monthly burn rate for runway calculation
+  const monthlyBurnRate = effectiveExpense;
+  const emergencyMonthsRunway = monthlyBurnRate > 0 && totalBalance > 0
+    ? parseFloat((totalBalance / monthlyBurnRate).toFixed(1))
+    : 0;
 
   // -------------------------------------------------------------
   // PILLAR 1: SAVINGS PERFORMANCE (Max 30 Points)
@@ -116,7 +223,11 @@ export function evaluateFinancialHealth(
   let savingsRating: HealthPillar['rating'] = 'fair';
   let savingsSummary = '';
 
-  if (savingsRate >= 30) {
+  if (effectiveIncome === 0 && effectiveExpense > 0) {
+    savingsScore = 2;
+    savingsRating = 'critical';
+    savingsSummary = `Cashflow deficit: Outflows of ${formatCurrency(effectiveExpense, currency)} with no recorded income`;
+  } else if (savingsRate >= 30) {
     savingsScore = 30;
     savingsRating = 'excellent';
     savingsSummary = `Saving ${savingsRate}% of income (Elite standard >30%)`;
@@ -135,7 +246,7 @@ export function evaluateFinancialHealth(
   } else {
     savingsScore = 2;
     savingsRating = 'critical';
-    savingsSummary = `Cashflow deficit (Outflows exceed current income by ${Math.abs(savingsRate)}%)`;
+    savingsSummary = `Cashflow deficit: Outflows exceed current income by ${Math.abs(savingsRate)}%`;
   }
 
   const savingsPillar: HealthPillar = {
@@ -154,7 +265,7 @@ export function evaluateFinancialHealth(
   let budgetRating: HealthPillar['rating'] = 'good';
   let budgetSummary = '';
 
-  if (budgets.length === 0) {
+  if (!budgets || budgets.length === 0) {
     budgetScore = 16;
     budgetRating = 'fair';
     budgetSummary = 'No active category budgets configured';
@@ -230,7 +341,13 @@ export function evaluateFinancialHealth(
   let emergencyRating: HealthPillar['rating'] = 'fair';
   let emergencySummary = '';
 
-  if (emergencyMonthsRunway >= 6) {
+  if (monthlyBurnRate === 0) {
+    emergencyScore = totalBalance > 0 ? 14 : 4;
+    emergencyRating = 'fair';
+    emergencySummary = totalBalance > 0
+      ? `Liquid reserve of ${formatCurrency(totalBalance, currency)} (No living expenses recorded yet to calculate burn rate)`
+      : 'No liquid reserve or expense history recorded';
+  } else if (emergencyMonthsRunway >= 6) {
     emergencyScore = 20;
     emergencyRating = 'excellent';
     emergencySummary = `${emergencyMonthsRunway} months of living expenses safely funded (Elite fortress)`;
@@ -315,7 +432,7 @@ export function evaluateFinancialHealth(
   }
 
   // Emergency runway recommendation
-  if (emergencyMonthsRunway < 3) {
+  if (monthlyBurnRate > 0 && emergencyMonthsRunway < 3) {
     recommendations.push({
       id: 'rec-emergency-buffer',
       category: 'emergency',
@@ -328,7 +445,7 @@ export function evaluateFinancialHealth(
   }
 
   // Budget recommendation
-  if (budgets.length === 0) {
+  if (!budgets || budgets.length === 0) {
     recommendations.push({
       id: 'rec-set-budgets',
       category: 'budget',
@@ -400,3 +517,4 @@ export function evaluateFinancialHealth(
     recommendations,
   };
 }
+
