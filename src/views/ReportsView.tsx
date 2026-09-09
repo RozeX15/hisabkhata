@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useI18n } from '../lib/i18n';
 import { Transaction, Wallet, Category, DashboardSummary } from '../types';
-import { formatCurrency } from '../lib/currencies';
+import { formatCurrency, convertCurrency } from '../lib/currencies';
 import { exportToPDF, exportToExcel, exportToCSV } from '../lib/exportUtils';
 import { AdvancedIncomeAnalysis } from '../components/AdvancedIncomeAnalysis';
 import { AdvancedExpenseAnalysis } from '../components/AdvancedExpenseAnalysis';
@@ -82,17 +82,18 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
 
   const totalIncome = filteredTxs
     .filter(t => t.type === 'income')
-    .reduce((s, t) => s + (Number(t.amount) || 0), 0);
+    .reduce((s, t) => s + convertCurrency(Number(t.amount) || 0, t.currency || 'BDT', currency), 0);
   const totalExpense = filteredTxs
     .filter(t => t.type === 'expense')
-    .reduce((s, t) => s + (Number(t.amount) || 0), 0);
+    .reduce((s, t) => s + convertCurrency(Number(t.amount) || 0, t.currency || 'BDT', currency), 0);
   const netSavings = totalIncome - totalExpense;
   const savingsRate = totalIncome > 0 ? Math.max(0, Math.round((netSavings / totalIncome) * 100)) : 0;
 
   // Category breakdown for filtered transactions
   const catTotals: Record<string, number> = {};
   filteredTxs.filter(t => t.type === 'expense').forEach((tx) => {
-    catTotals[tx.categoryId] = (catTotals[tx.categoryId] || 0) + (Number(tx.amount) || 0);
+    const amt = convertCurrency(Number(tx.amount) || 0, tx.currency || 'BDT', currency);
+    catTotals[tx.categoryId] = (catTotals[tx.categoryId] || 0) + amt;
   });
 
   const catPieData = Object.entries(catTotals).map(([catId, amount]) => {

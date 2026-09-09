@@ -1,4 +1,5 @@
 import { Transaction, Category } from '../types';
+import { convertCurrency } from './currencies';
 
 export interface IncomeBySource {
   categoryId: string;
@@ -59,10 +60,19 @@ export interface IncomeAnalysisResult {
 export function analyzeUserIncome(
   transactions: Transaction[],
   categories: Category[],
-  selectedPeriod: 'all' | '30days' | '90days' | '180days' | '365days' = 'all'
+  selectedPeriod: 'all' | '30days' | '90days' | '180days' | '365days' = 'all',
+  targetCurrency?: string,
+  baseCurrency: string = 'BDT'
 ): IncomeAnalysisResult {
   const now = new Date();
   const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+
+  const getAmount = (tx: Transaction): number => {
+    const raw = Number(tx.amount) || 0;
+    if (!targetCurrency) return raw;
+    const tCurr = tx.currency || baseCurrency;
+    return convertCurrency(raw, tCurr, targetCurrency);
+  };
 
   // Filter transactions by period
   const filteredTxs = transactions.filter((tx) => {
@@ -82,8 +92,8 @@ export function analyzeUserIncome(
   const incomeTxs = filteredTxs.filter((t) => t.type === 'income');
   const expenseTxs = filteredTxs.filter((t) => t.type === 'expense');
 
-  const totalIncome = incomeTxs.reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
-  const totalExpense = expenseTxs.reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+  const totalIncome = incomeTxs.reduce((sum, t) => sum + getAmount(t), 0);
+  const totalExpense = expenseTxs.reduce((sum, t) => sum + getAmount(t), 0);
   const netCashflow = totalIncome - totalExpense;
 
   const overallSavingsRate = totalIncome > 0
@@ -120,7 +130,7 @@ export function analyzeUserIncome(
     if (!sourceAggregation[key]) {
       sourceAggregation[key] = { total: 0, count: 0 };
     }
-    sourceAggregation[key].total += Number(t.amount) || 0;
+    sourceAggregation[key].total += getAmount(t);
     sourceAggregation[key].count += 1;
   });
 
@@ -160,8 +170,8 @@ export function analyzeUserIncome(
     const mKey = tx.date.substring(0, 7);
     if (monthMap.has(mKey)) {
       const entry = monthMap.get(mKey)!;
-      if (tx.type === 'income') entry.income += Number(tx.amount) || 0;
-      if (tx.type === 'expense') entry.expense += Number(tx.amount) || 0;
+      if (tx.type === 'income') entry.income += getAmount(tx);
+      if (tx.type === 'expense') entry.expense += getAmount(tx);
     }
   });
 
@@ -270,7 +280,7 @@ export function analyzeUserIncome(
     // Path A: Explicitly tagged isRecurring by user
     if (hasExplicitRecurring) {
       const relevantTxs = explicitRecurringTxs;
-      const amounts = relevantTxs.map((t) => Number(t.amount) || 0).filter((a) => a > 0);
+      const amounts = relevantTxs.map((t) => getAmount(t)).filter((a) => a > 0);
       const avgAmount = amounts.length > 0 ? Math.round(amounts.reduce((a, b) => a + b, 0) / amounts.length) : 0;
 
       const sortedTxs = [...relevantTxs].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -318,7 +328,7 @@ export function analyzeUserIncome(
       continue;
     }
 
-    const amounts = txList.map((t) => Number(t.amount) || 0).filter((a) => a > 0);
+    const amounts = txList.map((t) => getAmount(t)).filter((a) => a > 0);
     if (amounts.length < 3) continue;
 
     const avgAmount = amounts.reduce((a, b) => a + b, 0) / amounts.length;

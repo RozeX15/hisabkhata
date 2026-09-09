@@ -1,4 +1,5 @@
 import { Transaction, Category } from '../types';
+import { convertCurrency } from './currencies';
 
 export interface ExpenseByCategory {
   categoryId: string;
@@ -178,13 +179,22 @@ function isNeedCategory(catId: string, catName: string, nameKey?: string): boole
 export function analyzeUserExpenses(
   transactions: Transaction[],
   categories: Category[],
-  selectedPeriod: 'all' | '30days' | '90days' | '180days' | '365days' = 'all'
+  selectedPeriod: 'all' | '30days' | '90days' | '180days' | '365days' = 'all',
+  targetCurrency?: string,
+  baseCurrency: string = 'BDT'
 ): ExpenseAnalysisResult {
   const now = new Date();
   const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
   const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const previousMonthKey = `${prevMonthDate.getFullYear()}-${String(prevMonthDate.getMonth() + 1).padStart(2, '0')}`;
+
+  const getAmount = (tx: Transaction): number => {
+    const raw = Number(tx.amount) || 0;
+    if (!targetCurrency) return raw;
+    const tCurr = tx.currency || baseCurrency;
+    return convertCurrency(raw, tCurr, targetCurrency);
+  };
 
   // Period filtering
   const filteredTxs = transactions.filter((tx) => {
@@ -206,8 +216,8 @@ export function analyzeUserExpenses(
   const filteredExpenseTxs = filteredTxs.filter((t) => t.type === 'expense');
   const filteredIncomeTxs = filteredTxs.filter((t) => t.type === 'income');
 
-  const totalExpense = filteredExpenseTxs.reduce((s, t) => s + (Number(t.amount) || 0), 0);
-  const totalIncome = filteredIncomeTxs.reduce((s, t) => s + (Number(t.amount) || 0), 0);
+  const totalExpense = filteredExpenseTxs.reduce((s, t) => s + getAmount(t), 0);
+  const totalIncome = filteredIncomeTxs.reduce((s, t) => s + getAmount(t), 0);
   const netCashflow = totalIncome - totalExpense;
 
   const isInsufficientData = filteredExpenseTxs.length === 0 || totalExpense <= 0;
@@ -258,7 +268,7 @@ export function analyzeUserExpenses(
     if (!categoryTotals[cid]) {
       categoryTotals[cid] = { total: 0, count: 0 };
     }
-    categoryTotals[cid].total += Number(tx.amount) || 0;
+    categoryTotals[cid].total += getAmount(tx);
     categoryTotals[cid].count += 1;
   });
 
@@ -297,7 +307,7 @@ export function analyzeUserExpenses(
     const mKey = tx.date.substring(0, 7);
     if (monthMap.has(mKey)) {
       const entry = monthMap.get(mKey)!;
-      const amt = Number(tx.amount) || 0;
+      const amt = getAmount(tx);
       if (tx.type === 'expense') entry.expense += amt;
       if (tx.type === 'income') entry.income += amt;
     }
@@ -383,7 +393,7 @@ export function analyzeUserExpenses(
   const recurringCandidateMap: Record<string, { count: number; total: number; latestDate: string; isExplicit: boolean; catId: string }> = {};
 
   filteredExpenseTxs.forEach((tx) => {
-    const amt = Number(tx.amount) || 0;
+    const amt = getAmount(tx);
     const cat = categoryMap.get(tx.categoryId);
     const catName = resolveCategoryName(tx.categoryId);
     const isCatEssential = isEssentialOrFixedCategory(tx.categoryId, catName, cat?.nameKey);
@@ -500,7 +510,7 @@ export function analyzeUserExpenses(
   const dayOfWeekCounts: number[] = [0, 0, 0, 0, 0, 0, 0];
 
   filteredExpenseTxs.forEach((tx) => {
-    const amt = Number(tx.amount) || 0;
+    const amt = getAmount(tx);
     const dStr = tx.date;
     if (!daySpendMap[dStr]) {
       daySpendMap[dStr] = { total: 0, count: 0, topDesc: tx.description || 'Expense', maxSingle: 0 };
@@ -580,7 +590,7 @@ export function analyzeUserExpenses(
   // 6. UNUSUAL / HIGH-SPENDING DETECTION
   const unusualSpikes: UnusualSpendingOutlier[] = [];
   filteredExpenseTxs.forEach((tx) => {
-    const amt = Number(tx.amount) || 0;
+    const amt = getAmount(tx);
     const catId = tx.categoryId || 'uncategorized';
     const catData = categoryTotals[catId];
     if (!catData || catData.count < 3) return;
@@ -615,7 +625,7 @@ export function analyzeUserExpenses(
   let needsTotal = 0;
   let wantsTotal = 0;
   filteredExpenseTxs.forEach((tx) => {
-    const amt = Number(tx.amount) || 0;
+    const amt = getAmount(tx);
     const cat = categoryMap.get(tx.categoryId);
     const catName = resolveCategoryName(tx.categoryId);
     if (isNeedCategory(tx.categoryId, catName, cat?.nameKey)) {

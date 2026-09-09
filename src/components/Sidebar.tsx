@@ -76,7 +76,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           const isActive =
             currentView === item.id ||
             (item.id === 'savings_goals' && currentView === 'savings') ||
-            (item.id === 'savings' && currentView === 'savings_goals');
+            (item.id === 'savings' && currentView === 'savings_goals') ||
+            (item.id === 'reports' && (currentView === 'reports_income' || currentView === 'reports_expense'));
           return (
             <button
               key={item.id}

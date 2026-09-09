@@ -49,7 +49,9 @@ export const AdvancedIncomeAnalysis: React.FC<AdvancedIncomeAnalysisProps> = ({
   const [period, setPeriod] = useState<'all' | '30days' | '90days' | '180days' | '365days'>('all');
   const [activeTab, setActiveTab] = useState<'sources' | 'trends' | 'recurring' | 'forecast'>('sources');
 
-  const analysis = analyzeUserIncome(transactions, categories, period);
+  const analysis = React.useMemo(() => {
+    return analyzeUserIncome(transactions, categories, period, currency);
+  }, [transactions, categories, period, currency]);
 
   const getSavingsBadgeClass = (rating: string) => {
     switch (rating) {

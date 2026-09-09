@@ -463,17 +463,36 @@ const MainAppContent: React.FC = () => {
     } finally {
       setLoadingData(false);
     }
-  }, [token, user?.id, currency]);
+  }, [token, user?.id]);
+
+  const initialUserCurrencySyncedRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (user && token) {
       loadAllData();
       const userCurr = user.preferredCurrency || (user as any).defaultCurrency;
-      if (userCurr && userCurr !== currency) {
-        setCurrency(userCurr);
+      // Only set initial currency from user profile on initial sign-in if no local choice was made
+      if (userCurr && initialUserCurrencySyncedRef.current !== user.id) {
+        initialUserCurrencySyncedRef.current = user.id;
+        const savedCurrency = safeStorage.getItem('hk_currency');
+        if (!savedCurrency) {
+          setCurrency(userCurr);
+        }
       }
     }
-  }, [user, token, loadAllData]);
+  }, [user?.id, token, loadAllData]);
+
+  const handleCurrencyChange = async (newCurr: string) => {
+    setCurrency(newCurr);
+    safeStorage.setItem('hk_currency', newCurr);
+    if (user && token) {
+      try {
+        await api.updateProfile({ preferredCurrency: newCurr });
+      } catch (e) {
+        console.warn('Could not persist preferred currency to profile:', e);
+      }
+    }
+  };
 
   // Background Push Notification Polling (Realtime Sync)
   useEffect(() => {
@@ -952,6 +971,8 @@ const MainAppContent: React.FC = () => {
       {/* Main App Canvas */}
       <div id="main-scroll-container" className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto relative scroll-smooth">
         <Topbar
+          currentCurrency={currency}
+          onCurrencyChange={handleCurrencyChange}
           onOpenAddTransaction={() => {
             setEditingTx(null);
             setTxModalInitialType('expense');
@@ -1025,7 +1046,7 @@ const MainAppContent: React.FC = () => {
               onOpenContributeGoal={(goal) => setContributeGoal(goal)}
               onOpenAddBudget={() => setIsBudgetModalOpen(true)}
               onOpenAiAdvisor={() => setIsAiModalOpen(true)}
-              onNavigate={(v) => setActiveView(v)}
+              onNavigate={handleNavigate}
               onRefreshData={loadAllData}
             />
           )}
@@ -1116,7 +1137,7 @@ const MainAppContent: React.FC = () => {
             />
           )}
 
-          {activeView === 'reports' && (
+          {(activeView === 'reports' || activeView === 'reports_income' || activeView === 'reports_expense') && (
             <React.Suspense fallback={<ViewLoadingFallback label="Loading reports..." />}>
               <ReportsView
                 summary={summary}
@@ -1127,7 +1148,13 @@ const MainAppContent: React.FC = () => {
                 userName={user.name}
                 userPlan={user.plan}
                 onOpenUpgrade={() => setIsUpgradeModalOpen(true)}
-                initialTab={reportsInitialTab}
+                initialTab={
+                  activeView === 'reports_income'
+                    ? 'income_analysis'
+                    : activeView === 'reports_expense'
+                    ? 'expense_analysis'
+                    : reportsInitialTab
+                }
                 onOpenAddExpense={() => {
                   setEditingTx(null);
                   setTxModalInitialType('expense');
@@ -1144,7 +1171,7 @@ const MainAppContent: React.FC = () => {
               onMarkAllRead={handleMarkAllNotifsRead}
               onDelete={handleDeleteNotif}
               onClearAll={handleClearAllNotifs}
-              onNavigate={(view) => setActiveView(view)}
+              onNavigate={handleNavigate}
             />
           )}
 
@@ -1155,7 +1182,7 @@ const MainAppContent: React.FC = () => {
               isDarkMode={isDarkMode}
               onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
               onOpenDownloadApp={handleOpenDownloadApp}
-              onNavigate={(v) => setActiveView(v)}
+              onNavigate={handleNavigate}
             />
           )}
 
@@ -1163,7 +1190,7 @@ const MainAppContent: React.FC = () => {
             <SuggestionsView
               currency={currency}
               wallets={wallets}
-              onNavigate={(v) => setActiveView(v)}
+              onNavigate={handleNavigate}
               onRefreshWallets={loadAllData}
             />
           )}
@@ -1323,7 +1350,7 @@ const MainAppContent: React.FC = () => {
         onMarkAllRead={handleMarkAllNotifsRead}
         onDelete={handleDeleteNotif}
         onClearAll={handleClearAllNotifs}
-        onNavigate={(v) => setActiveView(v)}
+        onNavigate={handleNavigate}
       />
 
       <DownloadAppModal

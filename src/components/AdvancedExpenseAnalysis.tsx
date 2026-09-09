@@ -55,7 +55,9 @@ export const AdvancedExpenseAnalysis: React.FC<AdvancedExpenseAnalysisProps> = (
   const [period, setPeriod] = useState<'all' | '30days' | '90days' | '180days' | '365days'>('all');
   const [activeTab, setActiveTab] = useState<'categories' | 'trends' | 'behavior' | 'outliers' | 'forecast'>('categories');
 
-  const analysis = analyzeUserExpenses(transactions, categories, period);
+  const analysis = React.useMemo(() => {
+    return analyzeUserExpenses(transactions, categories, period, currency);
+  }, [transactions, categories, period, currency]);
 
   const getMomBadge = () => {
     if (analysis.momDirection === 'no_prior_data') {
