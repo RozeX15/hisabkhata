@@ -122,6 +122,53 @@ export function saveLocalVault(vault: Record<string, PersistentAccount>): void {
   }
 }
 
+export const REGISTERED_USERS_STORAGE_KEY = 'hk_registered_users_list';
+
+export function getLocalRegisteredUsers(): User[] {
+  try {
+    const raw = safeStorage.getItem(REGISTERED_USERS_STORAGE_KEY);
+    if (!raw) return [];
+    const list = JSON.parse(raw);
+    return Array.isArray(list) ? list : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveLocalRegisteredUser(user: User): void {
+  try {
+    const list = getLocalRegisteredUsers();
+    const map = new Map<string, User>();
+    list.forEach((u) => {
+      if (u?.id) map.set(u.id, u);
+      if (u?.email) map.set(u.email.toLowerCase().trim(), u);
+    });
+    map.set(user.id, user);
+    if (user.email) map.set(user.email.toLowerCase().trim(), user);
+    safeStorage.setItem(REGISTERED_USERS_STORAGE_KEY, JSON.stringify(Array.from(new Set(map.values()))));
+  } catch (err) {
+    console.warn('Could not save to local registered users list:', err);
+  }
+}
+
+export function broadcastAccountChange(accountOrUser: User | PersistentAccount): void {
+  try {
+    if (typeof window !== 'undefined') {
+      if ('BroadcastChannel' in window) {
+        const bc = new BroadcastChannel('hk_accounts_channel');
+        bc.postMessage({ type: 'ACCOUNT_UPDATED', user: accountOrUser, timestamp: Date.now() });
+        setTimeout(() => bc.close(), 100);
+      }
+      safeStorage.setItem('hk_last_account_event', JSON.stringify({
+        id: accountOrUser.id,
+        email: accountOrUser.email,
+        name: accountOrUser.name,
+        time: Date.now(),
+      }));
+    }
+  } catch {}
+}
+
 export function saveToLocalVault(account: PersistentAccount): void {
   try {
     const vault = getLocalVault();
@@ -130,6 +177,22 @@ export function saveToLocalVault(account: PersistentAccount): void {
     }
     vault[account.id] = account;
     safeStorage.setItem(VAULT_KEY, JSON.stringify(vault));
+
+    saveLocalRegisteredUser({
+      id: account.id,
+      name: account.name,
+      email: account.email,
+      phone: account.phone,
+      role: account.role,
+      plan: account.plan,
+      status: account.status,
+      emailVerified: true,
+      preferredLanguage: account.preferredLanguage,
+      preferredCurrency: account.preferredCurrency,
+      createdAt: account.createdAt,
+      updatedAt: account.updatedAt,
+    });
+    broadcastAccountChange(account);
   } catch (err) {
     console.warn('Could not save to local vault:', err);
   }
@@ -435,6 +498,21 @@ export const DEFAULT_SYSTEM_USERS: User[] = [
     createdAt: '2026-09-09T01:55:01.773Z',
     updatedAt: '2026-09-09T01:55:01.773Z',
   },
+  {
+    id: 'usr-toxic-001',
+    name: 'Toxic',
+    email: 'tesi@tesi.com',
+    phone: '01711122233',
+    role: 'user',
+    preferredLanguage: 'en',
+    preferredCurrency: 'BDT',
+    plan: 'free',
+    status: 'active',
+    emailVerified: true,
+    avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+    createdAt: '2026-09-09T01:50:00.000Z',
+    updatedAt: '2026-09-09T02:30:00.000Z',
+  },
 ];
 
 export async function seedDefaultUsersToFirestore(): Promise<void> {
@@ -504,8 +582,15 @@ export async function fetchAllUsersFromFirestore(): Promise<User[]> {
     if (cleanPhone) phoneToId.set(cleanPhone, canonicalId);
   };
 
-  // 1. Read accounts from local vault immediately
+  // 1. Read accounts from local vault and local registered users immediately
   try {
+    const registeredList = getLocalRegisteredUsers();
+    for (const u of registeredList) {
+      if (u && (u.email || u.name || u.phone || u.id)) {
+        registerOrMergeUser(u);
+      }
+    }
+
     const vault = getLocalVault();
     for (const acc of Object.values(vault)) {
       if (acc && (acc.email || acc.name || acc.phone || acc.id)) {
@@ -525,15 +610,15 @@ export async function fetchAllUsersFromFirestore(): Promise<User[]> {
       }
     }
   } catch (err) {
-    console.warn('Error reading local vault in fetchAllUsersFromFirestore:', err);
+    console.warn('Error reading local vault/registered users in fetchAllUsersFromFirestore:', err);
   }
 
-  // 2. Add default system users (only Owner Admin) as baseline
+  // 2. Add default system users as baseline
   for (const u of DEFAULT_SYSTEM_USERS) {
     registerOrMergeUser(u);
   }
 
-  // 2. Query Firestore collections and backend in parallel with 2500ms safety timeout
+  // 3. Query Firestore collections and backend in parallel with 3000ms safety timeout
   const runParallelFetches = async () => {
     try {
       const [usersSnapResult, accSnapResult, backendUsersResult] = await Promise.allSettled([
@@ -597,7 +682,7 @@ export async function fetchAllUsersFromFirestore(): Promise<User[]> {
     }
   };
 
-  await withTimeout(runParallelFetches(), 8000, undefined);
+  await withTimeout(runParallelFetches(), 3000, undefined);
 
   return Array.from(usersById.values());
 }
@@ -609,18 +694,52 @@ export function subscribeToFirestoreUsers(
   seedDefaultUsersToFirestore().catch(() => {});
   fetchAllUsersFromFirestore().then(onUpdate).catch(() => {});
 
+  let unsubFirestore = () => {};
   try {
-    const unsub = onSnapshot(collection(firestore, 'users'), async () => {
+    unsubFirestore = onSnapshot(collection(firestore, 'users'), async () => {
       const freshUsers = await fetchAllUsersFromFirestore();
       onUpdate(freshUsers);
     }, (err) => {
       console.warn('Firestore users subscription listener error:', err);
     });
-    return unsub;
   } catch (err) {
     console.warn('Could not setup onSnapshot for Firestore users:', err);
-    return () => {};
   }
+
+  // Cross-tab real-time sync listeners
+  let bc: BroadcastChannel | null = null;
+  const handleBcMessage = (event: MessageEvent) => {
+    if (event.data?.type === 'ACCOUNT_UPDATED' || event.data?.type === 'USER_REGISTERED') {
+      fetchAllUsersFromFirestore().then(onUpdate).catch(() => {});
+    }
+  };
+
+  const handleStorageEvent = (event: StorageEvent) => {
+    if (event.key === 'hk_last_account_event' || event.key === REGISTERED_USERS_STORAGE_KEY || event.key === VAULT_KEY) {
+      fetchAllUsersFromFirestore().then(onUpdate).catch(() => {});
+    }
+  };
+
+  if (typeof window !== 'undefined') {
+    if ('BroadcastChannel' in window) {
+      bc = new BroadcastChannel('hk_accounts_channel');
+      bc.addEventListener('message', handleBcMessage);
+    }
+    window.addEventListener('storage', handleStorageEvent);
+  }
+
+  return () => {
+    try { unsubFirestore(); } catch {}
+    if (bc) {
+      try {
+        bc.removeEventListener('message', handleBcMessage);
+        bc.close();
+      } catch {}
+    }
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('storage', handleStorageEvent);
+    }
+  };
 }
 
 export async function deleteUserFromFirestore(

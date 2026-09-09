@@ -36,21 +36,13 @@ export function getApiBase(): string {
   const hostname = (window.location.hostname || '').toLowerCase();
   const protocol = window.location.protocol;
 
-  // External static-only hosts without integrated Node.js server (e.g. cPanel, file://, custom domains)
-  const isExternalStaticHost =
-    protocol === 'file:' ||
-    hostname.includes('hishabkhata.site') ||
-    hostname.includes('site.je') ||
-    hostname.includes('000webhost') ||
-    hostname.includes('infinityfree') ||
-    hostname.includes('github.io');
-
-  if (isExternalStaticHost) {
+  // file: protocol or local files without web server
+  if (protocol === 'file:') {
     return CLOUD_RUN_API_BASE;
   }
 
-  // In all normal contexts (AI Studio preview, Google Cloud Run, localhost, iframe embeds),
-  // always use relative '/api' for instantaneous 0ms local container routing
+  // In standard web environments (AI Studio, Cloud Run, Vercel, localhost, custom domains),
+  // always use relative '/api' so local serverless/container routes handle requests seamlessly
   return '/api';
 }
 

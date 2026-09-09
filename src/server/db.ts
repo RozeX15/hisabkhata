@@ -320,9 +320,25 @@ function getSeedData(): DatabaseSchema {
       createdAt: '2026-09-09T01:55:01.773Z',
       updatedAt: '2026-09-09T01:55:01.773Z',
     },
+    {
+      id: 'usr-toxic-001',
+      name: 'Toxic',
+      email: 'tesi@tesi.com',
+      phone: '01711122233',
+      role: 'user',
+      preferredLanguage: 'en',
+      preferredCurrency: 'BDT',
+      plan: 'free',
+      status: 'active',
+      emailVerified: true,
+      avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+      createdAt: '2026-09-09T01:50:00.000Z',
+      updatedAt: '2026-09-09T02:30:00.000Z',
+    },
   ];
 
   const passwordHashes: Record<string, string> = {
+    'usr-toxic-001': '$2b$10$hr95veiEYdDaL4nXtALyf.Hp240EJ3pm/WevQBf3qlyehykA3dhQm',
     'admin-sultan-001': '$2b$10$0L03uYW3cB1rLXrR7RAmi.BsahqpSC21Gd2i6r7Sw1g/CHmxeXD8e',
     'admin-system-002': '$2b$10$sfL.7zo0urI1UUnlB0//8e8HY1xG9i6lLg9dzhqgr6x7BqGDRrc/y',
     'usr-1788594159081': '$2b$10$W5FlHuSN8XKNNCu13fllseSEFYCfXRFVTjmYB.C41m4bx7NjvuMlu',

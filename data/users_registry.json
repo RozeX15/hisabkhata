@@ -12,7 +12,7 @@
       "emailVerified": true,
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "createdAt": "2026-09-03T06:43:20.562Z",
-      "updatedAt": "2026-09-06T10:10:46.430Z"
+      "updatedAt": "2026-09-09T02:42:43.733Z"
     },
     {
       "id": "usr-1788594159081",
@@ -107,19 +107,6 @@
       "updatedAt": "2026-09-06T10:15:00.190Z"
     },
     {
-      "id": "admin-system-002",
-      "name": "admin",
-      "email": "admin@hishabkhata.com",
-      "role": "admin",
-      "plan": "pro",
-      "status": "active",
-      "preferredCurrency": "BDT",
-      "preferredLanguage": "en",
-      "emailVerified": true,
-      "createdAt": "2026-09-09T01:39:31.988Z",
-      "updatedAt": "2026-09-09T01:39:31.988Z"
-    },
-    {
       "id": "usr-1788918044261",
       "name": "Rahim Test",
       "email": "rahimtest1788918044171@gmail.com",
@@ -157,10 +144,25 @@
       "emailVerified": true,
       "createdAt": "2026-09-09T01:55:01.773Z",
       "updatedAt": "2026-09-09T01:55:01.773Z"
+    },
+    {
+      "id": "usr-toxic-001",
+      "name": "Toxic",
+      "email": "tesi@tesi.com",
+      "phone": "01711122233",
+      "role": "user",
+      "preferredLanguage": "en",
+      "preferredCurrency": "BDT",
+      "plan": "free",
+      "status": "active",
+      "emailVerified": true,
+      "avatarUrl": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80",
+      "createdAt": "2026-09-09T01:50:00.000Z",
+      "updatedAt": "2026-09-09T02:30:00.000Z"
     }
   ],
   "passwordHashes": {
-    "admin-sultan-001": "$2b$10$0L03uYW3cB1rLXrR7RAmi.BsahqpSC21Gd2i6r7Sw1g/CHmxeXD8e",
+    "admin-sultan-001": "$2b$10$SpSJG4CP.w4c1UHflqPrN.Lt72.8EgR/vA1Xto1tdAFz.QdnFc966",
     "usr-1788594159081": "$2b$10$W5FlHuSN8XKNNCu13fllseSEFYCfXRFVTjmYB.C41m4bx7NjvuMlu",
     "usr-1788599633823": "$2b$10$Encq1V3DZ.zt6Oc2ph0VC.lf54LdSDWBrL1rK9rTWZYsNCRJ4j/XO",
     "usr-1788600863223": "$2b$10$mB2gCRzzZ/XBr.O5XokTXulaEyDSsH4LAwAZZ.2H2wHf6FCI0q63a",
@@ -171,7 +173,8 @@
     "usr-1788689700190": "$2b$10$UFUMV23BGlNQOxEVi.Ijb.Net7bugqV9yoro0Tv5KNJMrV6vHzqPm",
     "usr-1788918044261": "$2b$10$TBpoIkj1WVDliTu7yHIOV.cTqK8/7Xc4YxWdFMwUuaD64lf4a1E42",
     "usr-1788918378314": "$2b$10$S4.X7dgYaKRtSOnrX80itOvK3QqhN5Fj75ChZIp51K9HK06NQzmUm",
-    "usr-1788918901773": "$2b$10$hr95veiEYdDaL4nXtALyf.Hp240EJ3pm/WevQBf3qlyehykA3dhQm"
+    "usr-1788918901773": "$2b$10$hr95veiEYdDaL4nXtALyf.Hp240EJ3pm/WevQBf3qlyehykA3dhQm",
+    "usr-toxic-001": "$2b$10$hr95veiEYdDaL4nXtALyf.Hp240EJ3pm/WevQBf3qlyehykA3dhQm"
   },
-  "updatedAt": "2026-09-09T01:57:54.740Z"
+  "updatedAt": "2026-09-09T02:42:43.909Z"
 }

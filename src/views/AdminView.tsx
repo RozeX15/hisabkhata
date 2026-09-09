@@ -324,7 +324,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
     // Live real-time stream directly from Firebase Firestore users collection
     const unsubscribeUsers = subscribeToFirestoreUsers((freshFirestoreUsers) => {
       if (freshFirestoreUsers && freshFirestoreUsers.length > 0) {
-        setUsers(freshFirestoreUsers);
+        mergeAndSetUsers(freshFirestoreUsers);
       }
     });
 
@@ -1134,7 +1134,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
               </span>
             </div>
             <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5 font-medium flex items-center gap-2 flex-wrap">
-              <span>Firestore Project: <span className="font-mono font-bold text-slate-900 dark:text-slate-100">pelagic-nebula-7jk7s</span></span>
+              <span>Firestore Project: <span className="font-mono font-bold text-slate-900 dark:text-slate-100">{firebaseConfigData.projectId || 'hishabkhata-ef99b'}</span></span>
               <span>•</span>
               <span>Production Domain: <a href="https://hishabkhata-olive.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-teal-600 dark:text-teal-400 font-mono font-bold hover:underline">hishabkhata-olive.vercel.app</a></span>
             </p>
