@@ -23,6 +23,7 @@ import {
 import { generateSmartInsights } from '../lib/insights';
 import { evaluateFinancialHealth } from '../lib/financialHealth';
 import { analyzeUserIncome } from '../lib/incomeAnalysis';
+import { analyzeUserExpenses } from '../lib/expenseAnalysis';
 import { GoogleGenAI } from '@google/genai';
 import {
   sendAdminSubscriptionNotification,
@@ -1966,10 +1967,11 @@ router.post('/ai/advisor', authMiddleware, async (req: AuthRequest, res) => {
   const userLang = req.user!.preferredLanguage || 'en';
   const userQuestion = (question || '').trim();
 
-  // Evaluate comprehensive financial health & income analysis
+  // Evaluate comprehensive financial health, income analysis & expense analysis
   const health = evaluateFinancialHealth(userWallets, userTransactions, userBudgets as any, userLoans, preferredCurrency);
   const userCategories = (db.categories || []).filter(c => !c.userId || c.userId === userId);
   const incomeAnalysis = analyzeUserIncome(userTransactions, userCategories);
+  const expenseAnalysis = analyzeUserExpenses(userTransactions, userCategories);
 
   // Detect Bengali in question or preferences
   const isBengali = /[\u0980-\u09FF]/.test(userQuestion) || userLang === 'bn';
@@ -2001,6 +2003,14 @@ USER REAL FINANCIAL DATA:
   * Recurring Monthly Inflow (Verified): ${preferredCurrency} ${incomeAnalysis.recurringTotalMonthly.toLocaleString()} (${incomeAnalysis.recurringPercentage}% of total)
   * Month-over-Month Growth: ${incomeAnalysis.momGrowthPercent}%
   * Next Month Inflow Forecast (Estimate): ${preferredCurrency} ${incomeAnalysis.simpleForecastNextMonth.projectedAmount.toLocaleString()}
+- Advanced Expense Analysis & Spending Behavior:
+  * Top Spending Channels: ${expenseAnalysis.topCategories.slice(0, 4).map(c => `${c.categoryName}: ${preferredCurrency} ${c.totalAmount.toLocaleString()} (${c.percentage}%)`).join(', ') || 'None'}
+  * Daily Burn Rate: ${preferredCurrency} ${expenseAnalysis.dailySpending.currentMonthDailyAverage.toLocaleString()}/day
+  * MoM Outflow Velocity: ${expenseAnalysis.momDirection === 'no_prior_data' ? 'Base Month' : `${expenseAnalysis.momGrowthPercent > 0 ? '+' : ''}${expenseAnalysis.momGrowthPercent}% (${preferredCurrency} ${expenseAnalysis.momDelta >= 0 ? '+' : ''}${expenseAnalysis.momDelta.toLocaleString()})`}
+  * Fixed vs Variable Outflows: ${expenseAnalysis.fixedVsVariable.fixedPercentage}% Fixed / ${expenseAnalysis.fixedVsVariable.variablePercentage}% Variable (${expenseAnalysis.fixedVsVariable.fixedRatioLabel})
+  * Where Is Money Going: ${expenseAnalysis.whereIsMoneyGoing.headline} (Needs: ${expenseAnalysis.whereIsMoneyGoing.needsVsWants.needsPercentage}%, Wants: ${expenseAnalysis.whereIsMoneyGoing.needsVsWants.wantsPercentage}%)
+  * Next Month Outflow Projection (Estimate): ${expenseAnalysis.nextMonthEstimate.hasSufficientData ? `${preferredCurrency} ${expenseAnalysis.nextMonthEstimate.projectedExpense.toLocaleString()} (Floor: ${preferredCurrency} ${expenseAnalysis.nextMonthEstimate.baselineFloor.toLocaleString()})` : 'Insufficient Data'}
+  * High-Spending Outliers: ${expenseAnalysis.unusualSpikes.length > 0 ? `${expenseAnalysis.unusualSpikes.length} flagged transaction(s)` : 'None detected'}
 - Total Logged Transactions: ${userTransactions.length}
 - Recent Transactions: ${recentTransactions.map(t => `${t.date}: ${t.type.toUpperCase()} ${preferredCurrency} ${Number(t.amount) || 0} (${t.description || t.categoryId || 'General'})`).join('; ') || 'No transactions logged yet'}
 - Active Savings Goals: ${userGoals.map(g => `${g.name}: ${preferredCurrency} ${(Number(g.currentAmount) || 0).toLocaleString()} / ${preferredCurrency} ${(Number(g.targetAmount) || 0).toLocaleString()} (${Math.round(((Number(g.currentAmount) || 0) / (Number(g.targetAmount) || 1)) * 100)}%)`).join(', ') || 'No active goals'}

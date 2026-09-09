@@ -34,7 +34,8 @@ import {
   Filter,
   Layers,
   ChevronDown,
-  Receipt
+  Receipt,
+  ArrowRight
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -559,6 +560,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </span>
             )}
           </div>
+          {onNavigate && (
+            <button
+              id="dashboard-goto-income-analysis"
+              type="button"
+              onClick={() => onNavigate('reports_income')}
+              className="mt-2.5 w-full py-1 px-2.5 rounded-xl bg-teal-50 hover:bg-teal-100 dark:bg-teal-950/40 dark:hover:bg-teal-900/60 text-teal-700 dark:text-teal-300 text-[10px] font-bold transition flex items-center justify-between cursor-pointer border border-teal-200/50 dark:border-teal-900/40"
+            >
+              <span className="flex items-center gap-1.5">
+                <Sparkles className="w-3 h-3 text-teal-600" />
+                Advanced Income Analysis
+              </span>
+              <ArrowRight className="w-3 h-3 text-teal-600" />
+            </button>
+          )}
         </div>
 
         {/* Selected Period Expenses */}
@@ -607,6 +622,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </span>
             )}
           </div>
+          {onNavigate && (
+            <button
+              id="dashboard-goto-expense-analysis"
+              type="button"
+              onClick={() => onNavigate('reports_expense')}
+              className="mt-2.5 w-full py-1 px-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 text-[10px] font-bold transition flex items-center justify-between cursor-pointer border border-rose-200/50 dark:border-rose-900/40"
+            >
+              <span className="flex items-center gap-1.5">
+                <Sparkles className="w-3 h-3 text-rose-600" />
+                Advanced Expense Analysis
+              </span>
+              <ArrowRight className="w-3 h-3 text-rose-600" />
+            </button>
+          )}
         </div>
 
         {/* Selected Period Net Cashflow / Savings */}

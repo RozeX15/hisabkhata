@@ -4,6 +4,7 @@ import { Transaction, Wallet, Category, DashboardSummary } from '../types';
 import { formatCurrency } from '../lib/currencies';
 import { exportToPDF, exportToExcel, exportToCSV } from '../lib/exportUtils';
 import { AdvancedIncomeAnalysis } from '../components/AdvancedIncomeAnalysis';
+import { AdvancedExpenseAnalysis } from '../components/AdvancedExpenseAnalysis';
 import {
   BarChart3,
   FileSpreadsheet,
@@ -39,6 +40,8 @@ interface ReportsViewProps {
   userName: string;
   userPlan?: string;
   onOpenUpgrade?: () => void;
+  initialTab?: 'statement' | 'income_analysis' | 'expense_analysis';
+  onOpenAddExpense?: () => void;
 }
 
 export const ReportsView: React.FC<ReportsViewProps> = ({
@@ -50,10 +53,18 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
   userName,
   userPlan = 'free',
   onOpenUpgrade,
+  initialTab = 'statement',
+  onOpenAddExpense,
 }) => {
   const { t } = useI18n();
-  const [viewMode, setViewMode] = useState<'statement' | 'income_analysis'>('statement');
+  const [viewMode, setViewMode] = useState<'statement' | 'income_analysis' | 'expense_analysis'>(initialTab);
   const [reportPeriod, setReportPeriod] = useState<'all' | '30days' | '90days'>('all');
+
+  React.useEffect(() => {
+    if (initialTab) {
+      setViewMode(initialTab);
+    }
+  }, [initialTab]);
 
   const now = new Date();
   const filteredTxs = transactions.filter((tx) => {
@@ -123,9 +134,33 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
             PRO
           </span>
         </button>
+
+        <button
+          id="reports-tab-expense-analysis"
+          type="button"
+          onClick={() => setViewMode('expense_analysis')}
+          className={`px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-2 cursor-pointer ${
+            viewMode === 'expense_analysis'
+              ? 'bg-white dark:bg-slate-800 text-rose-600 dark:text-rose-400 shadow-xs'
+              : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+          }`}
+        >
+          <TrendingDown className="w-4 h-4 text-rose-500" />
+          <span>Advanced Expense Analysis</span>
+          <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300">
+            PRO
+          </span>
+        </button>
       </div>
 
-      {viewMode === 'income_analysis' ? (
+      {viewMode === 'expense_analysis' ? (
+        <AdvancedExpenseAnalysis
+          transactions={transactions}
+          categories={categories}
+          currency={currency}
+          onOpenAddExpense={onOpenAddExpense}
+        />
+      ) : viewMode === 'income_analysis' ? (
         <AdvancedIncomeAnalysis
           transactions={transactions}
           categories={categories}

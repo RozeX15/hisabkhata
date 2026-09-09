@@ -128,7 +128,23 @@ const MainAppContent: React.FC = () => {
     }
   };
 
+  const [reportsInitialTab, setReportsInitialTab] = useState<'statement' | 'income_analysis' | 'expense_analysis'>('statement');
+
   const handleNavigate = (view: string) => {
+    if (view === 'reports_expense') {
+      setReportsInitialTab('expense_analysis');
+      setLastNonLegalView('reports');
+      setActiveView('reports');
+      scrollToTop();
+      return;
+    }
+    if (view === 'reports_income') {
+      setReportsInitialTab('income_analysis');
+      setLastNonLegalView('reports');
+      setActiveView('reports');
+      scrollToTop();
+      return;
+    }
     if (view !== 'legal') {
       setLastNonLegalView(view);
     }
@@ -1111,6 +1127,12 @@ const MainAppContent: React.FC = () => {
                 userName={user.name}
                 userPlan={user.plan}
                 onOpenUpgrade={() => setIsUpgradeModalOpen(true)}
+                initialTab={reportsInitialTab}
+                onOpenAddExpense={() => {
+                  setEditingTx(null);
+                  setTxModalInitialType('expense');
+                  setIsTxModalOpen(true);
+                }}
               />
             </React.Suspense>
           )}
