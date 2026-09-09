@@ -48,12 +48,21 @@ import { BudgetsView } from './views/BudgetsView';
 import { SavingsGoalsView } from './views/SavingsGoalsView';
 import { LoansView } from './views/LoansView';
 import { SmartInsightsView } from './views/SmartInsightsView';
-import { ReportsView } from './views/ReportsView';
 import { NotificationsView } from './views/NotificationsView';
 import { SettingsView } from './views/SettingsView';
-import { AdminView } from './views/AdminView';
 import { SuggestionsView } from './views/SuggestionsView';
-import { LegalViews } from './views/LegalViews';
+
+// Code-split heavy views to reduce initial bundle size and speed up page load
+const AdminView = React.lazy(() => import('./views/AdminView').then(m => ({ default: m.AdminView })));
+const ReportsView = React.lazy(() => import('./views/ReportsView').then(m => ({ default: m.ReportsView })));
+const LegalViews = React.lazy(() => import('./views/LegalViews').then(m => ({ default: m.LegalViews })));
+
+const ViewLoadingFallback: React.FC<{ label?: string }> = ({ label = 'Loading...' }) => (
+  <div className="py-20 flex flex-col items-center justify-center gap-3 text-teal-600">
+    <div className="w-8 h-8 border-3 border-teal-500/20 border-t-teal-600 rounded-full animate-spin" />
+    <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{label}</span>
+  </div>
+);
 
 const MainAppContent: React.FC = () => {
   const { user, token, logout, loginWithGoogle, loginSultanAdmin } = useAuth();
@@ -65,6 +74,24 @@ const MainAppContent: React.FC = () => {
       sessionStorage.removeItem('hk_chunk_reload_lock');
     } catch {
       /* ignore */
+    }
+  }, []);
+
+  // Preload AdminView immediately in the background if user has admin privileges
+  useEffect(() => {
+    if (user?.role === 'admin' || user?.email === 'sultanitbangladesh@gmail.com') {
+      import('./views/AdminView');
+    }
+  }, [user?.role, user?.email]);
+
+  // Preload secondary views during browser idle periods
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const timer = setTimeout(() => {
+        import('./views/ReportsView');
+        import('./views/LegalViews');
+      }, 1500);
+      return () => clearTimeout(timer);
     }
   }, []);
 
@@ -481,12 +508,14 @@ const MainAppContent: React.FC = () => {
   if (!user || !token) {
     if (activeView === 'legal') {
       return (
-        <LegalViews
-          type={legalType}
-          isAuthenticated={false}
-          onBack={() => setActiveView('landing')}
-          onSelectType={(t) => setLegalType(t)}
-        />
+        <React.Suspense fallback={<ViewLoadingFallback label="Loading document..." />}>
+          <LegalViews
+            type={legalType}
+            isAuthenticated={false}
+            onBack={() => setActiveView('landing')}
+            onSelectType={(t) => setLegalType(t)}
+          />
+        </React.Suspense>
       );
     }
 
@@ -1072,16 +1101,18 @@ const MainAppContent: React.FC = () => {
           )}
 
           {activeView === 'reports' && (
-            <ReportsView
-              summary={summary}
-              transactions={transactions}
-              wallets={wallets}
-              categories={categories}
-              currency={currency}
-              userName={user.name}
-              userPlan={user.plan}
-              onOpenUpgrade={() => setIsUpgradeModalOpen(true)}
-            />
+            <React.Suspense fallback={<ViewLoadingFallback label="Loading reports..." />}>
+              <ReportsView
+                summary={summary}
+                transactions={transactions}
+                wallets={wallets}
+                categories={categories}
+                currency={currency}
+                userName={user.name}
+                userPlan={user.plan}
+                onOpenUpgrade={() => setIsUpgradeModalOpen(true)}
+              />
+            </React.Suspense>
           )}
 
           {activeView === 'notifications' && (
@@ -1116,16 +1147,20 @@ const MainAppContent: React.FC = () => {
           )}
 
           {activeView === 'admin' && user.role === 'admin' && (
-            <AdminView onNavigate={handleNavigate} />
+            <React.Suspense fallback={<ViewLoadingFallback label="Loading Admin Suite..." />}>
+              <AdminView onNavigate={handleNavigate} />
+            </React.Suspense>
           )}
 
           {activeView === 'legal' && (
-            <LegalViews
-              type={legalType}
-              isAuthenticated={true}
-              onBack={() => handleNavigate(lastNonLegalView || 'dashboard')}
-              onSelectType={(t) => setLegalType(t)}
-            />
+            <React.Suspense fallback={<ViewLoadingFallback label="Loading document..." />}>
+              <LegalViews
+                type={legalType}
+                isAuthenticated={true}
+                onBack={() => handleNavigate(lastNonLegalView || 'dashboard')}
+                onSelectType={(t) => setLegalType(t)}
+              />
+            </React.Suspense>
           )}
 
           {/* Unified App Footer for both user and admin view */}

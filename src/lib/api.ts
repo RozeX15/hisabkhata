@@ -41,9 +41,20 @@ export function getApiBase(): string {
     return CLOUD_RUN_API_BASE;
   }
 
-  // In standard web environments (AI Studio, Cloud Run, Vercel, localhost, custom domains),
-  // always use relative '/api' so local serverless/container routes handle requests seamlessly
-  return '/api';
+  // If running on local dev (localhost, 127.0.0.1) or on Cloud Run container (run.app) or port 3000,
+  // use relative '/api'
+  if (
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1' ||
+    hostname.includes('.run.app') ||
+    window.location.port === '3000'
+  ) {
+    return '/api';
+  }
+
+  // In static hosting environments (e.g. hishabkhata.site.je, InfinityFree, cPanel htdocs, Netlify/Vercel static)
+  // where there is no local Express backend listening on /api, route directly to Cloud Run API base
+  return CLOUD_RUN_API_BASE;
 }
 
 export function getAuthToken(): string | null {

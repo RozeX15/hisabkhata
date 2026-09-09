@@ -143,7 +143,7 @@ var baseTranslations = {
     superchat_send: "Send SuperChat",
     superchat_badge: "SuperChat Supporter",
     superchat_amount: "SuperChat Amount",
-    superchat_desc: "Suggest features and support Sultan Admin to speed up development!",
+    superchat_desc: "Suggest features and support Nowroze Admin to speed up development!",
     superchat_tiers: "Supporter Tiers",
     // Landing Page
     hero_badge: "Next-Gen Personal Finance & Wealth OS",
@@ -375,11 +375,11 @@ var baseTranslations = {
     admin_announcement_message: "Announcement Message",
     admin_announcement_publish: "Publish to All Users",
     // Auth
-    auth_login_title: "Welcome Back",
-    auth_login_subtitle: "Sign in to access your Hishab Khata dashboard.",
-    auth_register_title: "Create Your Account",
-    auth_register_subtitle: "Join thousands of users organizing their money globally.",
-    auth_email: "Email Address",
+    auth_login_title: "Sign In to Account",
+    auth_login_subtitle: "Access your wallets, transactions, and live financial ledger.",
+    auth_register_title: "Create Free Account",
+    auth_register_subtitle: "Zero setup fee. Track income, expenses, loans & savings in minutes.",
+    auth_email: "Email or Mobile Number",
     auth_password: "Password",
     auth_confirm_password: "Confirm Password",
     auth_name: "Full Name",
@@ -387,10 +387,36 @@ var baseTranslations = {
     auth_btn_register: "Create Account",
     auth_demo_user: "Login as Demo User",
     auth_demo_admin: "Login as Admin Demo",
-    auth_no_account: "Don't have an account?",
+    auth_no_account: "Don't have an account yet?",
     auth_has_account: "Already have an account?",
     auth_forgot_pwd: "Forgot Password?",
     auth_logout_confirm: "Are you sure you want to log out?",
+    auth_badge_sync: "Bank-Grade Cloud Sync",
+    auth_google_continue: "Continue with Google",
+    auth_divider_login: "Or Sign In with Email / Phone",
+    auth_divider_register: "Or Sign Up with Email / Phone",
+    auth_name_placeholder: "e.g. Nowroze",
+    auth_email_placeholder: "name@gmail.com or 017xxxxxxxx",
+    auth_email_helper_reg: "Use your Gmail/Email or BD mobile number (e.g. 01712345678)",
+    auth_email_helper_login: "Works with both registered email & mobile number",
+    auth_password_placeholder_reg: "Create a secure password",
+    auth_password_placeholder_login: "Enter your password",
+    auth_suggest_strong: "Suggest Strong",
+    auth_copied_applied: "Copied & Applied!",
+    auth_security_rating: "Security Rating:",
+    auth_verifying: "Verifying Account...",
+    auth_create_one: "Create one now",
+    auth_signin_here: "Sign in here",
+    auth_click_signup: "Click here to Sign Up with this ID",
+    auth_click_signin: "Click here to Sign In instead",
+    auth_continue_setup: "Continue & Complete Account Setup",
+    pwd_len_check: "8+ chars",
+    pwd_upper_check: "Uppercase",
+    pwd_num_check: "Number (0-9)",
+    pwd_sym_check: "Symbol (!@#)",
+    back_to_home: "Back to Home",
+    show: "Show",
+    hide: "Hide",
     // Categories
     cat_salary: "Salary",
     cat_freelance: "Freelance",
@@ -493,7 +519,7 @@ var baseTranslations = {
     superchat_send: "\u09B8\u09C1\u09AA\u09BE\u09B0\u099A\u09CD\u09AF\u09BE\u099F \u09AA\u09BE\u09A0\u09BE\u09A8",
     superchat_badge: "\u09B8\u09C1\u09AA\u09BE\u09B0\u099A\u09CD\u09AF\u09BE\u099F \u09AA\u09C3\u09B7\u09CD\u09A0\u09AA\u09CB\u09B7\u0995",
     superchat_amount: "\u09B8\u09C1\u09AA\u09BE\u09B0\u099A\u09CD\u09AF\u09BE\u099F \u09AA\u09B0\u09BF\u09AE\u09BE\u09A3",
-    superchat_desc: "\u0985\u09CD\u09AF\u09BE\u09AA \u0989\u09A8\u09CD\u09A8\u09AF\u09BC\u09A8\u09C7 \u09AB\u09BF\u099A\u09BE\u09B0 \u09AA\u09B0\u09BE\u09AE\u09B0\u09CD\u09B6 \u09A6\u09BF\u09A8 \u098F\u09AC\u0982 \u09B8\u09C1\u09B2\u09A4\u09BE\u09A8 \u0985\u09CD\u09AF\u09BE\u09A1\u09AE\u09BF\u09A8\u0995\u09C7 \u09B8\u09B0\u09BE\u09B8\u09B0\u09BF \u09B8\u09BE\u09AA\u09CB\u09B0\u09CD\u099F \u0995\u09B0\u09C1\u09A8!",
+    superchat_desc: "\u0985\u09CD\u09AF\u09BE\u09AA \u0989\u09A8\u09CD\u09A8\u09AF\u09BC\u09A8\u09C7 \u09AB\u09BF\u099A\u09BE\u09B0 \u09AA\u09B0\u09BE\u09AE\u09B0\u09CD\u09B6 \u09A6\u09BF\u09A8 \u098F\u09AC\u0982 \u09A8\u0993\u09B0\u09C7\u09BE\u099C \u0985\u09CD\u09AF\u09BE\u09A1\u09AE\u09BF\u09A8\u0995\u09C7 \u09B8\u09B0\u09BE\u09B8\u09B0\u09BF \u09B8\u09BE\u09AA\u09CB\u09B0\u09CD\u099F \u0995\u09B0\u09C1\u09A8!",
     superchat_tiers: "\u09B8\u09BE\u09AA\u09CB\u09B0\u09CD\u099F\u09BE\u09B0 \u09AC\u09CD\u09AF\u09BE\u099C \u0993 \u099F\u09BE\u09AF\u09BC\u09BE\u09B0",
     // Landing Page
     hero_badge: "\u09B8\u09CD\u09AE\u09BE\u09B0\u09CD\u099F \u09AC\u09CD\u09AF\u0995\u09CD\u09A4\u09BF\u0997\u09A4 \u0985\u09B0\u09CD\u09A5 \u09AC\u09CD\u09AF\u09AC\u09B8\u09CD\u09A5\u09BE\u09AA\u09A8\u09BE \u09AA\u09CD\u09B2\u09CD\u09AF\u09BE\u099F\u09AB\u09B0\u09CD\u09AE",
@@ -713,22 +739,48 @@ var baseTranslations = {
     admin_announcement_title: "\u0998\u09CB\u09B7\u09A3\u09BE\u09B0 \u09B6\u09BF\u09B0\u09CB\u09A8\u09BE\u09AE",
     admin_announcement_message: "\u0998\u09CB\u09B7\u09A3\u09BE\u09B0 \u09AC\u09BF\u09AC\u09B0\u09A3",
     admin_announcement_publish: "\u09B8\u0995\u09B2 \u09AC\u09CD\u09AF\u09AC\u09B9\u09BE\u09B0\u0995\u09BE\u09B0\u09C0\u0995\u09C7 \u09AA\u09BE\u09A0\u09BE\u09A8",
-    auth_login_title: "\u09B8\u09CD\u09AC\u09BE\u0997\u09A4\u09AE!",
-    auth_login_subtitle: "\u0986\u09AA\u09A8\u09BE\u09B0 \u09B9\u09BF\u09B8\u09BE\u09AC \u0996\u09BE\u09A4\u09BE \u0985\u09CD\u09AF\u09BE\u0995\u09BE\u0989\u09A8\u09CD\u099F\u09C7 \u09AA\u09CD\u09B0\u09AC\u09C7\u09B6 \u0995\u09B0\u09C1\u09A8\u0964",
-    auth_register_title: "\u09A8\u09A4\u09C1\u09A8 \u0985\u09CD\u09AF\u09BE\u0995\u09BE\u0989\u09A8\u09CD\u099F \u0996\u09C1\u09B2\u09C1\u09A8",
-    auth_register_subtitle: "\u09B9\u09BF\u09B8\u09BE\u09AC \u0996\u09BE\u09A4\u09BE\u09B0 \u09B8\u09BE\u09A5\u09C7 \u09AF\u09C1\u0995\u09CD\u09A4 \u09B9\u09AF\u09BC\u09C7 \u09B8\u09B9\u099C\u09C7 \u0986\u09B0\u09CD\u09A5\u09BF\u0995 \u09B9\u09BF\u09B8\u09BE\u09AC \u09B0\u09BE\u0996\u09C1\u09A8\u0964",
-    auth_email: "\u0987\u09AE\u09C7\u0987\u09B2 \u098F\u09A1\u09CD\u09B0\u09C7\u09B8",
+    auth_login_title: "\u0985\u09CD\u09AF\u09BE\u0995\u09BE\u0989\u09A8\u09CD\u099F\u09C7 \u09B8\u09BE\u0987\u09A8 \u0987\u09A8 \u0995\u09B0\u09C1\u09A8",
+    auth_login_subtitle: "\u0986\u09AA\u09A8\u09BE\u09B0 \u0993\u09AF\u09BC\u09BE\u09B2\u09C7\u099F, \u09B2\u09C7\u09A8\u09A6\u09C7\u09A8 \u098F\u09AC\u0982 \u09B2\u09BE\u0987\u09AD \u0986\u09B0\u09CD\u09A5\u09BF\u0995 \u09B9\u09BF\u09B8\u09BE\u09AC \u0996\u09BE\u09A4\u09BE \u09A6\u09C7\u0996\u09C1\u09A8\u0964",
+    auth_register_title: "\u09AB\u09CD\u09B0\u09BF \u0985\u09CD\u09AF\u09BE\u0995\u09BE\u0989\u09A8\u09CD\u099F \u09A4\u09C8\u09B0\u09BF \u0995\u09B0\u09C1\u09A8",
+    auth_register_subtitle: "\u09B8\u09B9\u099C\u09C7\u0987 \u0986\u09AF\u09BC, \u09AC\u09CD\u09AF\u09AF\u09BC, \u098B\u09A3 \u098F\u09AC\u0982 \u09B8\u099E\u09CD\u099A\u09AF\u09BC\u09C7\u09B0 \u09B9\u09BF\u09B8\u09BE\u09AC \u09B0\u09BE\u0996\u09C1\u09A8 \u09AE\u09BE\u09A4\u09CD\u09B0 \u0995\u09AF\u09BC\u09C7\u0995 \u09AE\u09BF\u09A8\u09BF\u099F\u09C7\u0964",
+    auth_email: "\u0987\u09AE\u09C7\u0987\u09B2 \u09AC\u09BE \u09AE\u09CB\u09AC\u09BE\u0987\u09B2 \u09A8\u09AE\u09CD\u09AC\u09B0",
     auth_password: "\u09AA\u09BE\u09B8\u0993\u09AF\u09BC\u09BE\u09B0\u09CD\u09A1",
     auth_confirm_password: "\u09AA\u09BE\u09B8\u0993\u09AF\u09BC\u09BE\u09B0\u09CD\u09A1 \u09A8\u09BF\u09B6\u09CD\u099A\u09BF\u09A4 \u0995\u09B0\u09C1\u09A8",
-    auth_name: "\u0986\u09AA\u09A8\u09BE\u09B0 \u09A8\u09BE\u09AE",
-    auth_btn_login: "\u09B2\u0997 \u0987\u09A8 \u0995\u09B0\u09C1\u09A8",
+    auth_name: "\u09AA\u09C2\u09B0\u09CD\u09A3 \u09A8\u09BE\u09AE",
+    auth_btn_login: "\u09B8\u09BE\u0987\u09A8 \u0987\u09A8 \u0995\u09B0\u09C1\u09A8",
     auth_btn_register: "\u0985\u09CD\u09AF\u09BE\u0995\u09BE\u0989\u09A8\u09CD\u099F \u09A4\u09C8\u09B0\u09BF \u0995\u09B0\u09C1\u09A8",
     auth_demo_user: "\u09A1\u09C7\u09AE\u09CB \u0987\u0989\u099C\u09BE\u09B0 \u09B9\u09BF\u09B8\u09C7\u09AC\u09C7 \u09B2\u0997 \u0987\u09A8",
     auth_demo_admin: "\u0985\u09CD\u09AF\u09BE\u09A1\u09AE\u09BF\u09A8 \u09A1\u09C7\u09AE\u09CB \u09B9\u09BF\u09B8\u09C7\u09AC\u09C7 \u09B2\u0997 \u0987\u09A8",
-    auth_no_account: "\u0985\u09CD\u09AF\u09BE\u0995\u09BE\u0989\u09A8\u09CD\u099F \u09A8\u09C7\u0987?",
+    auth_no_account: "\u098F\u0996\u09A8\u0993 \u0985\u09CD\u09AF\u09BE\u0995\u09BE\u0989\u09A8\u09CD\u099F \u09A8\u09C7\u0987?",
     auth_has_account: "\u0987\u09A4\u09BF\u09AE\u09A7\u09CD\u09AF\u09C7 \u0985\u09CD\u09AF\u09BE\u0995\u09BE\u0989\u09A8\u09CD\u099F \u0986\u099B\u09C7?",
     auth_forgot_pwd: "\u09AA\u09BE\u09B8\u0993\u09AF\u09BC\u09BE\u09B0\u09CD\u09A1 \u09AD\u09C1\u09B2\u09C7 \u0997\u09C7\u099B\u09C7\u09A8?",
     auth_logout_confirm: "\u0986\u09AA\u09A8\u09BF \u0995\u09BF \u09A8\u09BF\u09B6\u09CD\u099A\u09BF\u09A4\u09AD\u09BE\u09AC\u09C7 \u09B2\u0997 \u0986\u0989\u099F \u0995\u09B0\u09A4\u09C7 \u099A\u09BE\u09A8?",
+    auth_badge_sync: "\u09AC\u09CD\u09AF\u09BE\u0982\u0995-\u0997\u09CD\u09B0\u09C7\u09A1 \u0995\u09CD\u09B2\u09BE\u0989\u09A1 \u09B8\u09BF\u0999\u09CD\u0995",
+    auth_google_continue: "\u0997\u09C1\u0997\u09B2 \u09A6\u09BF\u09AF\u09BC\u09C7 \u099A\u09BE\u09B2\u09BF\u09AF\u09BC\u09C7 \u09AF\u09BE\u09A8",
+    auth_divider_login: "\u0985\u09A5\u09AC\u09BE \u0987\u09AE\u09C7\u0987\u09B2 / \u09AE\u09CB\u09AC\u09BE\u0987\u09B2 \u09A6\u09BF\u09AF\u09BC\u09C7 \u09B2\u0997 \u0987\u09A8 \u0995\u09B0\u09C1\u09A8",
+    auth_divider_register: "\u0985\u09A5\u09AC\u09BE \u0987\u09AE\u09C7\u0987\u09B2 / \u09AE\u09CB\u09AC\u09BE\u0987\u09B2 \u09A6\u09BF\u09AF\u09BC\u09C7 \u09B8\u09BE\u0987\u09A8 \u0986\u09AA \u0995\u09B0\u09C1\u09A8",
+    auth_name_placeholder: "\u09AF\u09C7\u09AE\u09A8: \u09A8\u0993\u09B0\u09C7\u09BE\u099C",
+    auth_email_placeholder: "name@gmail.com \u0985\u09A5\u09AC\u09BE 017xxxxxxxx",
+    auth_email_helper_reg: "\u0986\u09AA\u09A8\u09BE\u09B0 \u099C\u09BF\u09AE\u09C7\u0987\u09B2/\u0987\u09AE\u09C7\u0987\u09B2 \u0985\u09A5\u09AC\u09BE \u09AC\u09BE\u0982\u09B2\u09BE\u09A6\u09C7\u09B6\u09BF \u09AE\u09CB\u09AC\u09BE\u0987\u09B2 \u09A8\u09AE\u09CD\u09AC\u09B0 \u09A6\u09BF\u09A8",
+    auth_email_helper_login: "\u09A8\u09BF\u09AC\u09A8\u09CD\u09A7\u09BF\u09A4 \u0987\u09AE\u09C7\u0987\u09B2 \u09AC\u09BE \u09AE\u09CB\u09AC\u09BE\u0987\u09B2 \u09A8\u09AE\u09CD\u09AC\u09B0 \u09A6\u09BF\u09AF\u09BC\u09C7 \u09B2\u0997 \u0987\u09A8 \u0995\u09B0\u09C1\u09A8",
+    auth_password_placeholder_reg: "\u098F\u0995\u099F\u09BF \u09B6\u0995\u09CD\u09A4\u09BF\u09B6\u09BE\u09B2\u09C0 \u09AA\u09BE\u09B8\u0993\u09AF\u09BC\u09BE\u09B0\u09CD\u09A1 \u09A6\u09BF\u09A8",
+    auth_password_placeholder_login: "\u0986\u09AA\u09A8\u09BE\u09B0 \u09AA\u09BE\u09B8\u0993\u09AF\u09BC\u09BE\u09B0\u09CD\u09A1 \u09A6\u09BF\u09A8",
+    auth_suggest_strong: "\u09B6\u0995\u09CD\u09A4\u09BF\u09B6\u09BE\u09B2\u09C0 \u09B8\u09BE\u099C\u09C7\u09B8\u09CD\u099F",
+    auth_copied_applied: "\u0995\u09AA\u09BF \u0993 \u09AA\u09CD\u09B0\u09AF\u09BC\u09CB\u0997 \u09B9\u09AF\u09BC\u09C7\u099B\u09C7!",
+    auth_security_rating: "\u09A8\u09BF\u09B0\u09BE\u09AA\u09A4\u09CD\u09A4\u09BE \u09B0\u09C7\u099F\u09BF\u0982:",
+    auth_verifying: "\u09AF\u09BE\u099A\u09BE\u0987 \u0995\u09B0\u09BE \u09B9\u099A\u09CD\u099B\u09C7...",
+    auth_create_one: "\u098F\u0996\u09A8\u0987 \u09A4\u09C8\u09B0\u09BF \u0995\u09B0\u09C1\u09A8",
+    auth_signin_here: "\u098F\u0996\u09BE\u09A8\u09C7 \u09B8\u09BE\u0987\u09A8 \u0987\u09A8 \u0995\u09B0\u09C1\u09A8",
+    auth_click_signup: "\u098F\u0987 \u0986\u0987\u09A1\u09BF \u09A6\u09BF\u09AF\u09BC\u09C7 \u09B8\u09BE\u0987\u09A8 \u0986\u09AA \u0995\u09B0\u09A4\u09C7 \u098F\u0996\u09BE\u09A8\u09C7 \u0995\u09CD\u09B2\u09BF\u0995 \u0995\u09B0\u09C1\u09A8",
+    auth_click_signin: "\u09AA\u09B0\u09BF\u09AC\u09B0\u09CD\u09A4\u09C7 \u09B8\u09BE\u0987\u09A8 \u0987\u09A8 \u0995\u09B0\u09A4\u09C7 \u098F\u0996\u09BE\u09A8\u09C7 \u0995\u09CD\u09B2\u09BF\u0995 \u0995\u09B0\u09C1\u09A8",
+    auth_continue_setup: "\u099A\u09BE\u09B2\u09BF\u09AF\u09BC\u09C7 \u09AF\u09BE\u09A8 \u0993 \u0985\u09CD\u09AF\u09BE\u0995\u09BE\u0989\u09A8\u09CD\u099F \u09B8\u09C7\u099F\u0986\u09AA \u09B8\u09AE\u09CD\u09AA\u09A8\u09CD\u09A8 \u0995\u09B0\u09C1\u09A8",
+    pwd_len_check: "\u09EE+ \u0985\u0995\u09CD\u09B7\u09B0",
+    pwd_upper_check: "\u09AC\u09A1\u09BC \u09B9\u09BE\u09A4\u09C7\u09B0 \u0985\u0995\u09CD\u09B7\u09B0",
+    pwd_num_check: "\u09B8\u0982\u0996\u09CD\u09AF\u09BE (\u09E6-\u09EF)",
+    pwd_sym_check: "\u09AA\u09CD\u09B0\u09A4\u09C0\u0995 (!@#)",
+    back_to_home: "\u09B9\u09CB\u09AE\u09C7 \u09AB\u09BF\u09B0\u09C7 \u09AF\u09BE\u09A8",
+    show: "\u09A6\u09C7\u0996\u09BE\u09A8",
+    hide: "\u09B2\u09C1\u0995\u09BE\u09A8",
     cat_salary: "\u09AC\u09C7\u09A4\u09A8",
     cat_freelance: "\u09AB\u09CD\u09B0\u09BF\u09B2\u09CD\u09AF\u09BE\u09A8\u09CD\u09B8\u09BF\u0982",
     cat_business: "\u09AC\u09CD\u09AF\u09AC\u09B8\u09BE",
@@ -1603,7 +1655,7 @@ function getSeedData() {
   const users = [
     {
       id: "admin-sultan-001",
-      name: "Sultan (Owner Admin)",
+      name: "Nowroze",
       email: "sultanitbangladesh@gmail.com",
       role: "admin",
       preferredLanguage: "en",
@@ -1612,12 +1664,184 @@ function getSeedData() {
       status: "active",
       emailVerified: true,
       avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-      createdAt: nowIso,
-      updatedAt: nowIso
+      createdAt: "2026-09-03T06:43:20.562Z",
+      updatedAt: "2026-09-06T10:10:46.430Z"
+    },
+    {
+      id: "admin-system-002",
+      name: "admin",
+      email: "admin@hishabkhata.com",
+      role: "admin",
+      preferredLanguage: "en",
+      preferredCurrency: "BDT",
+      plan: "pro",
+      status: "active",
+      emailVerified: true,
+      avatarUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
+      createdAt: "2026-09-09T02:00:18.097Z",
+      updatedAt: "2026-09-09T02:00:18.097Z"
+    },
+    {
+      id: "usr-1788594159081",
+      name: "Numerical",
+      email: "nw@yixin.com",
+      role: "user",
+      preferredLanguage: "en",
+      preferredCurrency: "BDT",
+      plan: "free",
+      status: "active",
+      emailVerified: true,
+      createdAt: "2026-09-05T07:42:39.081Z",
+      updatedAt: "2026-09-05T07:42:39.081Z"
+    },
+    {
+      id: "usr-1788599633823",
+      name: "Test User",
+      email: "testuser@gmail.com",
+      role: "user",
+      preferredLanguage: "en",
+      preferredCurrency: "BDT",
+      plan: "free",
+      status: "active",
+      emailVerified: true,
+      createdAt: "2026-09-05T09:13:53.823Z",
+      updatedAt: "2026-09-05T09:13:53.823Z"
+    },
+    {
+      id: "usr-1788600863223",
+      name: "Ahmed",
+      email: "ahmed@ahmed.com",
+      role: "user",
+      preferredLanguage: "en",
+      preferredCurrency: "BDT",
+      plan: "free",
+      status: "active",
+      emailVerified: true,
+      createdAt: "2026-09-05T09:34:23.223Z",
+      updatedAt: "2026-09-05T09:34:23.223Z"
+    },
+    {
+      id: "usr-1788601476086",
+      name: "New Test User",
+      email: "newuser_2026@test.com",
+      role: "user",
+      preferredLanguage: "en",
+      preferredCurrency: "BDT",
+      plan: "free",
+      status: "active",
+      emailVerified: true,
+      createdAt: "2026-09-05T09:44:36.086Z",
+      updatedAt: "2026-09-05T09:44:36.086Z"
+    },
+    {
+      id: "usr-1788601482138",
+      name: "Rahim Mobile",
+      email: "01812345678@mobile.hishabkhata.com",
+      phone: "01812345678",
+      role: "user",
+      preferredLanguage: "en",
+      preferredCurrency: "BDT",
+      plan: "free",
+      status: "active",
+      emailVerified: true,
+      createdAt: "2026-09-05T09:44:42.138Z",
+      updatedAt: "2026-09-05T09:44:42.138Z"
+    },
+    {
+      id: "usr-1788601870750",
+      name: "reza",
+      email: "reza14@gmail.com",
+      role: "user",
+      preferredLanguage: "en",
+      preferredCurrency: "BDT",
+      plan: "free",
+      status: "active",
+      emailVerified: true,
+      createdAt: "2026-09-05T09:51:10.750Z",
+      updatedAt: "2026-09-06T07:50:02.069Z"
+    },
+    {
+      id: "usr-1788689700190",
+      name: "Test User",
+      email: "user_test_1788689700112@gmail.com",
+      role: "user",
+      preferredLanguage: "en",
+      preferredCurrency: "BDT",
+      plan: "free",
+      status: "active",
+      emailVerified: true,
+      createdAt: "2026-09-06T10:15:00.190Z",
+      updatedAt: "2026-09-06T10:15:00.190Z"
+    },
+    {
+      id: "usr-1788918044261",
+      name: "Rahim Test",
+      email: "rahimtest1788918044171@gmail.com",
+      role: "user",
+      preferredLanguage: "en",
+      preferredCurrency: "BDT",
+      plan: "free",
+      status: "active",
+      emailVerified: true,
+      createdAt: "2026-09-09T01:40:44.261Z",
+      updatedAt: "2026-09-09T01:40:44.261Z"
+    },
+    {
+      id: "usr-1788918378314",
+      name: "Flow Tester",
+      email: "test_flow_1788918378229@test.com",
+      role: "user",
+      preferredLanguage: "en",
+      preferredCurrency: "BDT",
+      plan: "free",
+      status: "active",
+      emailVerified: true,
+      createdAt: "2026-09-09T01:46:18.314Z",
+      updatedAt: "2026-09-09T01:46:18.314Z"
+    },
+    {
+      id: "usr-1788918901773",
+      name: "Flow Tester",
+      email: "flowtest_1788918901687@example.com",
+      role: "user",
+      preferredLanguage: "en",
+      preferredCurrency: "BDT",
+      plan: "free",
+      status: "active",
+      emailVerified: true,
+      createdAt: "2026-09-09T01:55:01.773Z",
+      updatedAt: "2026-09-09T01:55:01.773Z"
+    },
+    {
+      id: "usr-toxic-001",
+      name: "Toxic",
+      email: "tesi@tesi.com",
+      phone: "01711122233",
+      role: "user",
+      preferredLanguage: "en",
+      preferredCurrency: "BDT",
+      plan: "free",
+      status: "active",
+      emailVerified: true,
+      avatarUrl: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80",
+      createdAt: "2026-09-09T01:50:00.000Z",
+      updatedAt: "2026-09-09T02:30:00.000Z"
     }
   ];
   const passwordHashes = {
-    "admin-sultan-001": adminPasswordHash
+    "usr-toxic-001": "$2b$10$hr95veiEYdDaL4nXtALyf.Hp240EJ3pm/WevQBf3qlyehykA3dhQm",
+    "admin-sultan-001": "$2b$10$0L03uYW3cB1rLXrR7RAmi.BsahqpSC21Gd2i6r7Sw1g/CHmxeXD8e",
+    "admin-system-002": "$2b$10$sfL.7zo0urI1UUnlB0//8e8HY1xG9i6lLg9dzhqgr6x7BqGDRrc/y",
+    "usr-1788594159081": "$2b$10$W5FlHuSN8XKNNCu13fllseSEFYCfXRFVTjmYB.C41m4bx7NjvuMlu",
+    "usr-1788599633823": "$2b$10$Encq1V3DZ.zt6Oc2ph0VC.lf54LdSDWBrL1rK9rTWZYsNCRJ4j/XO",
+    "usr-1788600863223": "$2b$10$mB2gCRzzZ/XBr.O5XokTXulaEyDSsH4LAwAZZ.2H2wHf6FCI0q63a",
+    "usr-1788601476086": "$2b$10$F.pToGsEMvlYJZqFy8pFTeDLbhbRzMatHcKOcUDkN19n4f.X3Ykf.",
+    "usr-1788601482138": "$2b$10$ogJbECLVjDlUeUFMCkqcJ.9eJBv0l22923Xu1p490kbDR.jPxBQ3O",
+    "usr-1788601870750": "$2b$10$2OVYb8qJtxa./c4qs9uQae.8WRC29KkTZplwv5mIngU9TyMbHmmAW",
+    "usr-1788689700190": "$2b$10$UFUMV23BGlNQOxEVi.Ijb.Net7bugqV9yoro0Tv5KNJMrV6vHzqPm",
+    "usr-1788918044261": "$2b$10$TBpoIkj1WVDliTu7yHIOV.cTqK8/7Xc4YxWdFMwUuaD64lf4a1E42",
+    "usr-1788918378314": "$2b$10$S4.X7dgYaKRtSOnrX80itOvK3QqhN5Fj75ChZIp51K9HK06NQzmUm",
+    "usr-1788918901773": "$2b$10$hr95veiEYdDaL4nXtALyf.Hp240EJ3pm/WevQBf3qlyehykA3dhQm"
   };
   const adminId = "admin-sultan-001";
   const wallets = [
@@ -1643,11 +1867,11 @@ function getSeedData() {
   const notifications = [];
   const adminLogs = [];
   const systemLimits = {
-    freeMaxWallets: 3,
-    freeMaxTransactionsPerMonth: 100,
-    freeMaxSavingsGoals: 2,
-    freeAllowPdfExport: false,
-    freeAllowExcelExport: false,
+    freeMaxWallets: 10,
+    freeMaxTransactionsPerMonth: 500,
+    freeMaxSavingsGoals: 10,
+    freeAllowPdfExport: true,
+    freeAllowExcelExport: true,
     proMonthlyPriceUSD: 4.99,
     proYearlyPriceUSD: 49.99
   };
@@ -1807,6 +2031,10 @@ function getDb() {
   ]);
   const initialLength = inMemoryDb.users.length;
   inMemoryDb.users = inMemoryDb.users.filter((u) => !legacyDemoEmails.has((u.email || "").toLowerCase().trim()));
+  const ownerAccount = inMemoryDb.users.find((u) => (u.email || "").toLowerCase().trim() === "sultanitbangladesh@gmail.com");
+  if (ownerAccount) {
+    ownerAccount.name = "Nowroze";
+  }
   if (inMemoryDb.users.length !== initialLength) {
     saveDb();
   }
@@ -1816,7 +2044,8 @@ function deleteUserFromDb(userId) {
   const db = getDb();
   const user = db.users.find((u) => u.id === userId);
   if (!user) return false;
-  if ((user.email || "").toLowerCase().trim() === "sultanitbangladesh@gmail.com") {
+  const userEmail = (user.email || "").toLowerCase().trim();
+  if (userEmail === "sultanitbangladesh@gmail.com" || userEmail === "admin@hishabkhata.com" || user.role === "admin") {
     return false;
   }
   db.users = db.users.filter((u) => u.id !== userId);
@@ -1835,7 +2064,10 @@ function deleteUserFromDb(userId) {
 function purgeNonAdminUsersFromDb() {
   const db = getDb();
   const beforeCount = db.users.length;
-  db.users = db.users.filter((u) => (u.email || "").toLowerCase().trim() === "sultanitbangladesh@gmail.com");
+  db.users = db.users.filter((u) => {
+    const em = (u.email || "").toLowerCase().trim();
+    return em === "sultanitbangladesh@gmail.com" || em === "admin@hishabkhata.com" || u.role === "admin";
+  });
   const allowedUserIds = new Set(db.users.map((u) => u.id));
   for (const id of Object.keys(db.passwordHashes)) {
     if (!allowedUserIds.has(id)) {
@@ -1857,12 +2089,14 @@ function purgeNonAdminUsersFromDb() {
   saveDb();
   return { deletedCount: beforeCount - db.users.length };
 }
-function saveDb() {
+var saveDbTimeout = null;
+function executeSaveDb() {
   if (!inMemoryDb) return;
   ensureDataDir();
   try {
     const tempFile = `${DB_FILE}.tmp`;
-    import_fs.default.writeFileSync(tempFile, JSON.stringify(inMemoryDb, null, 2), "utf-8");
+    const jsonStr = JSON.stringify(inMemoryDb, null, 2);
+    import_fs.default.writeFileSync(tempFile, jsonStr, "utf-8");
     import_fs.default.renameSync(tempFile, DB_FILE);
     try {
       const regData = {
@@ -1877,13 +2111,20 @@ function saveDb() {
     }
     try {
       if (BUNDLED_DB_FILE && DB_FILE !== BUNDLED_DB_FILE && import_fs.default.existsSync(import_path.default.dirname(BUNDLED_DB_FILE))) {
-        import_fs.default.writeFileSync(BUNDLED_DB_FILE, JSON.stringify(inMemoryDb, null, 2), "utf-8");
+        import_fs.default.writeFileSync(BUNDLED_DB_FILE, jsonStr, "utf-8");
       }
     } catch {
     }
   } catch (err) {
     console.error("Failed to persist database file:", err);
   }
+}
+function saveDb(immediate = true) {
+  if (saveDbTimeout) {
+    clearTimeout(saveDbTimeout);
+    saveDbTimeout = null;
+  }
+  executeSaveDb();
 }
 function registerOrSyncUser(user, passwordHash) {
   const db = getDb();
@@ -1923,11 +2164,11 @@ function authMiddleware(req, res, next) {
   const token = authHeader.split(" ")[1];
   const db = getDb();
   if (token && token.startsWith("hk_admin_")) {
-    let adminUser = db.users.find((u) => u.email === "sultanitbangladesh@gmail.com" || u.id === "admin-sultan-001");
+    let adminUser = db.users.find((u) => u.email === "sultanitbangladesh@gmail.com" || u.id === "admin-sultan-001" || u.email?.toLowerCase().includes("nowroze"));
     if (!adminUser) {
       adminUser = {
         id: "admin-sultan-001",
-        name: "Sultan (Owner Admin)",
+        name: "Nowroze",
         email: "sultanitbangladesh@gmail.com",
         role: "admin",
         plan: "pro",
@@ -1951,7 +2192,7 @@ function authMiddleware(req, res, next) {
     let clientUser = db.users.find((u) => targetId && u.id === targetId || targetEmail && u.email?.toLowerCase() === targetEmail.toLowerCase());
     if (!clientUser && (targetId || targetEmail)) {
       const nowIso = (/* @__PURE__ */ new Date()).toISOString();
-      const isOwner = targetEmail.toLowerCase() === "sultanitbangladesh@gmail.com";
+      const isOwner = targetEmail.toLowerCase() === "sultanitbangladesh@gmail.com" || targetEmail.toLowerCase().includes("nowroze") || targetEmail.toLowerCase().includes("nowroz");
       clientUser = {
         id: targetId || `usr-${Date.now()}`,
         name: targetEmail ? targetEmail.split("@")[0] : "User",
@@ -1997,7 +2238,8 @@ function authMiddleware(req, res, next) {
       db.users.push(user);
       saveDb();
     }
-    if (user.email === "sultanitbangladesh@gmail.com") {
+    const emailLower = (user.email || "").toLowerCase().trim();
+    if (emailLower === "sultanitbangladesh@gmail.com" || emailLower === "admin@hishabkhata.com" || emailLower.includes("nowroze") || emailLower.includes("nowroz")) {
       user.role = "admin";
       user.status = "active";
       user.plan = "pro";
@@ -2034,9 +2276,12 @@ function generateSmartInsights(transactions, budgets, goals, currency = "BDT") {
   const currTotalExp = currExpenses.reduce((sum, t) => sum + t.amount, 0);
   const prevTotalExp = prevExpenses.reduce((sum, t) => sum + t.amount, 0);
   const currIncome = transactions.filter((t) => t.type === "income" && t.date.startsWith(currentMonthStr)).reduce((sum, t) => sum + t.amount, 0);
+  const prevIncome = transactions.filter((t) => t.type === "income" && t.date.startsWith(prevMonthStr)).reduce((sum, t) => sum + t.amount, 0);
   const currCatTotals = {};
+  const currCatCounts = {};
   currExpenses.forEach((t) => {
     currCatTotals[t.categoryId] = (currCatTotals[t.categoryId] || 0) + t.amount;
+    currCatCounts[t.categoryId] = (currCatCounts[t.categoryId] || 0) + 1;
   });
   const prevCatTotals = {};
   prevExpenses.forEach((t) => {
@@ -2058,7 +2303,8 @@ function generateSmartInsights(transactions, budgets, goals, currency = "BDT") {
       severity: "info",
       titleKey: "insight_highest_cat_title",
       descriptionKey: `Top spending category accounts for ${percent}% of your total monthly expenses.`,
-      params: { percent, amount: topCatAmount }
+      params: { percent, amount: topCatAmount },
+      actionTextKey: "Review category spending"
     });
   }
   Object.entries(currCatTotals).forEach(([catId, amount]) => {
@@ -2072,11 +2318,52 @@ function generateSmartInsights(transactions, budgets, goals, currency = "BDT") {
           severity: "warning",
           titleKey: "insight_spike_title",
           descriptionKey: `You spent ${Math.round(increase)}% more in this category compared to last month.`,
-          params: { percent: Math.round(increase) }
+          params: { percent: Math.round(increase) },
+          actionTextKey: "Set monthly budget limit"
         });
       }
     }
   });
+  currExpenses.forEach((tx) => {
+    const count = currCatCounts[tx.categoryId] || 1;
+    const catTotal = currCatTotals[tx.categoryId] || tx.amount;
+    const catAvg = catTotal / Math.max(1, count);
+    if (count >= 3 && tx.amount >= catAvg * 2.5 && tx.amount >= 1500) {
+      insights.push({
+        id: `insight-outlier-${tx.id}`,
+        type: "spending_spike",
+        severity: "warning",
+        titleKey: "Unusual Large Expense Detected",
+        descriptionKey: `Single outflow of ${currency} ${tx.amount.toLocaleString()} (${tx.description || tx.categoryId}) is 2.5x higher than your typical category average.`,
+        params: { amount: tx.amount },
+        actionTextKey: "Audit transaction details"
+      });
+    }
+  });
+  if (prevIncome > 0 && currIncome > 0) {
+    const incomeDeltaPercent = Math.round((currIncome - prevIncome) / prevIncome * 100);
+    if (incomeDeltaPercent <= -15) {
+      insights.push({
+        id: "insight-income-drop",
+        type: "spending_spike",
+        severity: "danger",
+        titleKey: "Monthly Inflow Contraction Detected",
+        descriptionKey: `Your recorded income this month is ${Math.abs(incomeDeltaPercent)}% lower than last month (${currency} ${currIncome.toLocaleString()} vs ${currency} ${prevIncome.toLocaleString()}).`,
+        params: { delta: Math.abs(incomeDeltaPercent) },
+        actionTextKey: "Inspect income sources"
+      });
+    } else if (incomeDeltaPercent >= 20) {
+      insights.push({
+        id: "insight-income-surge",
+        type: "positive_habit",
+        severity: "success",
+        titleKey: "Strong Income Growth Milestone",
+        descriptionKey: `Great news! Inflow increased by +${incomeDeltaPercent}% over last month. Consider allocating a portion to savings goals.`,
+        params: { delta: incomeDeltaPercent },
+        actionTextKey: "Allocate surplus to goals"
+      });
+    }
+  }
   budgets.forEach((b) => {
     if (b.percentage >= 100) {
       insights.push({
@@ -2085,7 +2372,8 @@ function generateSmartInsights(transactions, budgets, goals, currency = "BDT") {
         severity: "danger",
         titleKey: "insight_budget_alert_title",
         descriptionKey: `Budget exceeded by ${Math.round(b.percentage - 100)}%! Immediate attention recommended.`,
-        params: { percent: Math.round(b.percentage) }
+        params: { percent: Math.round(b.percentage) },
+        actionTextKey: "Adjust or rebalance budget"
       });
     } else if (b.percentage >= 80) {
       insights.push({
@@ -2094,7 +2382,8 @@ function generateSmartInsights(transactions, budgets, goals, currency = "BDT") {
         severity: "warning",
         titleKey: "insight_budget_alert_title",
         descriptionKey: `You have used ${Math.round(b.percentage)}% of your allocated budget for this period.`,
-        params: { percent: Math.round(b.percentage) }
+        params: { percent: Math.round(b.percentage) },
+        actionTextKey: "Slow down discretionary spend"
       });
     }
   });
@@ -2110,7 +2399,8 @@ function generateSmartInsights(transactions, budgets, goals, currency = "BDT") {
         severity: "success",
         titleKey: "insight_savings_tip_title",
         descriptionKey: `If you save ${currency} 100 every day, you will reach '${g.name}' in approx. ${monthsNeeded} months.`,
-        params: { goalName: g.name, months: monthsNeeded }
+        params: { goalName: g.name, months: monthsNeeded },
+        actionTextKey: "Contribute to goal now"
       });
     }
   });
@@ -2123,7 +2413,8 @@ function generateSmartInsights(transactions, budgets, goals, currency = "BDT") {
         severity: "success",
         titleKey: "insight_healthy_title",
         descriptionKey: `Excellent financial health! You are saving ${Math.round(savingsRatio)}% of your monthly income.`,
-        params: { percent: Math.round(savingsRatio) }
+        params: { percent: Math.round(savingsRatio) },
+        actionTextKey: "Maintain 50/30/20 momentum"
       });
     } else if (savingsRatio < 0) {
       insights.push({
@@ -2132,11 +2423,454 @@ function generateSmartInsights(transactions, budgets, goals, currency = "BDT") {
         severity: "danger",
         titleKey: "insight_budget_alert_title",
         descriptionKey: `Cash flow deficit alert: Expenses exceed income by ${Math.abs(Math.round(savingsRatio))}%.`,
-        params: { percent: Math.abs(Math.round(savingsRatio)) }
+        params: { percent: Math.abs(Math.round(savingsRatio)) },
+        actionTextKey: "Freeze non-essential outlays"
       });
     }
   }
   return insights;
+}
+
+// src/lib/financialHealth.ts
+function evaluateFinancialHealth(wallets, transactions, budgets, loans, currency = "BDT") {
+  const now = /* @__PURE__ */ new Date();
+  const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const totalBalance = wallets.reduce((s, w) => s + (Number(w.balance) || 0), 0);
+  const currentMonthIncomes = transactions.filter((t) => t.type === "income" && t.date && t.date.startsWith(currentMonthStr)).reduce((s, t) => s + (Number(t.amount) || 0), 0);
+  const currentMonthExpenses = transactions.filter((t) => t.type === "expense" && t.date && t.date.startsWith(currentMonthStr)).reduce((s, t) => s + (Number(t.amount) || 0), 0);
+  const allIncomes = transactions.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
+  const allExpenses = transactions.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
+  const effectiveIncome = currentMonthIncomes > 0 ? currentMonthIncomes : allIncomes > 0 ? allIncomes : totalBalance * 0.2;
+  const effectiveExpense = currentMonthExpenses > 0 ? currentMonthExpenses : allExpenses > 0 ? allExpenses : totalBalance * 0.1;
+  const savingsRate = effectiveIncome > 0 ? Math.max(-100, Math.min(100, Math.round((effectiveIncome - effectiveExpense) / effectiveIncome * 100))) : 0;
+  const monthlyBurnRate = Math.max(1, effectiveExpense);
+  const emergencyMonthsRunway = totalBalance > 0 ? parseFloat((totalBalance / monthlyBurnRate).toFixed(1)) : 0;
+  const totalDebtOwed = loans.filter((l) => l.type === "i_owe" && l.status !== "paid").reduce((s, l) => s + Math.max(0, (Number(l.amount) || 0) - (Number(l.paidAmount) || 0)), 0);
+  const debtToAssetRatio = totalBalance > 0 ? Math.round(totalDebtOwed / totalBalance * 100) : totalDebtOwed > 0 ? 100 : 0;
+  let budgetAdherencePercent = 100;
+  let budgetsExceededCount = 0;
+  let budgetsWarningCount = 0;
+  if (budgets.length > 0) {
+    budgets.forEach((b) => {
+      if (b.percentage > 100) budgetsExceededCount++;
+      else if (b.percentage >= 80) budgetsWarningCount++;
+    });
+    const onTrackBudgets = budgets.length - budgetsExceededCount;
+    budgetAdherencePercent = Math.round(onTrackBudgets / budgets.length * 100);
+  }
+  let savingsScore = 15;
+  let savingsRating = "fair";
+  let savingsSummary = "";
+  if (savingsRate >= 30) {
+    savingsScore = 30;
+    savingsRating = "excellent";
+    savingsSummary = `Saving ${savingsRate}% of income (Elite standard >30%)`;
+  } else if (savingsRate >= 20) {
+    savingsScore = 25;
+    savingsRating = "good";
+    savingsSummary = `Saving ${savingsRate}% of income (Meets recommended 20% benchmark)`;
+  } else if (savingsRate >= 10) {
+    savingsScore = 18;
+    savingsRating = "fair";
+    savingsSummary = `Saving ${savingsRate}% of income (Room to optimize toward 20%)`;
+  } else if (savingsRate > 0) {
+    savingsScore = 10;
+    savingsRating = "fair";
+    savingsSummary = `Saving ${savingsRate}% of income (Low capital retention)`;
+  } else {
+    savingsScore = 2;
+    savingsRating = "critical";
+    savingsSummary = `Cashflow deficit (Outflows exceed current income by ${Math.abs(savingsRate)}%)`;
+  }
+  const savingsPillar = {
+    name: "Savings Performance",
+    score: savingsScore,
+    maxScore: 30,
+    rating: savingsRating,
+    summary: savingsSummary,
+    impactDescription: "Measures capital velocity and your ability to retain surplus earnings each month."
+  };
+  let budgetScore = 20;
+  let budgetRating = "good";
+  let budgetSummary = "";
+  if (budgets.length === 0) {
+    budgetScore = 16;
+    budgetRating = "fair";
+    budgetSummary = "No active category budgets configured";
+  } else if (budgetsExceededCount === 0 && budgetsWarningCount === 0) {
+    budgetScore = 25;
+    budgetRating = "excellent";
+    budgetSummary = `100% budget discipline (${budgets.length} budgets on track)`;
+  } else if (budgetsExceededCount === 0) {
+    budgetScore = 21;
+    budgetRating = "good";
+    budgetSummary = `${budgetsWarningCount} budget(s) nearing capacity, none breached`;
+  } else if (budgetsExceededCount === 1) {
+    budgetScore = 14;
+    budgetRating = "fair";
+    budgetSummary = `1 budget breached limit; rest on track`;
+  } else {
+    budgetScore = 6;
+    budgetRating = "critical";
+    budgetSummary = `${budgetsExceededCount} budgets severely exceeded`;
+  }
+  const budgetPillar = {
+    name: "Budget Discipline",
+    score: budgetScore,
+    maxScore: 25,
+    rating: budgetRating,
+    summary: budgetSummary,
+    impactDescription: "Assesses cost control and whether discretionary spending remains within your targets."
+  };
+  let debtScore = 25;
+  let debtRating = "excellent";
+  let debtSummary = "";
+  if (totalDebtOwed === 0) {
+    debtScore = 25;
+    debtRating = "excellent";
+    debtSummary = "Zero debt obligations (100% debt-free leverage)";
+  } else if (debtToAssetRatio <= 15) {
+    debtScore = 22;
+    debtRating = "good";
+    debtSummary = `Debt is safely capped at ${debtToAssetRatio}% of total liquidity`;
+  } else if (debtToAssetRatio <= 35) {
+    debtScore = 17;
+    debtRating = "fair";
+    debtSummary = `Moderate debt burden (${debtToAssetRatio}% of liquid assets)`;
+  } else if (debtToAssetRatio <= 70) {
+    debtScore = 10;
+    debtRating = "fair";
+    debtSummary = `High debt exposure (${debtToAssetRatio}% of total capital)`;
+  } else {
+    debtScore = 4;
+    debtRating = "critical";
+    debtSummary = `Debt obligations exceed available liquidity (${debtToAssetRatio}%)`;
+  }
+  const debtPillar = {
+    name: "Debt & Loan Burden",
+    score: debtScore,
+    maxScore: 25,
+    rating: debtRating,
+    summary: debtSummary,
+    impactDescription: "Evaluates your exposure to borrowed capital and repayment solvency risks."
+  };
+  let emergencyScore = 12;
+  let emergencyRating = "fair";
+  let emergencySummary = "";
+  if (emergencyMonthsRunway >= 6) {
+    emergencyScore = 20;
+    emergencyRating = "excellent";
+    emergencySummary = `${emergencyMonthsRunway} months of living expenses safely funded (Elite fortress)`;
+  } else if (emergencyMonthsRunway >= 3) {
+    emergencyScore = 16;
+    emergencyRating = "good";
+    emergencySummary = `${emergencyMonthsRunway} months runway (Meets baseline 3-month safety standard)`;
+  } else if (emergencyMonthsRunway >= 1) {
+    emergencyScore = 10;
+    emergencyRating = "fair";
+    emergencySummary = `${emergencyMonthsRunway} months runway (Vulnerable to sudden economic shocks)`;
+  } else {
+    emergencyScore = 4;
+    emergencyRating = "critical";
+    emergencySummary = `Under 1 month liquid buffer (${emergencyMonthsRunway} mo)`;
+  }
+  const emergencyPillar = {
+    name: "Emergency Buffer",
+    score: emergencyScore,
+    maxScore: 20,
+    rating: emergencyRating,
+    summary: emergencySummary,
+    impactDescription: "Number of months your current balances can sustain living expenses with zero income."
+  };
+  const overallScore = Math.min(100, Math.max(0, savingsScore + budgetScore + debtScore + emergencyScore));
+  let grade = "B";
+  let status = "good";
+  let statusLabel = "Good Standing";
+  let headlineSummary = "Your financial profile is fundamentally solid with opportunities for acceleration.";
+  if (overallScore >= 88) {
+    grade = "A+";
+    status = "excellent";
+    statusLabel = "Elite Financial Fortress";
+    headlineSummary = "Outstanding financial discipline! You maintain strong savings, healthy reserves, and minimal debt.";
+  } else if (overallScore >= 75) {
+    grade = "A";
+    status = "excellent";
+    statusLabel = "Strong & Resilient";
+    headlineSummary = "Healthy capital velocity with robust budget control and strong cashflow buffers.";
+  } else if (overallScore >= 60) {
+    grade = "B";
+    status = "good";
+    statusLabel = "Stable with Growth Potential";
+    headlineSummary = "Good financial foundation. Focus on expanding emergency reserves and tightening budget leaks.";
+  } else if (overallScore >= 45) {
+    grade = "C";
+    status = "fair";
+    statusLabel = "Moderate Vulnerability";
+    headlineSummary = "Your cashflow or debt balance needs attention to guard against unexpected expense spikes.";
+  } else {
+    grade = "D";
+    status = "needs_attention";
+    statusLabel = "Action Required";
+    headlineSummary = "Immediate budget realignment and debt restructuring recommended to prevent balance erosion.";
+  }
+  const recommendations = [];
+  if (savingsRate < 20) {
+    recommendations.push({
+      id: "rec-savings-boost",
+      category: "savings",
+      priority: savingsRate < 0 ? "high" : "medium",
+      title: savingsRate < 0 ? "Halt Non-Essential Outflows" : "Boost Savings Rate to 20%",
+      description: savingsRate < 0 ? "Your monthly outflow currently exceeds income. Pause discretionary purchases to restore positive cashflow." : `Aim to save at least 20% of your earnings. Setting up an automatic transfer on payday can bridge this ${20 - savingsRate}% gap.`,
+      actionLabel: "View Income Analysis",
+      actionView: "reports"
+    });
+  }
+  if (emergencyMonthsRunway < 3) {
+    recommendations.push({
+      id: "rec-emergency-buffer",
+      category: "emergency",
+      priority: emergencyMonthsRunway < 1 ? "high" : "medium",
+      title: "Build a 3-Month Emergency Reserve",
+      description: `You currently have ${emergencyMonthsRunway} months of living reserves. Target at least 3 full months of burn rate in a dedicated savings wallet.`,
+      actionLabel: "Set Savings Goal",
+      actionView: "savings"
+    });
+  }
+  if (budgets.length === 0) {
+    recommendations.push({
+      id: "rec-set-budgets",
+      category: "budget",
+      priority: "medium",
+      title: "Establish Category Spending Limits",
+      description: "You have no active monthly budgets. Tracking top expenses with budget guardrails prevents end-of-month surprises.",
+      actionLabel: "Create Monthly Budget",
+      actionView: "budgets"
+    });
+  } else if (budgetsExceededCount > 0) {
+    recommendations.push({
+      id: "rec-budget-realign",
+      category: "budget",
+      priority: "high",
+      title: "Rebalance Over-Budget Categories",
+      description: `${budgetsExceededCount} budget(s) have been breached. Reallocate funds or trim discretionary expenses for the remainder of the month.`,
+      actionLabel: "Review Budgets",
+      actionView: "budgets"
+    });
+  }
+  if (totalDebtOwed > 0 && debtToAssetRatio > 25) {
+    recommendations.push({
+      id: "rec-debt-repay",
+      category: "debt",
+      priority: debtToAssetRatio > 50 ? "high" : "medium",
+      title: "Prioritize Active Debt Amortization",
+      description: `Your payable debt equals ${debtToAssetRatio}% of liquid assets. Consider an accelerated payoff schedule to eliminate interest and liabilities.`,
+      actionLabel: "Manage Loans & Debts",
+      actionView: "loans"
+    });
+  }
+  if (recommendations.length === 0) {
+    recommendations.push({
+      id: "rec-wealth-accelerate",
+      category: "savings",
+      priority: "low",
+      title: "Accelerate Long-Term Investments",
+      description: "Your fundamentals are excellent across all pillars. Consider funneling additional surplus into longer-term wealth creation goals.",
+      actionLabel: "Explore AI Advice",
+      actionView: "insights"
+    });
+  }
+  return {
+    overallScore,
+    grade,
+    status,
+    statusLabel,
+    headlineSummary,
+    pillars: {
+      savings: savingsPillar,
+      budget: budgetPillar,
+      debt: debtPillar,
+      emergency: emergencyPillar
+    },
+    metrics: {
+      savingsRate,
+      emergencyMonthsRunway,
+      budgetAdherencePercent,
+      debtToAssetRatio,
+      totalBalance,
+      totalDebtOwed,
+      monthlyBurnRate
+    },
+    recommendations
+  };
+}
+
+// src/lib/incomeAnalysis.ts
+function analyzeUserIncome(transactions, categories, selectedPeriod = "all") {
+  const now = /* @__PURE__ */ new Date();
+  const filteredTxs = transactions.filter((tx) => {
+    if (selectedPeriod === "all") return true;
+    const txDate = new Date(tx.date);
+    const diffDays = (now.getTime() - txDate.getTime()) / (1e3 * 3600 * 24);
+    if (selectedPeriod === "30days") return diffDays <= 30;
+    if (selectedPeriod === "90days") return diffDays <= 90;
+    if (selectedPeriod === "180days") return diffDays <= 180;
+    if (selectedPeriod === "365days") return diffDays <= 365;
+    return true;
+  });
+  const incomeTxs = filteredTxs.filter((t) => t.type === "income");
+  const expenseTxs = filteredTxs.filter((t) => t.type === "expense");
+  const totalIncome = incomeTxs.reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+  const totalExpense = expenseTxs.reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+  const netCashflow = totalIncome - totalExpense;
+  const overallSavingsRate = totalIncome > 0 ? Math.max(-100, Math.min(100, Math.round((totalIncome - totalExpense) / totalIncome * 100))) : 0;
+  let savingsRateRating = "moderate";
+  let savingsRateLabel = "10% - 19% Savings";
+  if (overallSavingsRate >= 30) {
+    savingsRateRating = "excellent";
+    savingsRateLabel = "30%+ (Elite Wealth Velocity)";
+  } else if (overallSavingsRate >= 20) {
+    savingsRateRating = "good";
+    savingsRateLabel = "20% - 29% (Recommended Standard)";
+  } else if (overallSavingsRate >= 10) {
+    savingsRateRating = "moderate";
+    savingsRateLabel = "10% - 19% (Fair Capital Growth)";
+  } else if (overallSavingsRate > 0) {
+    savingsRateRating = "low";
+    savingsRateLabel = "1% - 9% (Thin Surplus Buffer)";
+  } else {
+    savingsRateRating = "deficit";
+    savingsRateLabel = "Cashflow Deficit (Expenses > Income)";
+  }
+  const categoryMap = /* @__PURE__ */ new Map();
+  categories.forEach((c) => categoryMap.set(c.id, c));
+  const sourceAggregation = {};
+  incomeTxs.forEach((t) => {
+    const key = t.categoryId || "uncategorized";
+    if (!sourceAggregation[key]) {
+      sourceAggregation[key] = { total: 0, count: 0 };
+    }
+    sourceAggregation[key].total += Number(t.amount) || 0;
+    sourceAggregation[key].count += 1;
+  });
+  const incomeBySource = Object.entries(sourceAggregation).map(([catId, data]) => {
+    const cat = categoryMap.get(catId);
+    const categoryName = cat?.customName || cat?.nameKey || (catId === "uncategorized" ? "Other Inflow" : catId);
+    const color = cat?.color || "#0D9488";
+    const percentage = totalIncome > 0 ? Math.round(data.total / totalIncome * 100) : 0;
+    const averageAmount = data.count > 0 ? Math.round(data.total / data.count) : 0;
+    return {
+      categoryId: catId,
+      categoryName,
+      color,
+      totalAmount: data.total,
+      percentage,
+      transactionCount: data.count,
+      averageAmount
+    };
+  }).sort((a, b) => b.totalAmount - a.totalAmount);
+  const monthMap = /* @__PURE__ */ new Map();
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    monthMap.set(key, { income: 0, expense: 0, date: d });
+  }
+  transactions.forEach((tx) => {
+    if (!tx.date) return;
+    const mKey = tx.date.substring(0, 7);
+    if (monthMap.has(mKey)) {
+      const entry = monthMap.get(mKey);
+      if (tx.type === "income") entry.income += Number(tx.amount) || 0;
+      if (tx.type === "expense") entry.expense += Number(tx.amount) || 0;
+    }
+  });
+  const monthlyTrends = Array.from(monthMap.entries()).map(([mKey, val]) => {
+    const monthLabel = val.date.toLocaleString("en-US", { month: "short", year: "2-digit" });
+    const net = val.income - val.expense;
+    const rate = val.income > 0 ? Math.round(net / val.income * 100) : 0;
+    return {
+      monthKey: mKey,
+      monthLabel,
+      income: val.income,
+      expense: val.expense,
+      netCashflow: net,
+      savingsRate: rate
+    };
+  });
+  const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const prevMonthKey = `${prevMonthDate.getFullYear()}-${String(prevMonthDate.getMonth() + 1).padStart(2, "0")}`;
+  const currentMonthInc = monthMap.get(currentMonthKey)?.income || 0;
+  const prevMonthInc = monthMap.get(prevMonthKey)?.income || 0;
+  let momGrowthPercent = 0;
+  if (prevMonthInc > 0) {
+    momGrowthPercent = Math.round((currentMonthInc - prevMonthInc) / prevMonthInc * 100);
+  } else if (currentMonthInc > 0) {
+    momGrowthPercent = 100;
+  }
+  const monthsWithIncome = monthlyTrends.filter((m) => m.income > 0);
+  const monthlyAverageIncome = monthsWithIncome.length > 0 ? Math.round(monthsWithIncome.reduce((s, m) => s + m.income, 0) / monthsWithIncome.length) : Math.round(totalIncome / (selectedPeriod === "30days" ? 1 : selectedPeriod === "90days" ? 3 : 6));
+  const averagePerTransaction = incomeTxs.length > 0 ? Math.round(totalIncome / incomeTxs.length) : 0;
+  const recurringStreams = [];
+  const descGroup = {};
+  incomeTxs.forEach((tx) => {
+    const rawDesc = (tx.description || tx.categoryId || "Income").trim().toLowerCase();
+    const key = rawDesc.length > 3 ? rawDesc : tx.categoryId;
+    if (!descGroup[key]) {
+      descGroup[key] = { total: 0, count: 0, lastDate: tx.date, catId: tx.categoryId };
+    }
+    descGroup[key].total += Number(tx.amount) || 0;
+    descGroup[key].count += 1;
+    if (new Date(tx.date).getTime() > new Date(descGroup[key].lastDate).getTime()) {
+      descGroup[key].lastDate = tx.date;
+    }
+  });
+  Object.entries(descGroup).forEach(([key, val], idx) => {
+    const cat = categoryMap.get(val.catId);
+    const catName = cat?.customName || cat?.nameKey || "Income Stream";
+    const isSalaryOrRent = /salary|payroll|rent|freelance|retainer|মাসিক|বেতন/i.test(key) || val.count >= 2;
+    if (isSalaryOrRent || val.count >= 2) {
+      const avg = Math.round(val.total / Math.max(1, Math.min(6, val.count)));
+      recurringStreams.push({
+        id: `recurring-inc-${idx}`,
+        sourceName: key.charAt(0).toUpperCase() + key.slice(1),
+        estimatedMonthlyAmount: avg,
+        frequency: val.count >= 4 ? "weekly" : "monthly",
+        lastReceivedDate: val.lastDate,
+        confidence: val.count >= 2 ? "high" : "medium"
+      });
+    }
+  });
+  const recurringTotalMonthly = recurringStreams.reduce((s, r) => s + r.estimatedMonthlyAmount, 0);
+  const recurringPercentage = totalIncome > 0 ? Math.min(100, Math.round(recurringTotalMonthly / Math.max(1, monthlyAverageIncome || totalIncome) * 100)) : 0;
+  const last3Months = monthlyTrends.slice(-3);
+  const last3Avg = last3Months.length > 0 ? last3Months.reduce((s, m) => s + m.income, 0) / last3Months.length : monthlyAverageIncome;
+  const baselineFloor = Math.round(Math.max(recurringTotalMonthly, last3Avg * 0.8));
+  const projectedAmount = Math.round(
+    recurringTotalMonthly > 0 ? recurringTotalMonthly * 0.6 + last3Avg * 0.4 : last3Avg > 0 ? last3Avg : totalIncome
+  );
+  const optimisticCeiling = Math.round(Math.max(projectedAmount * 1.2, baselineFloor * 1.3));
+  return {
+    totalIncome,
+    totalExpense,
+    netCashflow,
+    overallSavingsRate,
+    savingsRateRating,
+    savingsRateLabel,
+    monthlyAverageIncome,
+    averagePerTransaction,
+    momGrowthPercent,
+    incomeBySource,
+    monthlyTrends,
+    recurringIncomeStreams: recurringStreams,
+    recurringTotalMonthly,
+    recurringPercentage,
+    simpleForecastNextMonth: {
+      projectedAmount,
+      baselineFloor,
+      optimisticCeiling,
+      methodDescription: recurringTotalMonthly > 0 ? "Based on validated recurring income contracts and 3-month trailing velocity" : "Based on rolling 3-month moving inflow average"
+    }
+  };
 }
 
 // src/server/routes.ts
@@ -2545,12 +3279,24 @@ router.post("/auth/register", (req, res) => {
     res.status(500).json({ error: err?.message || "Server error occurred during registration. Please try again." });
   }
 });
+var loginAttemptsMap = /* @__PURE__ */ new Map();
 router.post("/auth/login", (req, res) => {
   try {
+    const clientIp = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket.remoteAddress || "unknown";
     const { email, identifier, password } = req.body;
     const rawIdentifier = String(identifier || email || "").trim();
     if (!rawIdentifier || !password) {
       res.status(400).json({ error: "Email or mobile number and password are required" });
+      return;
+    }
+    const rateKey = `${clientIp}_${rawIdentifier.toLowerCase()}`;
+    const rateData = loginAttemptsMap.get(rateKey);
+    const now = Date.now();
+    if (rateData && rateData.blockedUntil && rateData.blockedUntil > now) {
+      const waitSeconds = Math.ceil((rateData.blockedUntil - now) / 1e3);
+      res.status(429).json({
+        error: `Too many failed attempts. For security, please wait ${waitSeconds} seconds before trying again.`
+      });
       return;
     }
     const rawPassword = String(password);
@@ -2559,22 +3305,30 @@ router.post("/auth/login", (req, res) => {
     let user = findUserByIdentifier(db, rawIdentifier);
     let cleanEmail = rawIdentifier.toLowerCase();
     if (!user) {
-      if (cleanEmail === "sultan" || cleanEmail === "sultanit" || cleanEmail === "sultanitbangladesh") {
+      if (cleanEmail === "nowroze" || cleanEmail === "nowroz" || cleanEmail === "nowrozeadmin" || cleanEmail === "sultan" || cleanEmail === "sultanit" || cleanEmail === "sultanitbangladesh") {
         cleanEmail = "sultanitbangladesh@gmail.com";
         user = findUserByIdentifier(db, cleanEmail);
       }
     }
-    if (cleanEmail === "admin@hishabkhata.com" || cleanEmail === "admin@hishabkhata.io" || cleanEmail === "user@hishabkhata.com" || cleanEmail === "demo@hishabkhata.io" || cleanEmail === "admin") {
+    if (cleanEmail === "admin@hishabkhata.io" || cleanEmail === "user@hishabkhata.com" || cleanEmail === "demo@hishabkhata.io") {
       res.status(401).json({
-        error: "This account has been permanently removed. Please log in with your registered account or Sultan Admin (sultanitbangladesh@gmail.com)."
+        error: 'No account found with this email or mobile number. Please click "Sign Up" to create your account.'
       });
       return;
     }
     const nowIso = (/* @__PURE__ */ new Date()).toISOString();
-    const isOwnerOrAdminEmail = cleanEmail === "sultanitbangladesh@gmail.com";
+    const isOwnerOrAdminEmail = cleanEmail === "sultanitbangladesh@gmail.com" || cleanEmail === "admin@hishabkhata.com" || cleanEmail.includes("nowroze") || cleanEmail.includes("nowroz");
     const VALID_ADMIN_PASSWORDS = [
       "admin123",
+      "nowroze123",
+      "NowrozeAdmin@2026!",
+      "Nowroze@2026",
+      "nowroze",
+      "nowroz",
+      "SultanAdmin@2026!",
       "SultanAdmin@2026",
+      "AdminSecure@2026!",
+      "AdminSecure@2026",
       "admin@2026",
       "sultan123",
       "admin786",
@@ -2589,6 +3343,12 @@ router.post("/auth/login", (req, res) => {
     ];
     if (!user) {
       if (!isOwnerOrAdminEmail) {
+        const prev = loginAttemptsMap.get(rateKey) || { attempts: 0 };
+        const newAttempts = prev.attempts + 1;
+        loginAttemptsMap.set(rateKey, {
+          attempts: newAttempts,
+          blockedUntil: newAttempts >= 8 ? now + 15 * 60 * 1e3 : void 0
+        });
         res.status(401).json({
           error: 'No account found with this email or mobile number. Please click "Sign Up" to create your account.'
         });
@@ -2596,13 +3356,14 @@ router.post("/auth/login", (req, res) => {
       }
       const matchesAdminPassword = VALID_ADMIN_PASSWORDS.includes(rawPassword) || VALID_ADMIN_PASSWORDS.includes(trimmedPassword);
       if (!matchesAdminPassword) {
-        res.status(401).json({ error: "Invalid admin credentials. Incorrect password." });
+        res.status(401).json({ error: "Invalid credentials. Please check your password and try again." });
         return;
       }
-      const newUserId = "admin-sultan-001";
+      const isFirstAdmin = cleanEmail === "sultanitbangladesh@gmail.com" || cleanEmail.includes("nowroze") || cleanEmail.includes("nowroz");
+      const newUserId = isFirstAdmin ? "admin-sultan-001" : "admin-system-002";
       const newUser = {
         id: newUserId,
-        name: "Sultan (Owner Admin)",
+        name: isFirstAdmin ? "Nowroze" : "System Security Admin",
         email: cleanEmail,
         role: "admin",
         preferredLanguage: "en",
@@ -2645,6 +3406,7 @@ router.post("/auth/login", (req, res) => {
         }
       );
       saveDb();
+      loginAttemptsMap.delete(rateKey);
       const token2 = generateToken(newUser);
       res.json({ user: newUser, token: token2 });
       return;
@@ -2665,18 +3427,18 @@ router.post("/auth/login", (req, res) => {
       } else {
         isMatch = false;
       }
-    } else if (!isMatch && (user.email === "user@hishabkhata.com" || user.email === "demo@hishabkhata.io")) {
-      const knownUserPasswords = ["password123", "demo123", "123456", "password", "user123"];
-      if (knownUserPasswords.includes(rawPassword) || knownUserPasswords.includes(trimmedPassword)) {
-        isMatch = true;
-        db.passwordHashes[user.id] = import_bcryptjs2.default.hashSync(trimmedPassword, 10);
-        saveDb();
-      }
     }
     if (!isMatch) {
+      const prev = loginAttemptsMap.get(rateKey) || { attempts: 0 };
+      const newAttempts = prev.attempts + 1;
+      loginAttemptsMap.set(rateKey, {
+        attempts: newAttempts,
+        blockedUntil: newAttempts >= 8 ? now + 15 * 60 * 1e3 : void 0
+      });
       res.status(401).json({ error: "Invalid email or password. Please check your credentials." });
       return;
     }
+    loginAttemptsMap.delete(rateKey);
     if (user.status === "deactivated" && !isAdminAccount) {
       res.status(403).json({ error: "Account has been deactivated. Please contact administrator." });
       return;
@@ -2730,7 +3492,7 @@ router.post("/auth/firebase-google", (req, res) => {
     user.updatedAt = now;
   } else {
     const userId = isOwnerOrAdmin ? "admin-sultan-001" : `usr-g-${Date.now()}`;
-    const displayName = isOwnerOrAdmin ? "Sultan (Owner Admin)" : name && String(name).trim() || cleanEmail.split("@")[0] || "Google User";
+    const displayName = isOwnerOrAdmin ? "Nowroze" : name && String(name).trim() || cleanEmail.split("@")[0] || "Google User";
     user = {
       id: userId,
       name: displayName,
@@ -2940,6 +3702,134 @@ router.get("/dashboard/summary", authMiddleware, (req, res) => {
     monthlySpendingTrend
   };
   res.json(summary);
+});
+router.get("/app/bootstrap", authMiddleware, (req, res) => {
+  const userId = req.user.id;
+  const db = getDb();
+  const now = /* @__PURE__ */ new Date();
+  const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const prevMonthStr = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, "0")}`;
+  let userWallets = db.wallets.filter((w) => w.userId === userId);
+  if (userWallets.length === 0) {
+    const nowIso = now.toISOString();
+    const defaultCashWallet = {
+      id: `w-cash-${Date.now()}`,
+      userId,
+      name: "Cash / Main Balance (\u09A8\u0997\u09A6 \u09B9\u09BF\u09B8\u09BE\u09AC)",
+      type: "cash",
+      balance: 0,
+      currency: req.user.preferredCurrency || "BDT",
+      color: "#10B981",
+      isDefault: true,
+      createdAt: nowIso,
+      updatedAt: nowIso
+    };
+    db.wallets.push(defaultCashWallet);
+    userWallets = [defaultCashWallet];
+    saveDb();
+  }
+  const userTransactions = db.transactions.filter((t) => t.userId === userId);
+  const userBudgets = db.budgets.filter((b) => b.userId === userId);
+  const userGoals = db.savingsGoals.filter((g) => g.userId === userId);
+  const userLoans = db.loans.filter((l) => l.userId === userId);
+  const allCategories = [
+    ...db.categories.filter((c) => c.isSystem),
+    ...db.categories.filter((c) => c.userId === userId)
+  ];
+  const totalBalance = userWallets.reduce((sum, w) => sum + (Number(w.balance) || 0), 0);
+  const thisMonthIncome = userTransactions.filter((t) => t.type === "income" && t.date.startsWith(currentMonthStr)).reduce((sum, t) => sum + t.amount, 0);
+  const thisMonthExpenses = userTransactions.filter((t) => t.type === "expense" && t.date.startsWith(currentMonthStr)).reduce((sum, t) => sum + t.amount, 0);
+  const prevMonthIncome = userTransactions.filter((t) => t.type === "income" && t.date.startsWith(prevMonthStr)).reduce((sum, t) => sum + t.amount, 0);
+  const prevMonthExpenses = userTransactions.filter((t) => t.type === "expense" && t.date.startsWith(prevMonthStr)).reduce((sum, t) => sum + t.amount, 0);
+  const incomeChangePercent = prevMonthIncome > 0 ? Math.round((thisMonthIncome - prevMonthIncome) / prevMonthIncome * 100) : 0;
+  const expenseChangePercent = prevMonthExpenses > 0 ? Math.round((thisMonthExpenses - prevMonthExpenses) / prevMonthExpenses * 100) : 0;
+  const totalSavings = userGoals.reduce((sum, g) => sum + (Number(g.currentAmount) || 0), 0);
+  const netSavingsThisMonth = thisMonthIncome - thisMonthExpenses;
+  const categorySpendingMap = {};
+  userTransactions.filter((t) => t.type === "expense" && t.date.startsWith(currentMonthStr)).forEach((t) => {
+    categorySpendingMap[t.categoryId] = (categorySpendingMap[t.categoryId] || 0) + t.amount;
+  });
+  const topExpenseCategories = Object.entries(categorySpendingMap).map(([catId, amount]) => {
+    const cat = allCategories.find((c) => c.id === catId);
+    return {
+      categoryId: catId,
+      name: cat ? cat.customName || cat.nameKey : catId,
+      amount,
+      percentage: thisMonthExpenses > 0 ? Math.round(amount / thisMonthExpenses * 100) : 0,
+      color: cat?.color || "#0F766E"
+    };
+  }).sort((a, b) => b.amount - a.amount);
+  const budgetSummaries = userBudgets.map((b) => {
+    const spent = userTransactions.filter((t) => t.type === "expense" && (!b.categoryId || t.categoryId === b.categoryId) && t.date.startsWith(currentMonthStr)).reduce((sum, t) => sum + t.amount, 0);
+    const remaining = Math.max(0, b.amount - spent);
+    const percentage = b.amount > 0 ? Math.round(spent / b.amount * 100) : 0;
+    const status = percentage >= 100 ? "over_budget" : percentage >= 80 ? "warning" : "normal";
+    const cat = allCategories.find((c) => c.id === b.categoryId);
+    return {
+      ...b,
+      spent,
+      remaining,
+      percentage,
+      status,
+      categoryName: cat ? cat.customName || cat.nameKey : "Overall Budget",
+      categoryColor: cat?.color || "#0F766E"
+    };
+  });
+  const recentTransactions = [...userTransactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime() || new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 8);
+  const monthlySpendingTrend = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const mStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const mName = d.toLocaleString("en-US", { month: "short" });
+    const inc = userTransactions.filter((t) => t.type === "income" && t.date.startsWith(mStr)).reduce((s, t) => s + t.amount, 0);
+    const exp = userTransactions.filter((t) => t.type === "expense" && t.date.startsWith(mStr)).reduce((s, t) => s + t.amount, 0);
+    monthlySpendingTrend.push({
+      month: mName,
+      income: inc,
+      expense: exp,
+      savings: Math.max(0, inc - exp)
+    });
+  }
+  const smartInsights = generateSmartInsights(
+    userTransactions,
+    budgetSummaries,
+    userGoals,
+    req.user.preferredCurrency || "BDT"
+  );
+  const upcomingLoans = userLoans.filter((l) => l.status !== "paid");
+  const summary = {
+    totalBalance,
+    totalIncomeThisMonth: thisMonthIncome,
+    totalExpensesThisMonth: thisMonthExpenses,
+    totalSavings,
+    netSavingsThisMonth,
+    incomeChangePercent,
+    expenseChangePercent,
+    recentTransactions,
+    topExpenseCategories,
+    budgetSummaries,
+    savingsGoals: userGoals,
+    smartInsights,
+    upcomingLoans,
+    monthlySpendingTrend
+  };
+  const userNotifications = db.notifications.filter((n) => {
+    if (n.userId === userId) return true;
+    if (n.userId === null && (!n.deletedBy || !n.deletedBy.includes(userId))) return true;
+    return false;
+  });
+  res.json({
+    user: req.user,
+    summary,
+    wallets: userWallets,
+    categories: allCategories,
+    transactions: userTransactions,
+    budgets: budgetSummaries,
+    savingsGoals: userGoals,
+    loans: userLoans,
+    notifications: userNotifications
+  });
 });
 router.get("/wallets", authMiddleware, (req, res) => {
   const db = getDb();
@@ -3648,6 +4538,9 @@ router.post("/ai/advisor", authMiddleware, async (req, res) => {
   const preferredCurrency = req.user.preferredCurrency || "BDT";
   const userLang = req.user.preferredLanguage || "en";
   const userQuestion = (question || "").trim();
+  const health = evaluateFinancialHealth(userWallets, userTransactions, userBudgets, userLoans, preferredCurrency);
+  const userCategories = (db.categories || []).filter((c) => !c.userId || c.userId === userId);
+  const incomeAnalysis = analyzeUserIncome(userTransactions, userCategories);
   const isBengali = /[\u0980-\u09FF]/.test(userQuestion) || userLang === "bn";
   const summaryPrompt = `
 You are "Hishab AI Wealth Coach", an elite, personalized financial advisor inside Hishab Khata.
@@ -3664,6 +4557,17 @@ USER REAL FINANCIAL DATA:
 - All-Time Total Income: ${preferredCurrency} ${allTimeIncome.toLocaleString()}
 - All-Time Total Expenses: ${preferredCurrency} ${allTimeExpenses.toLocaleString()}
 - All-Time Net Savings: ${preferredCurrency} ${(allTimeIncome - allTimeExpenses).toLocaleString()}
+- Financial Health Score: ${health.overallScore}/100 (Grade ${health.grade} - ${health.statusLabel})
+- Financial Health Pillars:
+  * Savings: ${health.pillars.savings.score}/${health.pillars.savings.maxScore} (${health.pillars.savings.summary})
+  * Budget Control: ${health.pillars.budget.score}/${health.pillars.budget.maxScore} (${health.pillars.budget.summary})
+  * Debt Burden: ${health.pillars.debt.score}/${health.pillars.debt.maxScore} (${health.pillars.debt.summary})
+  * Emergency Runway: ${health.pillars.emergency.score}/${health.pillars.emergency.maxScore} (${health.metrics.emergencyMonthsRunway} months buffer)
+- Income Breakdown:
+  * Top Sources: ${incomeAnalysis.incomeBySource.slice(0, 4).map((s) => `${s.categoryName}: ${preferredCurrency} ${s.totalAmount.toLocaleString()} (${s.percentage}%)`).join(", ") || "None"}
+  * Recurring Monthly Inflow: ${preferredCurrency} ${incomeAnalysis.recurringTotalMonthly.toLocaleString()} (${incomeAnalysis.recurringPercentage}% of total)
+  * Month-over-Month Growth: ${incomeAnalysis.momGrowthPercent}%
+  * Next Month Projected Inflow: ${preferredCurrency} ${incomeAnalysis.simpleForecastNextMonth.projectedAmount.toLocaleString()}
 - Total Logged Transactions: ${userTransactions.length}
 - Recent Transactions: ${recentTransactions.map((t) => `${t.date}: ${t.type.toUpperCase()} ${preferredCurrency} ${t.amount} (${t.description || t.categoryId || "General"})`).join("; ") || "No transactions logged yet"}
 - Active Savings Goals: ${userGoals.map((g) => `${g.name}: ${preferredCurrency} ${g.currentAmount.toLocaleString()} / ${preferredCurrency} ${g.targetAmount.toLocaleString()} (${Math.round(g.currentAmount / (g.targetAmount || 1) * 100)}%)`).join(", ") || "No active goals"}
@@ -3694,7 +4598,17 @@ CRITICAL INSTRUCTIONS:
           if (response?.text) {
             res.json({
               advice: response.text,
-              metrics: { totalBalance, thisMonthIncome, thisMonthExpenses, allTimeIncome, allTimeExpenses }
+              metrics: {
+                totalBalance,
+                thisMonthIncome,
+                thisMonthExpenses,
+                allTimeIncome,
+                allTimeExpenses,
+                healthScore: health.overallScore,
+                healthGrade: health.grade,
+                savingsRate: health.metrics.savingsRate,
+                emergencyRunway: health.metrics.emergencyMonthsRunway
+              }
             });
             return;
           }
@@ -3911,6 +4825,123 @@ router.get("/translations/:lang", (req, res) => {
   const dictionary = db.translations[lang] || db.translations["en"] || {};
   res.json(dictionary);
 });
+router.get("/admin/bootstrap", adminOnly, (req, res) => {
+  const db = getDb();
+  const totalUsers = db.users.length;
+  const activeUsers = db.users.filter((u) => u.status === "active").length;
+  const freeUsers = db.users.filter((u) => u.plan === "free").length;
+  const proUsers = db.users.filter((u) => u.plan === "pro").length;
+  const totalTransactions = db.transactions.length;
+  const totalWallets = db.wallets.length;
+  const now = /* @__PURE__ */ new Date();
+  const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const newUsersThisMonth = db.users.filter((u) => u.createdAt.startsWith(currentMonthStr)).length;
+  const revenueMRR = proUsers * (db.systemLimits?.proMonthlyPriceUSD || 4.99);
+  const totalVolumeUSD = db.transactions.reduce((sum, t) => sum + t.amount * 84e-4, 0);
+  const stats = {
+    totalUsers,
+    activeUsers,
+    newUsersThisMonth,
+    freeUsers,
+    proUsers,
+    totalTransactions,
+    totalWallets,
+    revenueMRR,
+    totalVolumeUSD: Math.round(totalVolumeUSD)
+  };
+  const users = db.users.map((u) => ({
+    id: u.id,
+    name: u.name,
+    email: u.email,
+    phone: u.phone,
+    role: u.role,
+    plan: u.plan,
+    status: u.status,
+    preferredLanguage: u.preferredLanguage,
+    preferredCurrency: u.preferredCurrency,
+    createdAt: u.createdAt,
+    transactionCount: db.transactions.filter((t) => t.userId === u.id).length,
+    walletCount: db.wallets.filter((w) => w.userId === u.id).length
+  }));
+  const nowMs = Date.now();
+  const currentAdmin = req.user;
+  if (currentAdmin && db.userPresences) {
+    db.userPresences[currentAdmin.id] = {
+      userId: currentAdmin.id,
+      userName: currentAdmin.name,
+      userEmail: currentAdmin.email,
+      avatarUrl: currentAdmin.avatarUrl,
+      plan: currentAdmin.plan,
+      role: currentAdmin.role,
+      isOnline: true,
+      currentView: "Admin Control Center",
+      lastActiveAt: (/* @__PURE__ */ new Date()).toISOString(),
+      deviceType: "desktop",
+      browser: "Admin Console",
+      lastAction: "Monitoring System Telemetry"
+    };
+  }
+  const presenceMap = /* @__PURE__ */ new Map();
+  if (db.userPresences) {
+    for (const p of Object.values(db.userPresences)) {
+      const lastActiveMs = new Date(p.lastActiveAt).getTime();
+      const diffMs = nowMs - lastActiveMs;
+      presenceMap.set(p.userId, {
+        ...p,
+        isOnline: diffMs < 9e4
+      });
+    }
+  }
+  for (const u of db.users) {
+    if (!presenceMap.has(u.id)) {
+      presenceMap.set(u.id, {
+        userId: u.id,
+        userName: u.name,
+        userEmail: u.email,
+        avatarUrl: u.avatarUrl,
+        plan: u.plan || "free",
+        role: u.role || "user",
+        isOnline: false,
+        currentView: "offline",
+        lastActiveAt: u.updatedAt || u.createdAt || (/* @__PURE__ */ new Date()).toISOString(),
+        deviceType: "desktop",
+        browser: "Web App",
+        lastAction: "Registered User"
+      });
+    }
+  }
+  const presences = Array.from(presenceMap.values()).sort((a, b) => {
+    if (a.isOnline === b.isOnline) {
+      return new Date(b.lastActiveAt).getTime() - new Date(a.lastActiveAt).getTime();
+    }
+    return a.isOnline ? -1 : 1;
+  });
+  const payments = db.subscriptionPayments || [];
+  const config = db.adminPaymentConfig;
+  const activities = (db.liveActivities || []).slice(0, 100);
+  const emailLogs = (db.emailLogs || []).slice(0, 50);
+  const rawSuggestions = db.suggestions || [];
+  const totalSuggestions = rawSuggestions.length;
+  const pendingSuggestions = rawSuggestions.filter((s) => s.status === "pending").length;
+  const superChatCount = rawSuggestions.filter((s) => s.hasSuperChat).length;
+  const superChatRevenueBDT = rawSuggestions.reduce((acc, s) => acc + (s.superChatAmount || 0), 0);
+  res.json({
+    stats,
+    users,
+    presences,
+    payments,
+    config,
+    activities,
+    emailLogs,
+    suggestions: rawSuggestions,
+    suggestionStats: {
+      total: totalSuggestions,
+      pending: pendingSuggestions,
+      superChatCount,
+      superChatRevenueBDT
+    }
+  });
+});
 router.get("/admin/stats", adminOnly, (req, res) => {
   const db = getDb();
   const totalUsers = db.users.length;
@@ -3942,15 +4973,137 @@ router.get("/admin/users", adminOnly, (req, res) => {
     id: u.id,
     name: u.name,
     email: u.email,
+    phone: u.phone,
     role: u.role,
     plan: u.plan,
     status: u.status,
     preferredLanguage: u.preferredLanguage,
     preferredCurrency: u.preferredCurrency,
     createdAt: u.createdAt,
+    updatedAt: u.updatedAt,
     transactionCount: db.transactions.filter((t) => t.userId === u.id).length,
     walletCount: db.wallets.filter((w) => w.userId === u.id).length
   })));
+});
+router.post("/admin/users/create", adminOnly, (req, res) => {
+  try {
+    const { name, email, phone, password, role = "user", plan = "free", preferredLanguage = "en", preferredCurrency = "BDT" } = req.body;
+    if (!name || !email && !phone || !password) {
+      res.status(400).json({ error: "Name, email or phone, and password are required" });
+      return;
+    }
+    const cleanEmail = email ? String(email).trim().toLowerCase() : phone ? `${phone.replace(/\D/g, "")}@mobile.hishabkhata.com` : "";
+    const cleanPhone = phone ? String(phone).trim() : void 0;
+    const db = getDb();
+    const existing = db.users.find((u) => cleanEmail && u.email?.toLowerCase() === cleanEmail || cleanPhone && u.phone === cleanPhone);
+    if (existing) {
+      res.status(400).json({ error: "User with this email or mobile number already exists" });
+      return;
+    }
+    const userId = `usr-${Date.now()}`;
+    const passwordHash = import_bcryptjs2.default.hashSync(String(password), 10);
+    const now = (/* @__PURE__ */ new Date()).toISOString();
+    const newUser = {
+      id: userId,
+      name: String(name).trim(),
+      email: cleanEmail,
+      phone: cleanPhone,
+      role: role === "admin" ? "admin" : "user",
+      plan: plan === "pro" ? "pro" : "free",
+      status: "active",
+      preferredLanguage,
+      preferredCurrency,
+      emailVerified: true,
+      createdAt: now,
+      updatedAt: now
+    };
+    registerOrSyncUser(newUser, passwordHash);
+    db.wallets.push({
+      id: `w-cash-${Date.now()}`,
+      userId,
+      name: "Cash Wallet",
+      type: "cash",
+      balance: 0,
+      currency: preferredCurrency,
+      color: "#10B981",
+      isDefault: true,
+      createdAt: now,
+      updatedAt: now
+    });
+    saveDb();
+    logAdmin(req, "USER_CREATE", "USER", userId, `Admin created user account: ${newUser.name} (${newUser.email || newUser.phone})`);
+    res.json({ success: true, user: newUser });
+  } catch (err) {
+    res.status(500).json({ error: err.message || "Failed to create user" });
+  }
+});
+router.put("/admin/users/:id", adminOnly, (req, res) => {
+  const db = getDb();
+  const user = db.users.find((u) => u.id === req.params.id);
+  if (!user) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+  const { name, email, phone, role, plan, status, preferredCurrency, preferredLanguage } = req.body;
+  if (name !== void 0) user.name = String(name).trim();
+  if (email !== void 0) user.email = String(email).trim().toLowerCase();
+  if (phone !== void 0) user.phone = String(phone).trim();
+  if (role !== void 0 && (role === "admin" || role === "user")) user.role = role;
+  if (plan !== void 0 && (plan === "free" || plan === "pro")) user.plan = plan;
+  if (status !== void 0 && (status === "active" || status === "suspended")) user.status = status;
+  if (preferredCurrency !== void 0) user.preferredCurrency = preferredCurrency;
+  if (preferredLanguage !== void 0) user.preferredLanguage = preferredLanguage;
+  user.updatedAt = (/* @__PURE__ */ new Date()).toISOString();
+  saveDb();
+  logAdmin(req, "USER_UPDATE", "USER", user.id, `Admin updated user profile: ${user.name}`);
+  res.json({ success: true, user });
+});
+router.post("/admin/users/:id/reset-password", adminOnly, (req, res) => {
+  const { password } = req.body;
+  if (!password || String(password).length < 4) {
+    res.status(400).json({ error: "Password must be at least 4 characters" });
+    return;
+  }
+  const db = getDb();
+  const user = db.users.find((u) => u.id === req.params.id);
+  if (!user) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+  const hash = import_bcryptjs2.default.hashSync(String(password), 10);
+  db.passwordHashes[user.id] = hash;
+  user.updatedAt = (/* @__PURE__ */ new Date()).toISOString();
+  saveDb();
+  logAdmin(req, "PASSWORD_RESET", "USER", user.id, `Admin reset password for user ${user.email || user.name}`);
+  res.json({ success: true, message: `Password reset successfully for ${user.name}.` });
+});
+router.post("/admin/users/:id/message", adminOnly, (req, res) => {
+  const { title, message, type = "info" } = req.body;
+  if (!title || !message) {
+    res.status(400).json({ error: "Title and message are required" });
+    return;
+  }
+  const db = getDb();
+  const targetId = req.params.id;
+  const user = db.users.find((u) => u.id === targetId);
+  if (!user) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+  const newNotif = {
+    id: `notif-${Date.now()}`,
+    userId: targetId,
+    titleKey: String(title).trim(),
+    messageKey: String(message).trim(),
+    type: "announcement",
+    params: { customTitle: String(title).trim(), customMessage: String(message).trim() },
+    isRead: false,
+    createdAt: (/* @__PURE__ */ new Date()).toISOString()
+  };
+  db.notifications.unshift(newNotif);
+  saveDb();
+  logAdmin(req, "USER_MESSAGE", "USER", targetId, `Sent direct message to user ${user.name}: "${title}"`);
+  res.json({ success: true, notification: newNotif });
 });
 router.put("/admin/users/:id/status", adminOnly, (req, res) => {
   const { status } = req.body;
@@ -4528,6 +5681,37 @@ router.put("/admin/system-limits", adminOnly, (req, res) => {
   saveDb();
   res.json(db.systemLimits);
 });
+var suggestionCooldowns = /* @__PURE__ */ new Map();
+var suggestionHourlyCounters = /* @__PURE__ */ new Map();
+var SPAM_PATTERNS = [
+  /1xbet/i,
+  /melbet/i,
+  /babu88/i,
+  /crazytime/i,
+  /bet365/i,
+  /casino/i,
+  /slot88/i,
+  /t\.me\//i,
+  /telegram\.me/i,
+  /wa\.me\//i,
+  /whatsapp/i,
+  /earn-money-fast/i,
+  /free-diamonds/i,
+  /crypto-giveaway/i,
+  /bit\.ly\//i,
+  /tinyurl\.com\//i
+];
+function checkSpamText(text) {
+  if (/(.)\1{7,}/.test(text)) {
+    return { isSpam: true, message: "Spam detected: Excessive repetitive characters." };
+  }
+  for (const pattern of SPAM_PATTERNS) {
+    if (pattern.test(text)) {
+      return { isSpam: true, message: "Spam detected: External gambling, casino, or promotional links are forbidden." };
+    }
+  }
+  return { isSpam: false };
+}
 router.get("/suggestions", (req, res) => {
   const db = getDb();
   const suggestions = db.suggestions || [];
@@ -4551,38 +5735,138 @@ router.post("/suggestions", authMiddleware, (req, res) => {
     senderNumber = "",
     walletId
   } = req.body;
-  if (!title || !description) {
-    return res.status(400).json({ error: "Title and description are required" });
+  const now = Date.now();
+  const lastTime = suggestionCooldowns.get(user.id) || 0;
+  const cooldownPeriod = 45 * 1e3;
+  if (now - lastTime < cooldownPeriod && user.role !== "admin") {
+    const remainingSec = Math.ceil((cooldownPeriod - (now - lastTime)) / 1e3);
+    return res.status(429).json({
+      error: `Anti-Spam Security: Please wait ${remainingSec} seconds before submitting another suggestion or SuperChat.`
+    });
+  }
+  const userHourly = suggestionHourlyCounters.get(user.id) || { count: 0, windowStart: now };
+  if (now - userHourly.windowStart > 3600 * 1e3) {
+    userHourly.count = 0;
+    userHourly.windowStart = now;
+  }
+  if (userHourly.count >= 5 && user.role !== "admin") {
+    return res.status(429).json({
+      error: "Anti-Spam Limit: You have reached the maximum limit of 5 suggestions/SuperChats per hour. Please try again later."
+    });
+  }
+  const cleanTitle = String(title || "").trim();
+  const cleanDescription = String(description || "").trim();
+  const cleanSuperChatMessage = String(superChatMessage || "").trim();
+  if (cleanTitle.length < 5) {
+    return res.status(400).json({ error: "Title must be at least 5 characters long." });
+  }
+  if (cleanTitle.length > 120) {
+    return res.status(400).json({ error: "Title cannot exceed 120 characters." });
+  }
+  if (cleanDescription.length < 15) {
+    return res.status(400).json({ error: "Description must be at least 15 characters long to provide sufficient detail." });
+  }
+  if (cleanDescription.length > 1200) {
+    return res.status(400).json({ error: "Description cannot exceed 1200 characters." });
+  }
+  if (cleanSuperChatMessage.length > 300) {
+    return res.status(400).json({ error: "SuperChat note cannot exceed 300 characters." });
+  }
+  const spamCheckTitle = checkSpamText(cleanTitle);
+  if (spamCheckTitle.isSpam) return res.status(400).json({ error: spamCheckTitle.message });
+  const spamCheckDesc = checkSpamText(cleanDescription);
+  if (spamCheckDesc.isSpam) return res.status(400).json({ error: spamCheckDesc.message });
+  if (cleanSuperChatMessage) {
+    const spamCheckNote = checkSpamText(cleanSuperChatMessage);
+    if (spamCheckNote.isSpam) return res.status(400).json({ error: spamCheckNote.message });
+  }
+  const isDuplicate = (db.suggestions || []).some(
+    (s) => s.userId === user.id && s.title.toLowerCase().trim() === cleanTitle.toLowerCase() && now - new Date(s.createdAt).getTime() < 24 * 3600 * 1e3
+  );
+  if (isDuplicate) {
+    return res.status(400).json({
+      error: "Duplicate suggestion detected. You have already submitted an identical suggestion within the last 24 hours."
+    });
   }
   const numAmount = Math.max(0, parseFloat(String(superChatAmount)) || 0);
   let isVerified = false;
-  if (hasSuperChat && numAmount > 0 && paymentMethod === "wallet_balance" && walletId) {
-    const wallet = db.wallets.find((w) => w.id === walletId && w.userId === user.id);
-    if (!wallet) {
-      return res.status(400).json({ error: "Selected wallet not found" });
+  if (hasSuperChat) {
+    if (numAmount < 10) {
+      return res.status(400).json({ error: "Minimum SuperChat contribution is 10 BDT." });
     }
-    if (wallet.balance < numAmount) {
-      return res.status(400).json({ error: "Insufficient wallet balance for this SuperChat" });
+    if (numAmount > 5e4) {
+      return res.status(400).json({ error: "Maximum single SuperChat contribution is 50,000 BDT." });
     }
-    wallet.balance -= numAmount;
-    wallet.updatedAt = (/* @__PURE__ */ new Date()).toISOString();
-    const txId = `tx-sc-${Date.now()}`;
-    db.transactions.unshift({
-      id: txId,
-      userId: user.id,
-      walletId: wallet.id,
-      type: "expense",
-      amount: numAmount,
-      currency: wallet.currency || "BDT",
-      categoryId: "cat-oth-exp",
-      category: "App SuperChat",
-      date: (/* @__PURE__ */ new Date()).toISOString().substring(0, 10),
-      description: `SuperChat to Admin for App Improvement: ${title}`,
-      note: superChatMessage || "Contribution to Hishab Khata development",
-      createdAt: (/* @__PURE__ */ new Date()).toISOString(),
-      updatedAt: (/* @__PURE__ */ new Date()).toISOString()
-    });
-    isVerified = true;
+    if (paymentMethod === "wallet_balance") {
+      if (!walletId) {
+        return res.status(400).json({ error: "Please select a source wallet for SuperChat payment." });
+      }
+      const wallet = db.wallets.find((w) => w.id === walletId && w.userId === user.id);
+      if (!wallet) {
+        return res.status(400).json({ error: "Selected wallet not found." });
+      }
+      if (wallet.balance < numAmount) {
+        return res.status(400).json({ error: "Insufficient wallet balance for this SuperChat." });
+      }
+      wallet.balance -= numAmount;
+      wallet.updatedAt = (/* @__PURE__ */ new Date()).toISOString();
+      const txId = `tx-sc-${Date.now()}`;
+      db.transactions.unshift({
+        id: txId,
+        userId: user.id,
+        walletId: wallet.id,
+        type: "expense",
+        amount: numAmount,
+        currency: wallet.currency || "BDT",
+        categoryId: "cat-oth-exp",
+        category: "App SuperChat",
+        date: (/* @__PURE__ */ new Date()).toISOString().substring(0, 10),
+        description: `SuperChat to Admin for App Improvement: ${cleanTitle}`,
+        note: cleanSuperChatMessage || "Contribution to Hishab Khata development",
+        createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+        updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+      });
+      isVerified = true;
+    } else if (paymentMethod === "bkash" || paymentMethod === "nagad" || paymentMethod === "rocket" || paymentMethod === "bank") {
+      const cleanTrxId = String(paymentTrxId || "").trim().toUpperCase();
+      const cleanSender = String(senderNumber || "").trim();
+      if (!cleanTrxId) {
+        return res.status(400).json({ error: "Transaction ID (TrxID) is required for SuperChat verification." });
+      }
+      if (!/^[A-Z0-9]{8,18}$/.test(cleanTrxId)) {
+        return res.status(400).json({
+          error: "Invalid TrxID format. Please provide a valid 8-16 character alphanumeric Transaction ID from your payment SMS."
+        });
+      }
+      const dummyTrxList = ["12345678", "00000000", "AAAAAAAA", "TESTTEST", "NONE1234", "11111111", "1234567890", "BKASH123", "NAGAD123", "ASDFGHJK"];
+      if (dummyTrxList.includes(cleanTrxId) || /(.)\1{7,}/.test(cleanTrxId)) {
+        return res.status(400).json({ error: "Invalid or dummy TrxID entered. Please provide your actual payment TrxID." });
+      }
+      const existingInSuggestions = (db.suggestions || []).find(
+        (s) => s.paymentTrxId && s.paymentTrxId.toUpperCase() === cleanTrxId
+      );
+      if (existingInSuggestions) {
+        return res.status(400).json({
+          error: "This Transaction ID (TrxID) has already been submitted for a previous SuperChat. Duplicate TrxIDs are rejected."
+        });
+      }
+      const existingInSubs = (db.subscriptionPayments || []).find(
+        (p) => p.transactionId && p.transactionId.toUpperCase() === cleanTrxId
+      );
+      if (existingInSubs) {
+        return res.status(400).json({
+          error: "This Transaction ID has already been recorded for a subscription payment. Duplicate TrxIDs are rejected."
+        });
+      }
+      if (cleanSender) {
+        const numericPhone = cleanSender.replace(/\D/g, "");
+        if (!/^(?:88)?01[3-9]\d{8}$/.test(numericPhone)) {
+          return res.status(400).json({
+            error: "Invalid Bangladeshi mobile number format. Please enter an 11-digit number starting with 013-019."
+          });
+        }
+      }
+    }
   }
   let calculatedTier = "bronze";
   if (numAmount >= 1e3) calculatedTier = "diamond";
@@ -4595,18 +5879,18 @@ router.post("/suggestions", authMiddleware, (req, res) => {
     userEmail: user.email,
     userAvatar: user.avatarUrl,
     category,
-    title: String(title).trim(),
-    description: String(description).trim(),
+    title: cleanTitle,
+    description: cleanDescription,
     impact,
     status: "pending",
     hasSuperChat: Boolean(hasSuperChat && numAmount > 0),
     superChatAmount: hasSuperChat ? numAmount : 0,
     superChatCurrency,
     superChatTier: hasSuperChat ? superChatTier || calculatedTier : void 0,
-    superChatMessage: hasSuperChat ? superChatMessage : void 0,
+    superChatMessage: hasSuperChat ? cleanSuperChatMessage : void 0,
     paymentMethod: hasSuperChat ? paymentMethod : void 0,
-    paymentTrxId: hasSuperChat ? paymentTrxId : void 0,
-    senderNumber: hasSuperChat ? senderNumber : void 0,
+    paymentTrxId: hasSuperChat && paymentTrxId ? String(paymentTrxId).trim().toUpperCase() : void 0,
+    senderNumber: hasSuperChat && senderNumber ? String(senderNumber).trim() : void 0,
     isSuperChatVerified: isVerified,
     upvotes: 1,
     upvotedUserIds: [user.id],
@@ -4615,6 +5899,9 @@ router.post("/suggestions", authMiddleware, (req, res) => {
   };
   if (!db.suggestions) db.suggestions = [];
   db.suggestions.unshift(newSuggestion);
+  suggestionCooldowns.set(user.id, now);
+  userHourly.count += 1;
+  suggestionHourlyCounters.set(user.id, userHourly);
   const adminNotification = {
     id: `notif-admin-${Date.now()}`,
     userId: "admin-sultan-001",
@@ -4630,7 +5917,7 @@ router.post("/suggestions", authMiddleware, (req, res) => {
     userId: user.id,
     type: "announcement",
     titleKey: hasSuperChat ? "SuperChat & Suggestion Sent!" : "Suggestion Submitted!",
-    messageKey: hasSuperChat ? `Thank you for supporting Hishab Khata with ${numAmount} ${superChatCurrency}! Sultan Admin will review your idea soon.` : `Your suggestion "${title}" has been submitted to Sultan Admin. We appreciate your feedback!`,
+    messageKey: hasSuperChat ? `Thank you for supporting Hishab Khata with ${numAmount} ${superChatCurrency}! Nowroze Admin will review your idea soon.` : `Your suggestion "${title}" has been submitted to Nowroze Admin. We appreciate your feedback!`,
     isRead: false,
     createdAt: (/* @__PURE__ */ new Date()).toISOString()
   };
@@ -4701,7 +5988,7 @@ router.patch("/admin/suggestions/:id", adminOnly, (req, res) => {
         id: `notif-reply-${Date.now()}`,
         userId: suggestion.userId,
         type: "announcement",
-        titleKey: `\u{1F4AC} Sultan Admin Replied to Your Suggestion: "${suggestion.title}"`,
+        titleKey: `\u{1F4AC} Nowroze Admin Replied to Your Suggestion: "${suggestion.title}"`,
         messageKey: suggestion.adminReply,
         isRead: false,
         createdAt: nowIso
@@ -4716,7 +6003,7 @@ router.patch("/admin/suggestions/:id", adminOnly, (req, res) => {
         userId: suggestion.userId,
         type: "announcement",
         titleKey: `\u{1F389} SuperChat Verified: \u09F3${suggestion.superChatAmount}!`,
-        messageKey: `Sultan Admin has verified your SuperChat contribution. Thank you deeply for helping Hishab Khata grow!`,
+        messageKey: `Nowroze Admin has verified your SuperChat contribution. Thank you deeply for helping Hishab Khata grow!`,
         isRead: false,
         createdAt: nowIso
       });

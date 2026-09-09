@@ -1,5 +1,3 @@
-import * as XLSX from 'xlsx';
-import { jsPDF } from 'jspdf';
 import { Transaction, Wallet, Category } from '../types';
 
 export function exportToCSV(transactions: Transaction[], filename: string = 'hishab_khata_transactions.csv') {
@@ -25,11 +23,12 @@ export function exportToCSV(transactions: Transaction[], filename: string = 'his
   document.body.removeChild(link);
 }
 
-export function exportToExcel(
+export async function exportToExcel(
   transactions: Transaction[],
   wallets: Wallet[],
   filename: string = 'Hishab_Khata_Financial_Report.xlsx'
 ) {
+  const XLSX = await import('xlsx');
   const wb = XLSX.utils.book_new();
 
   // Transactions Sheet
@@ -60,11 +59,12 @@ export function exportToExcel(
   XLSX.writeFile(wb, filename);
 }
 
-export function exportToPDF(
+export async function exportToPDF(
   transactions: Transaction[],
   summary: { totalIncome: number; totalExpense: number; netSavings: number; currency: string; userName: string },
   filename: string = 'Hishab_Khata_Statement.pdf'
 ) {
+  const { jsPDF } = await import('jspdf');
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
 

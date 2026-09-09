@@ -67,9 +67,22 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => {
+    try {
+      const cached = safeStorage.getItem('hk_user');
+      return cached ? JSON.parse(cached) : null;
+    } catch {
+      return null;
+    }
+  });
   const [token, setTokenState] = useState<string | null>(() => getAuthToken());
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(() => {
+    const currentToken = getAuthToken();
+    if (!currentToken) return false;
+    const cachedUser = safeStorage.getItem('hk_user');
+    // If we already have token and cached user, render instantly (0ms delay)
+    return !cachedUser;
+  });
   const [error, setError] = useState<string | null>(null);
 
   const clearError = () => setError(null);
@@ -85,12 +98,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     try {
       const res = await api.getMe();
-      setUser(res.user);
-    } catch (err) {
+      if (res?.user) {
+        setUser(res.user);
+        safeStorage.setItem('hk_user', JSON.stringify(res.user));
+      }
+    } catch (err: any) {
       console.warn('Failed to verify token:', err);
-      setAuthToken(null);
-      setTokenState(null);
-      setUser(null);
+      // Only purge credentials if server explicitly told us token is unauthorized (401/403)
+      // If network offline or temporary timeout, retain cached user for offline resilience
+      const msg = String(err?.message || '').toLowerCase();
+      if (msg.includes('401') || msg.includes('unauthorized') || msg.includes('forbidden') || msg.includes('invalid email or password')) {
+        setAuthToken(null);
+        setTokenState(null);
+        setUser(null);
+        safeStorage.removeItem('hk_user');
+      }
     } finally {
       setLoading(false);
     }

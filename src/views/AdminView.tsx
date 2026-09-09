@@ -90,15 +90,77 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
   // Active Main Tab - Default to 'users' so all registered accounts are immediately visible!
   const [activeTab, setActiveTab] = useState<'users' | 'presence' | 'activities' | 'payments' | 'suggestions' | 'emailLogs' | 'broadcast' | 'config'>('users');
 
-  // Core Data - Initialize with all registered system users to guarantee 0ms visibility!
-  const [stats, setStats] = useState<any>(null);
-  const [users, setUsers] = useState<User[]>(DEFAULT_SYSTEM_USERS);
-  const [presences, setPresences] = useState<UserPresence[]>([]);
-  const [liveActivities, setLiveActivities] = useState<LiveUserActivity[]>([]);
+  // Core Data - Initialize instantly from local bootstrap snapshot or system defaults (0ms load time!)
+  const [stats, setStats] = useState<any>(() => {
+    try {
+      const cached = safeStorage.getItem('hk_admin_bootstrap_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed?.data?.stats) return parsed.data.stats;
+      }
+    } catch {}
+    return {
+      totalUsers: DEFAULT_SYSTEM_USERS.length,
+      proUsers: DEFAULT_SYSTEM_USERS.filter(u => u.plan === 'pro').length,
+      revenueMRR: 998,
+      totalTransactions: 0,
+      totalWallets: 2,
+    };
+  });
+  const [users, setUsers] = useState<User[]>(() => {
+    try {
+      const cached = safeStorage.getItem('hk_admin_bootstrap_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed?.data?.users) && parsed.data.users.length > 0) {
+          return parsed.data.users;
+        }
+      }
+    } catch {}
+    return DEFAULT_SYSTEM_USERS;
+  });
+  const [presences, setPresences] = useState<UserPresence[]>(() => {
+    try {
+      const cached = safeStorage.getItem('hk_admin_bootstrap_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed?.data?.presences)) return parsed.data.presences;
+      }
+    } catch {}
+    return [];
+  });
+  const [liveActivities, setLiveActivities] = useState<LiveUserActivity[]>(() => {
+    try {
+      const cached = safeStorage.getItem('hk_admin_bootstrap_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed?.data?.activities)) return parsed.data.activities;
+      }
+    } catch {}
+    return [];
+  });
   const [emailLogs, setEmailLogs] = useState<EmailLogEntry[]>([]);
-  const [payments, setPayments] = useState<SubscriptionPayment[]>([]);
-  const [paymentConfig, setPaymentConfig] = useState<AdminPaymentConfig | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [payments, setPayments] = useState<SubscriptionPayment[]>(() => {
+    try {
+      const cached = safeStorage.getItem('hk_admin_bootstrap_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed?.data?.payments)) return parsed.data.payments;
+      }
+    } catch {}
+    return [];
+  });
+  const [paymentConfig, setPaymentConfig] = useState<AdminPaymentConfig | null>(() => {
+    try {
+      const cached = safeStorage.getItem('hk_admin_bootstrap_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed?.data?.config) return parsed.data.config;
+      }
+    } catch {}
+    return null;
+  });
+  const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   // User Management Modals State
@@ -340,26 +402,22 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
       }
     });
 
-    // Auto refresh presence & activities every 10 seconds
+    // Efficient periodic background sync every 30 seconds when window is visible (1 fast request instead of 5!)
     const interval = setInterval(() => {
-      api.getAdminPresences().then(res => {
-        if (Array.isArray(res)) {
-          setPresences((prev) => {
-            const map = new Map<string, UserPresence>();
-            prev.forEach((p) => map.set(p.userId, p));
-            res.forEach((p) => map.set(p.userId, p));
-            return Array.from(map.values()).sort((a, b) => (a.isOnline === b.isOnline ? 0 : a.isOnline ? -1 : 1));
-          });
+      if (typeof document !== 'undefined' && document.hidden) return;
+
+      api.getAdminBootstrap().then((bootstrap) => {
+        if (bootstrap) {
+          const { stats: bsStats, payments: bsPayments, activities: bsActivities, emailLogs: bsEmails, suggestions: bsSuggestions, suggestionStats: bsSugStats } = bootstrap;
+          if (bsStats) setStats(bsStats);
+          if (Array.isArray(bsPayments)) setPayments(bsPayments);
+          if (Array.isArray(bsActivities)) setLiveActivities(bsActivities);
+          if (Array.isArray(bsEmails)) setEmailLogs(bsEmails);
+          if (Array.isArray(bsSuggestions)) setAdminSuggestions(bsSuggestions);
+          if (bsSugStats) setSuggestionStats(bsSugStats);
         }
       }).catch(() => {});
-      api.getAdminSubscriptionPayments().then(res => setPayments(res || [])).catch(() => {});
-      api.getLiveActivities().then(res => setLiveActivities(res || [])).catch(() => {});
-      api.getEmailLogs().then(res => setEmailLogs(res || [])).catch(() => {});
-      api.getAdminSuggestions().then(res => {
-        if (res?.suggestions) setAdminSuggestions(res.suggestions);
-        if (res?.stats) setSuggestionStats(res.stats);
-      }).catch(() => {});
-    }, 10000);
+    }, 30000);
 
     return () => {
       clearInterval(interval);
@@ -947,14 +1005,6 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
     if (suggestionFilter === 'completed') return s.status === 'completed';
     return true;
   });
-
-  if (loading && !stats) {
-    return (
-      <div className="py-24 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-teal-600 animate-spin" />
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6 pb-16">
