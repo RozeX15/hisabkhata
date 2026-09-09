@@ -32,6 +32,7 @@ export const SmartInsightsView: React.FC<SmartInsightsViewProps> = ({
   onOpenAiAdvisor,
 }) => {
   const { t } = useI18n();
+  const [filterType, setFilterType] = useState<'all' | 'warning' | 'income' | 'savings'>('all');
   const [chatPrompt, setChatPrompt] = useState('');
   const [chatResponse, setChatResponse] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -51,6 +52,13 @@ export const SmartInsightsView: React.FC<SmartInsightsViewProps> = ({
       setLoading(false);
     }
   };
+
+  const filteredInsights = insights.filter((insight) => {
+    if (filterType === 'warning') return insight.severity === 'danger' || insight.severity === 'warning';
+    if (filterType === 'income') return insight.type.includes('income');
+    if (filterType === 'savings') return insight.type.includes('saving') || insight.type.includes('habit');
+    return true;
+  });
 
   const getInsightIcon = (type: string, severity?: string) => {
     if (severity === 'danger' || type === 'spending_spike' || type === 'budget_alert') return AlertTriangle;
@@ -90,22 +98,53 @@ export const SmartInsightsView: React.FC<SmartInsightsViewProps> = ({
 
       {/* Rule-based Heuristic Insights Grid */}
       <div>
-        <h3 className="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider mb-3">
-          Portfolio Diagnoses & Recommendations
-        </h3>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+          <div>
+            <h3 className="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
+              Portfolio Diagnoses & Recommendations
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Heuristic signals detecting spending outliers, income shifts, and budget risks
+            </p>
+          </div>
+
+          {/* Filter Pills */}
+          <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-900 rounded-xl overflow-x-auto shrink-0">
+            {[
+              { key: 'all', label: 'All' },
+              { key: 'warning', label: 'Outliers & Risks' },
+              { key: 'income', label: 'Income Shifts' },
+              { key: 'savings', label: 'Savings & Goals' },
+            ].map((f) => (
+              <button
+                key={f.key}
+                type="button"
+                onClick={() => setFilterType(f.key as any)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                  filterType === f.key
+                    ? 'bg-white dark:bg-slate-800 text-teal-700 dark:text-teal-400 shadow-xs'
+                    : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {insights.length === 0 ? (
+          {filteredInsights.length === 0 ? (
             <div className="col-span-full p-8 text-center bg-white dark:bg-slate-800/90 rounded-3xl border border-slate-200/80 dark:border-slate-700/80">
               <Sparkles className="w-8 h-8 mx-auto mb-2 text-teal-600" />
               <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                All financial indicators look balanced!
+                No matching indicators for selected filter!
               </p>
               <p className="text-xs text-slate-400 mt-1">
-                Record more transactions to unlock deeper historical velocity metrics.
+                Select 'All' to view your complete financial diagnosis.
               </p>
             </div>
           ) : (
-            insights.map((insight) => {
+            filteredInsights.map((insight) => {
               const IconComp = getInsightIcon(insight.type, insight.severity);
               const isWarning = insight.severity === 'danger' || insight.severity === 'warning';
               const isSuccess = insight.severity === 'success';
@@ -172,9 +211,10 @@ export const SmartInsightsView: React.FC<SmartInsightsViewProps> = ({
         {/* Quick buttons */}
         <div className="flex flex-wrap gap-2">
           {[
-            'Calculate my monthly savings rate',
-            'How can I cut expenses without lifestyle pain?',
-            'What is the 50/30/20 rule breakdown for my income?'
+            'Analyze my Financial Health Score & 4 pillars',
+            'Calculate my monthly savings velocity',
+            'What is my recurring income baseline vs variable expenses?',
+            'How can I cut expenses without lifestyle pain?'
           ].map((promptText, i) => (
             <button
               key={i}

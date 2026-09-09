@@ -22,11 +22,14 @@ export function generateSmartInsights(
   const prevTotalExp = prevExpenses.reduce((sum, t) => sum + t.amount, 0);
 
   const currIncome = transactions.filter(t => t.type === 'income' && t.date.startsWith(currentMonthStr)).reduce((sum, t) => sum + t.amount, 0);
+  const prevIncome = transactions.filter(t => t.type === 'income' && t.date.startsWith(prevMonthStr)).reduce((sum, t) => sum + t.amount, 0);
 
   // Group by category
   const currCatTotals: Record<string, number> = {};
+  const currCatCounts: Record<string, number> = {};
   currExpenses.forEach(t => {
     currCatTotals[t.categoryId] = (currCatTotals[t.categoryId] || 0) + t.amount;
+    currCatCounts[t.categoryId] = (currCatCounts[t.categoryId] || 0) + 1;
   });
 
   const prevCatTotals: Record<string, number> = {};
@@ -53,6 +56,7 @@ export function generateSmartInsights(
       titleKey: 'insight_highest_cat_title',
       descriptionKey: `Top spending category accounts for ${percent}% of your total monthly expenses.`,
       params: { percent, amount: topCatAmount },
+      actionTextKey: 'Review category spending',
     });
   }
 
@@ -69,12 +73,59 @@ export function generateSmartInsights(
           titleKey: 'insight_spike_title',
           descriptionKey: `You spent ${Math.round(increase)}% more in this category compared to last month.`,
           params: { percent: Math.round(increase) },
+          actionTextKey: 'Set monthly budget limit',
         });
       }
     }
   });
 
-  // 2. Budget Alerts
+  // 2. UNUSUAL SPENDING DETECTION (Outlier single transactions)
+  currExpenses.forEach((tx) => {
+    const count = currCatCounts[tx.categoryId] || 1;
+    const catTotal = currCatTotals[tx.categoryId] || tx.amount;
+    const catAvg = catTotal / Math.max(1, count);
+
+    // If single purchase is more than 2.5x the average for this category and is at least 1500
+    if (count >= 3 && tx.amount >= catAvg * 2.5 && tx.amount >= 1500) {
+      insights.push({
+        id: `insight-outlier-${tx.id}`,
+        type: 'spending_spike',
+        severity: 'warning',
+        titleKey: 'Unusual Large Expense Detected',
+        descriptionKey: `Single outflow of ${currency} ${tx.amount.toLocaleString()} (${tx.description || tx.categoryId}) is 2.5x higher than your typical category average.`,
+        params: { amount: tx.amount },
+        actionTextKey: 'Audit transaction details',
+      });
+    }
+  });
+
+  // 3. INCOME CHANGES DETECTION (MoM Drop or Surge)
+  if (prevIncome > 0 && currIncome > 0) {
+    const incomeDeltaPercent = Math.round(((currIncome - prevIncome) / prevIncome) * 100);
+    if (incomeDeltaPercent <= -15) {
+      insights.push({
+        id: 'insight-income-drop',
+        type: 'spending_spike',
+        severity: 'danger',
+        titleKey: 'Monthly Inflow Contraction Detected',
+        descriptionKey: `Your recorded income this month is ${Math.abs(incomeDeltaPercent)}% lower than last month (${currency} ${currIncome.toLocaleString()} vs ${currency} ${prevIncome.toLocaleString()}).`,
+        params: { delta: Math.abs(incomeDeltaPercent) },
+        actionTextKey: 'Inspect income sources',
+      });
+    } else if (incomeDeltaPercent >= 20) {
+      insights.push({
+        id: 'insight-income-surge',
+        type: 'positive_habit',
+        severity: 'success',
+        titleKey: 'Strong Income Growth Milestone',
+        descriptionKey: `Great news! Inflow increased by +${incomeDeltaPercent}% over last month. Consider allocating a portion to savings goals.`,
+        params: { delta: incomeDeltaPercent },
+        actionTextKey: 'Allocate surplus to goals',
+      });
+    }
+  }
+
+  // 4. Budget Alerts
   budgets.forEach(b => {
     if (b.percentage >= 100) {
       insights.push({
@@ -84,6 +135,7 @@ export function generateSmartInsights(
         titleKey: 'insight_budget_alert_title',
         descriptionKey: `Budget exceeded by ${Math.round(b.percentage - 100)}%! Immediate attention recommended.`,
         params: { percent: Math.round(b.percentage) },
+        actionTextKey: 'Adjust or rebalance budget',
       });
     } else if (b.percentage >= 80) {
       insights.push({
@@ -93,11 +145,12 @@ export function generateSmartInsights(
         titleKey: 'insight_budget_alert_title',
         descriptionKey: `You have used ${Math.round(b.percentage)}% of your allocated budget for this period.`,
         params: { percent: Math.round(b.percentage) },
+        actionTextKey: 'Slow down discretionary spend',
       });
     }
   });
 
-  // 3. Savings Goal Projections
+  // 5. Savings Goal Projections
   goals.filter(g => g.status === 'in_progress').forEach(g => {
     const remaining = Math.max(0, g.targetAmount - g.currentAmount);
     if (remaining > 0) {
@@ -111,11 +164,12 @@ export function generateSmartInsights(
         titleKey: 'insight_savings_tip_title',
         descriptionKey: `If you save ${currency} 100 every day, you will reach '${g.name}' in approx. ${monthsNeeded} months.`,
         params: { goalName: g.name, months: monthsNeeded },
+        actionTextKey: 'Contribute to goal now',
       });
     }
   });
 
-  // 4. Financial Health score
+  // 6. Financial Health score & cashflow
   if (currIncome > 0) {
     const savingsRatio = ((currIncome - currTotalExp) / currIncome) * 100;
     if (savingsRatio >= 25) {
@@ -126,6 +180,7 @@ export function generateSmartInsights(
         titleKey: 'insight_healthy_title',
         descriptionKey: `Excellent financial health! You are saving ${Math.round(savingsRatio)}% of your monthly income.`,
         params: { percent: Math.round(savingsRatio) },
+        actionTextKey: 'Maintain 50/30/20 momentum',
       });
     } else if (savingsRatio < 0) {
       insights.push({
@@ -135,6 +190,7 @@ export function generateSmartInsights(
         titleKey: 'insight_budget_alert_title',
         descriptionKey: `Cash flow deficit alert: Expenses exceed income by ${Math.abs(Math.round(savingsRatio))}%.`,
         params: { percent: Math.abs(Math.round(savingsRatio)) },
+        actionTextKey: 'Freeze non-essential outlays',
       });
     }
   }

@@ -21,6 +21,8 @@ import {
   SuggestionSuperChat
 } from '../types';
 import { generateSmartInsights } from '../lib/insights';
+import { evaluateFinancialHealth } from '../lib/financialHealth';
+import { analyzeUserIncome } from '../lib/incomeAnalysis';
 import { GoogleGenAI } from '@google/genai';
 import {
   sendAdminSubscriptionNotification,
@@ -1964,6 +1966,11 @@ router.post('/ai/advisor', authMiddleware, async (req: AuthRequest, res) => {
   const userLang = req.user!.preferredLanguage || 'en';
   const userQuestion = (question || '').trim();
 
+  // Evaluate comprehensive financial health & income analysis
+  const health = evaluateFinancialHealth(userWallets, userTransactions, userBudgets as any, userLoans, preferredCurrency);
+  const userCategories = (db.categories || []).filter(c => !c.userId || c.userId === userId);
+  const incomeAnalysis = analyzeUserIncome(userTransactions, userCategories);
+
   // Detect Bengali in question or preferences
   const isBengali = /[\u0980-\u09FF]/.test(userQuestion) || userLang === 'bn';
 
@@ -1983,6 +1990,17 @@ USER REAL FINANCIAL DATA:
 - All-Time Total Income: ${preferredCurrency} ${allTimeIncome.toLocaleString()}
 - All-Time Total Expenses: ${preferredCurrency} ${allTimeExpenses.toLocaleString()}
 - All-Time Net Savings: ${preferredCurrency} ${(allTimeIncome - allTimeExpenses).toLocaleString()}
+- Financial Health Score: ${health.overallScore}/100 (Grade ${health.grade} - ${health.statusLabel})
+- Financial Health Pillars:
+  * Savings: ${health.pillars.savings.score}/${health.pillars.savings.maxScore} (${health.pillars.savings.summary})
+  * Budget Control: ${health.pillars.budget.score}/${health.pillars.budget.maxScore} (${health.pillars.budget.summary})
+  * Debt Burden: ${health.pillars.debt.score}/${health.pillars.debt.maxScore} (${health.pillars.debt.summary})
+  * Emergency Runway: ${health.pillars.emergency.score}/${health.pillars.emergency.maxScore} (${health.metrics.emergencyMonthsRunway} months buffer)
+- Income Breakdown:
+  * Top Sources: ${incomeAnalysis.incomeBySource.slice(0, 4).map(s => `${s.categoryName}: ${preferredCurrency} ${s.totalAmount.toLocaleString()} (${s.percentage}%)`).join(', ') || 'None'}
+  * Recurring Monthly Inflow: ${preferredCurrency} ${incomeAnalysis.recurringTotalMonthly.toLocaleString()} (${incomeAnalysis.recurringPercentage}% of total)
+  * Month-over-Month Growth: ${incomeAnalysis.momGrowthPercent}%
+  * Next Month Projected Inflow: ${preferredCurrency} ${incomeAnalysis.simpleForecastNextMonth.projectedAmount.toLocaleString()}
 - Total Logged Transactions: ${userTransactions.length}
 - Recent Transactions: ${recentTransactions.map(t => `${t.date}: ${t.type.toUpperCase()} ${preferredCurrency} ${t.amount} (${t.description || t.categoryId || 'General'})`).join('; ') || 'No transactions logged yet'}
 - Active Savings Goals: ${userGoals.map(g => `${g.name}: ${preferredCurrency} ${g.currentAmount.toLocaleString()} / ${preferredCurrency} ${g.targetAmount.toLocaleString()} (${Math.round((g.currentAmount / (g.targetAmount || 1)) * 100)}%)`).join(', ') || 'No active goals'}
@@ -2016,7 +2034,17 @@ CRITICAL INSTRUCTIONS:
           if (response?.text) {
             res.json({
               advice: response.text,
-              metrics: { totalBalance, thisMonthIncome, thisMonthExpenses, allTimeIncome, allTimeExpenses },
+              metrics: {
+                totalBalance,
+                thisMonthIncome,
+                thisMonthExpenses,
+                allTimeIncome,
+                allTimeExpenses,
+                healthScore: health.overallScore,
+                healthGrade: health.grade,
+                savingsRate: health.metrics.savingsRate,
+                emergencyRunway: health.metrics.emergencyMonthsRunway,
+              },
             });
             return;
           }

@@ -52,6 +52,7 @@ import {
   CartesianGrid
 } from 'recharts';
 import { ActivityLogWidget } from '../components/ActivityLogWidget';
+import { FinancialHealthCard } from '../components/FinancialHealthCard';
 
 interface DashboardViewProps {
   summary: DashboardSummary | null;
@@ -719,6 +720,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <span>Ask AI Coach</span>
         </button>
       </div>
+
+      {/* 2.5 Executive Financial Health Diagnostics */}
+      <FinancialHealthCard
+        wallets={wallets}
+        transactions={transactions || []}
+        budgets={activeSummary.budgetSummaries}
+        loans={activeSummary.upcomingLoans}
+        currency={currency}
+        onOpenAiAdvisor={onOpenAiAdvisor}
+        onNavigate={onNavigate}
+      />
 
       {/* 3. Smart Insights Recommendation Strip */}
       {(activeSummary.smartInsights || []).length > 0 && (

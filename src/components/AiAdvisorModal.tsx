@@ -28,10 +28,12 @@ interface ChatMessage {
 }
 
 const PROMPT_SUGGESTIONS = [
+  { en: 'Analyze my Financial Health Score & 4 pillars', bn: 'আমার ফাইন্যান্সিয়াল হেলথ স্কোর ও ৪টি স্তম্ভ বিশ্লেষণ করুন' },
+  { en: 'Evaluate my monthly income growth and recurring streams', bn: 'আমার আয়ের প্রবৃদ্ধি ও নিয়মিত আয়ের উৎস বিশ্লেষণ করুন' },
   { en: 'How can I save 20% more of my income this month?', bn: 'আমার আয়ের ২০% অতিরিক্ত কীভাবে সঞ্চয় করতে পারি?' },
-  { en: 'Analyze my food and dining expenses and suggest cutbacks.', bn: 'খাবার ও রেস্তোরাঁর খরচ কীভাবে সাশ্রয় করব?' },
   { en: 'Do I have enough emergency fund buffer right now?', bn: 'আমার কি পর্যাপ্ত জরুরি সঞ্চয় তহবিল আছে?' },
   { en: 'Calculate my daily spending limit to stay under budget.', bn: 'বাজেট নিয়ন্ত্রণে রাখতে আমার দৈনিক খরচের সীমা কত হওয়া উচিত?' },
+  { en: 'How can I eliminate my debt and increase my net worth?', bn: 'কীভাবে ঋণ দ্রুত পরিশোধ করে সম্পদ বৃদ্ধি করতে পারি?' },
 ];
 
 export const AiAdvisorModal: React.FC<AiAdvisorModalProps> = ({
