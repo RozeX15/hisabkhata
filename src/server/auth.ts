@@ -38,7 +38,7 @@ export function authMiddleware(req: AuthRequest, res: Response, next: NextFuncti
     if (!adminUser) {
       adminUser = {
         id: 'admin-sultan-001',
-        name: 'Nowroze (Owner Admin)',
+        name: 'Nowroze',
         email: 'sultanitbangladesh@gmail.com',
         role: 'admin',
         plan: 'pro',

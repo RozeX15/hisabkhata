@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { AuthProvider, useAuth } from './lib/auth';
 import { I18nProvider, useI18n } from './lib/i18n';
-import { api } from './lib/api';
+import { api, getAuthToken } from './lib/api';
 import { safeStorage } from './lib/storage';
 import { playNotificationChime, triggerNativePushNotification } from './lib/pushNotifications';
 import {
@@ -218,35 +218,68 @@ const MainAppContent: React.FC = () => {
     safeStorage.setItem('hishab_dark_mode', String(isDarkMode));
   }, [isDarkMode]);
 
+  const prevUserIdRef = useRef<string | undefined>(user?.id);
+
+  // User session boundary: clear in-memory state whenever user changes or logs out
+  useEffect(() => {
+    if (prevUserIdRef.current && prevUserIdRef.current !== user?.id) {
+      setSummary(null);
+      setWallets([]);
+      setCategories(DEFAULT_CATEGORIES);
+      setTransactions([]);
+      setBudgets([]);
+      setSavingsGoals([]);
+      setLoans([]);
+      setNotifications([]);
+      setUnreadNotifsCount(0);
+    }
+    prevUserIdRef.current = user?.id;
+  }, [user?.id]);
+
   // Load All User Financial Data with high-performance single-request bootstrap
   const loadAllData = useCallback(async () => {
-    if (!token) return;
+    const activeToken = token || getAuthToken();
+    if (!activeToken) return;
+
+    const activeUser = user || (() => {
+      try {
+        const u = JSON.parse(safeStorage.getItem('hk_user') || '');
+        return u;
+      } catch {
+        return null;
+      }
+    })();
+    const activeUserId = activeUser?.id;
 
     // 1. Check cached snapshot for instant visual load (0ms white-screen elimination)
-    try {
-      const cached = safeStorage.getItem(`hk_app_bootstrap_${user?.id}`);
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (parsed?.data) {
-          const d = parsed.data;
-          if (d.summary) setSummary(d.summary);
-          if (Array.isArray(d.wallets) && d.wallets.length > 0) setWallets(d.wallets);
-          if (Array.isArray(d.categories) && d.categories.length > 0) setCategories(d.categories);
-          if (Array.isArray(d.transactions)) setTransactions(d.transactions);
-          if (Array.isArray(d.budgets)) setBudgets(d.budgets);
-          if (Array.isArray(d.savingsGoals)) setSavingsGoals(d.savingsGoals);
-          if (Array.isArray(d.loans)) setLoans(d.loans);
-          if (Array.isArray(d.notifications)) {
-            setNotifications(d.notifications);
-            setUnreadNotifsCount(d.notifications.filter((n: any) => !n.isRead).length);
+    if (activeUserId) {
+      try {
+        const cached = safeStorage.getItem(`hk_app_bootstrap_${activeUserId}`);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed?.data) {
+            const d = parsed.data;
+            if (d.summary) setSummary(d.summary);
+            if (Array.isArray(d.wallets) && d.wallets.length > 0) setWallets(d.wallets);
+            if (Array.isArray(d.categories) && d.categories.length > 0) setCategories(d.categories);
+            if (Array.isArray(d.transactions)) setTransactions(d.transactions);
+            if (Array.isArray(d.budgets)) setBudgets(d.budgets);
+            if (Array.isArray(d.savingsGoals)) setSavingsGoals(d.savingsGoals);
+            if (Array.isArray(d.loans)) setLoans(d.loans);
+            if (Array.isArray(d.notifications)) {
+              setNotifications(d.notifications);
+              setUnreadNotifsCount(d.notifications.filter((n: any) => !n.isRead).length);
+            }
+            // Do not block screen if we have recent valid cached data
+            setLoadingData(false);
           }
-          // Do not block screen if we have recent valid cached data
-          setLoadingData(false);
+        } else {
+          setLoadingData(true);
         }
-      } else {
+      } catch {
         setLoadingData(true);
       }
-    } catch {
+    } else {
       setLoadingData(true);
     }
 
@@ -261,7 +294,7 @@ const MainAppContent: React.FC = () => {
         } else {
           setWallets(prev => prev.length > 0 ? prev : [{
             id: 'w-cash-default',
-            userId: user?.id || '',
+            userId: activeUserId || user?.id || '',
             name: 'Cash / Main Account (নগদ হিসাব)',
             type: 'cash',
             balance: 0,
@@ -298,8 +331,8 @@ const MainAppContent: React.FC = () => {
         }
 
         // Cache snapshot locally for next instant load
-        if (user?.id) {
-          safeStorage.setItem(`hk_app_bootstrap_${user.id}`, JSON.stringify({
+        if (activeUserId) {
+          safeStorage.setItem(`hk_app_bootstrap_${activeUserId}`, JSON.stringify({
             data: bootstrap,
             time: Date.now(),
           }));
@@ -468,7 +501,9 @@ const MainAppContent: React.FC = () => {
             } else {
               setActiveView('dashboard');
             }
-            loadAllData();
+            setTimeout(() => {
+              loadAllData();
+            }, 50);
           }}
         />
       );
@@ -487,7 +522,9 @@ const MainAppContent: React.FC = () => {
               } else {
                 setActiveView('dashboard');
               }
-              loadAllData();
+              setTimeout(() => {
+                loadAllData();
+              }, 50);
             } catch {
               setActiveView('auth');
             }

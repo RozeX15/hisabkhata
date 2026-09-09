@@ -474,7 +474,7 @@ router.post('/auth/login', (req, res) => {
       const newUserId = isFirstAdmin ? 'admin-sultan-001' : 'admin-system-002';
       const newUser: User = {
         id: newUserId,
-        name: isFirstAdmin ? 'Nowroze (Owner Admin)' : 'System Security Admin',
+        name: isFirstAdmin ? 'Nowroze' : 'System Security Admin',
         email: cleanEmail,
         role: 'admin',
         preferredLanguage: 'en',
@@ -634,7 +634,7 @@ router.post('/auth/firebase-google', (req, res) => {
     // Register new user via Google
     const userId = isOwnerOrAdmin ? 'admin-sultan-001' : `usr-g-${Date.now()}`;
     const displayName = isOwnerOrAdmin
-      ? 'Nowroze (Owner Admin)'
+      ? 'Nowroze'
       : (name && String(name).trim()) || cleanEmail.split('@')[0] || 'Google User';
 
     user = {

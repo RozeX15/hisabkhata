@@ -276,7 +276,7 @@ export async function findPersistentAccount(
 export const DEFAULT_SYSTEM_USERS: User[] = [
   {
     id: 'admin-sultan-001',
-    name: 'Nowroze (Owner Admin)',
+    name: 'Nowroze',
     email: 'sultanitbangladesh@gmail.com',
     phone: '01700000001',
     role: 'admin',

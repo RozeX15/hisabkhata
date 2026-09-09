@@ -469,7 +469,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
       const res = await purgeAllNonAdminUsersFromFirestore();
       const fresh = await fetchAllUsersFromFirestore();
       setUsers(fresh);
-      alert(`Cleanup successful: ${res.deletedCount} account(s) deleted. Only Nowroze (Owner Admin) is preserved.`);
+      alert(`Cleanup successful: ${res.deletedCount} account(s) deleted. Only Nowroze is preserved.`);
     } catch (err: any) {
       alert(err.message || 'Purge failed');
     } finally {
@@ -658,7 +658,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
       const existing = map.get(user.id);
       map.set(user.id, {
         userId: user.id,
-        userName: user.name || 'Nowroze (Owner Admin)',
+        userName: user.name || 'Nowroze',
         userEmail: user.email || 'sultanitbangladesh@gmail.com',
         avatarUrl: user.avatarUrl,
         plan: user.plan || 'pro',

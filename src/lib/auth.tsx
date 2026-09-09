@@ -214,7 +214,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const isFirstAdmin = isOwnerAdmin;
         const adminUser: User = {
           id: isFirstAdmin ? 'admin-sultan-001' : 'admin-system-002',
-          name: isFirstAdmin ? 'Nowroze (Owner Admin)' : 'System Security Admin',
+          name: isFirstAdmin ? 'Nowroze' : 'System Security Admin',
           email: isFirstAdmin ? 'sultanitbangladesh@gmail.com' : 'admin@hishabkhata.com',
           phone: isFirstAdmin ? '01700000001' : '01700000002',
           preferredLanguage: 'en',

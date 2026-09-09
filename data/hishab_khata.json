@@ -2,7 +2,7 @@
   "users": [
     {
       "id": "admin-sultan-001",
-      "name": "Nowroze (Owner Admin)",
+      "name": "Nowroze",
       "email": "sultanitbangladesh@gmail.com",
       "role": "admin",
       "preferredLanguage": "en",
@@ -94,20 +94,6 @@
       "updatedAt": "2026-09-06T07:50:02.069Z"
     },
     {
-      "id": "admin-system-002",
-      "name": "System Security Admin",
-      "email": "admin@hishabkhata.com",
-      "role": "admin",
-      "preferredLanguage": "en",
-      "preferredCurrency": "BDT",
-      "plan": "pro",
-      "status": "active",
-      "emailVerified": true,
-      "avatarUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
-      "createdAt": "2026-09-06T10:13:59.560Z",
-      "updatedAt": "2026-09-06T10:13:59.560Z"
-    },
-    {
       "id": "usr-1788689700190",
       "name": "Test User",
       "email": "user_test_1788689700112@gmail.com",
@@ -119,6 +105,58 @@
       "emailVerified": true,
       "createdAt": "2026-09-06T10:15:00.190Z",
       "updatedAt": "2026-09-06T10:15:00.190Z"
+    },
+    {
+      "id": "admin-system-002",
+      "name": "admin",
+      "email": "admin@hishabkhata.com",
+      "role": "admin",
+      "plan": "pro",
+      "status": "active",
+      "preferredCurrency": "BDT",
+      "preferredLanguage": "en",
+      "emailVerified": true,
+      "createdAt": "2026-09-09T01:39:31.988Z",
+      "updatedAt": "2026-09-09T01:39:31.988Z"
+    },
+    {
+      "id": "usr-1788918044261",
+      "name": "Rahim Test",
+      "email": "rahimtest1788918044171@gmail.com",
+      "role": "user",
+      "preferredLanguage": "en",
+      "preferredCurrency": "BDT",
+      "plan": "free",
+      "status": "active",
+      "emailVerified": true,
+      "createdAt": "2026-09-09T01:40:44.261Z",
+      "updatedAt": "2026-09-09T01:40:44.261Z"
+    },
+    {
+      "id": "usr-1788918378314",
+      "name": "Flow Tester",
+      "email": "test_flow_1788918378229@test.com",
+      "role": "user",
+      "preferredLanguage": "en",
+      "preferredCurrency": "BDT",
+      "plan": "free",
+      "status": "active",
+      "emailVerified": true,
+      "createdAt": "2026-09-09T01:46:18.314Z",
+      "updatedAt": "2026-09-09T01:46:18.314Z"
+    },
+    {
+      "id": "usr-1788918901773",
+      "name": "Flow Tester",
+      "email": "flowtest_1788918901687@example.com",
+      "role": "user",
+      "preferredLanguage": "en",
+      "preferredCurrency": "BDT",
+      "plan": "free",
+      "status": "active",
+      "emailVerified": true,
+      "createdAt": "2026-09-09T01:55:01.773Z",
+      "updatedAt": "2026-09-09T01:55:01.773Z"
     }
   ],
   "passwordHashes": {
@@ -130,7 +168,10 @@
     "usr-1788601482138": "$2b$10$ogJbECLVjDlUeUFMCkqcJ.9eJBv0l22923Xu1p490kbDR.jPxBQ3O",
     "usr-1788601870750": "$2b$10$2OVYb8qJtxa./c4qs9uQae.8WRC29KkTZplwv5mIngU9TyMbHmmAW",
     "admin-system-002": "$2b$10$sfL.7zo0urI1UUnlB0//8e8HY1xG9i6lLg9dzhqgr6x7BqGDRrc/y",
-    "usr-1788689700190": "$2b$10$UFUMV23BGlNQOxEVi.Ijb.Net7bugqV9yoro0Tv5KNJMrV6vHzqPm"
+    "usr-1788689700190": "$2b$10$UFUMV23BGlNQOxEVi.Ijb.Net7bugqV9yoro0Tv5KNJMrV6vHzqPm",
+    "usr-1788918044261": "$2b$10$TBpoIkj1WVDliTu7yHIOV.cTqK8/7Xc4YxWdFMwUuaD64lf4a1E42",
+    "usr-1788918378314": "$2b$10$S4.X7dgYaKRtSOnrX80itOvK3QqhN5Fj75ChZIp51K9HK06NQzmUm",
+    "usr-1788918901773": "$2b$10$hr95veiEYdDaL4nXtALyf.Hp240EJ3pm/WevQBf3qlyehykA3dhQm"
   },
   "wallets": [
     {
@@ -350,6 +391,102 @@
       "isDefault": false,
       "createdAt": "2026-09-06T10:15:00.190Z",
       "updatedAt": "2026-09-06T10:15:00.190Z"
+    },
+    {
+      "id": "w-cash-1788918044360",
+      "userId": "usr-1788918044261",
+      "name": "Cash Wallet",
+      "type": "cash",
+      "balance": -1500,
+      "currency": "BDT",
+      "color": "#10B981",
+      "isDefault": true,
+      "createdAt": "2026-09-09T01:40:44.261Z",
+      "updatedAt": "2026-09-09T01:40:44.380Z"
+    },
+    {
+      "id": "w-bank-1788918044360",
+      "userId": "usr-1788918044261",
+      "name": "Main Bank Account",
+      "type": "bank",
+      "balance": 0,
+      "currency": "BDT",
+      "color": "#0F766E",
+      "isDefault": false,
+      "createdAt": "2026-09-09T01:40:44.261Z",
+      "updatedAt": "2026-09-09T01:40:44.261Z"
+    },
+    {
+      "id": "w-1788918044386",
+      "userId": "usr-1788918044261",
+      "name": "Nagad Personal",
+      "type": "mobile_banking",
+      "balance": 3000,
+      "currency": "BDT",
+      "color": "#D97706",
+      "isDefault": false,
+      "createdAt": "2026-09-09T01:40:44.386Z",
+      "updatedAt": "2026-09-09T01:40:44.386Z"
+    },
+    {
+      "id": "w-cash-1788918378400",
+      "userId": "usr-1788918378314",
+      "name": "Cash Wallet",
+      "type": "cash",
+      "balance": -1500,
+      "currency": "BDT",
+      "color": "#10B981",
+      "isDefault": true,
+      "createdAt": "2026-09-09T01:46:18.314Z",
+      "updatedAt": "2026-09-09T01:46:18.412Z"
+    },
+    {
+      "id": "w-bank-1788918378400",
+      "userId": "usr-1788918378314",
+      "name": "Main Bank Account",
+      "type": "bank",
+      "balance": 0,
+      "currency": "BDT",
+      "color": "#0F766E",
+      "isDefault": false,
+      "createdAt": "2026-09-09T01:46:18.314Z",
+      "updatedAt": "2026-09-09T01:46:18.314Z"
+    },
+    {
+      "id": "w-cash-1788918901859",
+      "userId": "usr-1788918901773",
+      "name": "Cash Wallet",
+      "type": "cash",
+      "balance": -750,
+      "currency": "BDT",
+      "color": "#10B981",
+      "isDefault": true,
+      "createdAt": "2026-09-09T01:55:01.773Z",
+      "updatedAt": "2026-09-09T01:55:01.872Z"
+    },
+    {
+      "id": "w-bank-1788918901859",
+      "userId": "usr-1788918901773",
+      "name": "Main Bank Account",
+      "type": "bank",
+      "balance": 0,
+      "currency": "BDT",
+      "color": "#0F766E",
+      "isDefault": false,
+      "createdAt": "2026-09-09T01:55:01.773Z",
+      "updatedAt": "2026-09-09T01:55:01.773Z"
+    },
+    {
+      "id": "w-1788918901877",
+      "userId": "usr-1788918901773",
+      "name": "Nagad Wallet",
+      "type": "nagad",
+      "balance": 5000,
+      "currency": "BDT",
+      "color": "#0F766E",
+      "isDefault": false,
+      "createdAt": "2026-09-09T01:55:01.877Z",
+      "updatedAt": "2026-09-09T01:55:01.877Z"
     }
   ],
   "categories": [
@@ -490,6 +627,51 @@
     }
   ],
   "transactions": [
+    {
+      "id": "tx-1788918901872",
+      "userId": "usr-1788918901773",
+      "walletId": "w-cash-1788918901859",
+      "toWalletId": null,
+      "type": "expense",
+      "amount": 750,
+      "currency": "BDT",
+      "categoryId": "cat-oex",
+      "date": "2026-09-09",
+      "description": "Business Lunch",
+      "isRecurring": false,
+      "createdAt": "2026-09-09T01:55:01.872Z",
+      "updatedAt": "2026-09-09T01:55:01.872Z"
+    },
+    {
+      "id": "tx-1788918378412",
+      "userId": "usr-1788918378314",
+      "walletId": "w-cash-1788918378400",
+      "toWalletId": null,
+      "type": "expense",
+      "amount": 1500,
+      "currency": "BDT",
+      "categoryId": "cat-oex",
+      "date": "2026-09-08",
+      "description": "Test Lunch",
+      "isRecurring": false,
+      "createdAt": "2026-09-09T01:46:18.412Z",
+      "updatedAt": "2026-09-09T01:46:18.412Z"
+    },
+    {
+      "id": "tx-1788918044380",
+      "userId": "usr-1788918044261",
+      "walletId": "w-cash-1788918044360",
+      "toWalletId": null,
+      "type": "expense",
+      "amount": 1500,
+      "currency": "BDT",
+      "categoryId": "cat-foo",
+      "date": "2026-09-08",
+      "description": "Dinner with family",
+      "isRecurring": false,
+      "createdAt": "2026-09-09T01:40:44.380Z",
+      "updatedAt": "2026-09-09T01:40:44.380Z"
+    },
     {
       "id": "tx-1788689700294",
       "userId": "usr-1788689700190",
@@ -719,6 +901,33 @@
       "messageKey": "Your financial workspace is ready. Add your first income or expense to get started.",
       "isRead": false,
       "createdAt": "2026-09-06T10:15:00.190Z"
+    },
+    {
+      "id": "notif-1788918044360",
+      "userId": "usr-1788918044261",
+      "type": "system",
+      "titleKey": "Welcome to Hishab Khata!",
+      "messageKey": "Your financial workspace is ready. Add your first income or expense to get started.",
+      "isRead": false,
+      "createdAt": "2026-09-09T01:40:44.261Z"
+    },
+    {
+      "id": "notif-1788918378400",
+      "userId": "usr-1788918378314",
+      "type": "system",
+      "titleKey": "Welcome to Hishab Khata!",
+      "messageKey": "Your financial workspace is ready. Add your first income or expense to get started.",
+      "isRead": false,
+      "createdAt": "2026-09-09T01:46:18.314Z"
+    },
+    {
+      "id": "notif-1788918901859",
+      "userId": "usr-1788918901773",
+      "type": "system",
+      "titleKey": "Welcome to Hishab Khata!",
+      "messageKey": "Your financial workspace is ready. Add your first income or expense to get started.",
+      "isRead": false,
+      "createdAt": "2026-09-09T01:55:01.773Z"
     }
   ],
   "languages": [
@@ -2455,7 +2664,7 @@
     },
     "admin-sultan-001": {
       "userId": "admin-sultan-001",
-      "userName": "Nowroze (Owner Admin)",
+      "userName": "Nowroze",
       "userEmail": "sultanitbangladesh@gmail.com",
       "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
       "plan": "pro",
@@ -2509,20 +2718,31 @@
     },
     "admin-system-002": {
       "userId": "admin-system-002",
-      "userName": "System Security Admin",
+      "userName": "admin",
       "userEmail": "admin@hishabkhata.com",
-      "avatarUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
       "plan": "pro",
       "role": "admin",
       "isOnline": true,
-      "currentView": "Admin Control Center",
-      "lastActiveAt": "2026-09-06T10:14:59.963Z",
+      "currentView": "dashboard",
+      "lastActiveAt": "2026-09-09T01:57:54.487Z",
       "deviceType": "desktop",
-      "browser": "Admin Console",
-      "lastAction": "Monitoring System Telemetry"
+      "browser": "Chrome",
+      "lastAction": "Viewing dashboard"
     }
   },
   "liveActivities": [
+    {
+      "id": "act-1788917972465-8sfy",
+      "userId": "admin-system-002",
+      "userName": "admin",
+      "userEmail": "admin@hishabkhata.com",
+      "action": "NAVIGATE",
+      "category": "NAVIGATION",
+      "details": "Switched view to DASHBOARD",
+      "currentView": "dashboard",
+      "deviceType": "desktop",
+      "timestamp": "2026-09-09T01:39:32.465Z"
+    },
     {
       "id": "act-1788689699941-1gow",
       "userId": "admin-system-002",

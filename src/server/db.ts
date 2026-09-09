@@ -163,7 +163,7 @@ function getSeedData(): DatabaseSchema {
   const users: User[] = [
     {
       id: 'admin-sultan-001',
-      name: 'Nowroze (Owner Admin)',
+      name: 'Nowroze',
       email: 'sultanitbangladesh@gmail.com',
       role: 'admin',
       preferredLanguage: 'en',
@@ -225,11 +225,11 @@ function getSeedData(): DatabaseSchema {
   const adminLogs: AdminLog[] = [];
 
   const systemLimits: SystemPlanLimits = {
-    freeMaxWallets: 3,
-    freeMaxTransactionsPerMonth: 100,
-    freeMaxSavingsGoals: 2,
-    freeAllowPdfExport: false,
-    freeAllowExcelExport: false,
+    freeMaxWallets: 10,
+    freeMaxTransactionsPerMonth: 500,
+    freeMaxSavingsGoals: 10,
+    freeAllowPdfExport: true,
+    freeAllowExcelExport: true,
     proMonthlyPriceUSD: 4.99,
     proYearlyPriceUSD: 49.99,
   };
@@ -415,7 +415,7 @@ export function getDb(): DatabaseSchema {
   // Guarantee Owner Admin display name is strictly Nowroze
   const ownerAccount = inMemoryDb.users.find(u => (u.email || '').toLowerCase().trim() === 'sultanitbangladesh@gmail.com');
   if (ownerAccount) {
-    ownerAccount.name = 'Nowroze (Owner Admin)';
+    ownerAccount.name = 'Nowroze';
   }
 
   if (inMemoryDb.users.length !== initialLength) {
@@ -524,22 +524,12 @@ function executeSaveDb(): void {
   }
 }
 
-export function saveDb(immediate = false): void {
-  if (immediate) {
-    if (saveDbTimeout) {
-      clearTimeout(saveDbTimeout);
-      saveDbTimeout = null;
-    }
-    executeSaveDb();
-    return;
+export function saveDb(immediate = true): void {
+  if (saveDbTimeout) {
+    clearTimeout(saveDbTimeout);
+    saveDbTimeout = null;
   }
-
-  if (!saveDbTimeout) {
-    saveDbTimeout = setTimeout(() => {
-      saveDbTimeout = null;
-      executeSaveDb();
-    }, 250);
-  }
+  executeSaveDb();
 }
 
 export function registerOrSyncUser(user: User, passwordHash?: string): void {
