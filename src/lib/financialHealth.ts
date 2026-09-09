@@ -98,11 +98,18 @@ export function evaluateFinancialHealth(
 
   if (budgets && budgets.length > 0) {
     budgets.forEach((b) => {
-      const pct = Number(b.percentage) || 0;
+      let pct = Number((b as any).percentage);
+      if (isNaN(pct) || typeof (b as any).percentage === 'undefined') {
+        const budgetCatId = b.categoryId;
+        const spent = expenseTxs
+          .filter((t) => (!budgetCatId || t.categoryId === budgetCatId) && t.date && t.date.startsWith(currentMonthStr))
+          .reduce((s, t) => s + (Number(t.amount) || 0), 0);
+        pct = (Number(b.amount) || 0) > 0 ? Math.round((spent / Number(b.amount)) * 100) : 0;
+      }
       if (pct > 100) budgetsExceededCount++;
       else if (pct >= 80) budgetsWarningCount++;
     });
-    const onTrackBudgets = budgets.length - budgetsExceededCount;
+    const onTrackBudgets = Math.max(0, budgets.length - budgetsExceededCount);
     budgetAdherencePercent = Math.round((onTrackBudgets / budgets.length) * 100);
   }
 
@@ -200,18 +207,34 @@ export function evaluateFinancialHealth(
   const effectiveIncome = currentMonthIncomes > 0 ? currentMonthIncomes : historicalMonthlyIncome;
   const effectiveExpense = currentMonthExpenses > 0 ? currentMonthExpenses : historicalMonthlyExpense;
 
-  // Real Savings Rate
+  // Monthly burn rate for runway calculation:
+  // If user has multi-month history, prefer historical monthly expense to prevent early-month distortion.
+  // If user only has this month, extrapolate by days elapsed in current month.
+  let monthlyBurnRate = 0;
+  if (distinctExpenseMonths > 1) {
+    monthlyBurnRate = historicalMonthlyExpense;
+  } else if (currentMonthExpenses > 0) {
+    const daysElapsed = Math.max(1, now.getDate());
+    const extrapolated = Math.round((currentMonthExpenses / daysElapsed) * 30);
+    monthlyBurnRate = Math.max(currentMonthExpenses, extrapolated);
+  } else if (hasRealExpenseHistory) {
+    monthlyBurnRate = historicalMonthlyExpense;
+  }
+
+  // Real Savings Rate:
+  // If active current month, compare current month income and expenses.
+  // Otherwise use historical totals.
   let savingsRate = 0;
-  if (effectiveIncome > 0) {
-    savingsRate = Math.max(-100, Math.min(100, Math.round(((effectiveIncome - effectiveExpense) / effectiveIncome) * 100)));
+  if (currentMonthIncomes > 0) {
+    savingsRate = Math.max(-100, Math.min(100, Math.round(((currentMonthIncomes - currentMonthExpenses) / currentMonthIncomes) * 100)));
+  } else if (hasRealIncomeHistory && allIncomes > 0) {
+    savingsRate = Math.max(-100, Math.min(100, Math.round(((allIncomes - allExpenses) / allIncomes) * 100)));
   } else if (effectiveExpense > 0) {
     savingsRate = -100; // Outflows without income = 100% cashflow deficit
   } else {
     savingsRate = 0;
   }
 
-  // Monthly burn rate for runway calculation
-  const monthlyBurnRate = effectiveExpense;
   const emergencyMonthsRunway = monthlyBurnRate > 0 && totalBalance > 0
     ? parseFloat((totalBalance / monthlyBurnRate).toFixed(1))
     : 0;

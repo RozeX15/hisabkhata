@@ -155,48 +155,21 @@ export interface ExpenseAnalysisResult {
  * Checks if a category corresponds to fixed/essential non-discretionary commitments
  */
 function isEssentialOrFixedCategory(catId: string, catName: string, nameKey?: string): boolean {
-  const normalized = `${catId} ${catName} ${nameKey || ''}`.toLowerCase();
-  return (
-    normalized.includes('ren') ||
-    normalized.includes('rent') ||
-    normalized.includes('basha') ||
-    normalized.includes('bil') ||
-    normalized.includes('bill') ||
-    normalized.includes('utilit') ||
-    normalized.includes('electric') ||
-    normalized.includes('gas') ||
-    normalized.includes('water') ||
-    normalized.includes('wifi') ||
-    normalized.includes('internet') ||
-    normalized.includes('edu') ||
-    normalized.includes('school') ||
-    normalized.includes('tuition') ||
-    normalized.includes('hea') ||
-    normalized.includes('health') ||
-    normalized.includes('med') ||
-    normalized.includes('doctor') ||
-    normalized.includes('loan') ||
-    normalized.includes('emi')
-  );
+  if (nameKey === 'cat_rent' || nameKey === 'cat_bills' || nameKey === 'cat_education' || nameKey === 'cat_health') {
+    return true;
+  }
+  const text = `${catId} ${catName} ${nameKey || ''}`.toLowerCase();
+  return /\b(rent|basha|bhadra|bill|bills|utility|utilities|electric|electricity|gas|water|wifi|broadband|internet|tuition|school|college|loan|emi|installment|insurance|medical|medicine|hospital|doctor|health|clinic)\b/i.test(text);
 }
 
 /**
  * Check if a category represents needs (Essentials) vs wants (Discretionary)
  */
 function isNeedCategory(catId: string, catName: string, nameKey?: string): boolean {
-  const normalized = `${catId} ${catName} ${nameKey || ''}`.toLowerCase();
-  // Fixed essentials + groceries/basic food + transport
-  return (
-    isEssentialOrFixedCategory(catId, catName, nameKey) ||
-    normalized.includes('foo') ||
-    normalized.includes('food') ||
-    normalized.includes('groc') ||
-    normalized.includes('tra') ||
-    normalized.includes('transport') ||
-    normalized.includes('commute') ||
-    normalized.includes('fam') ||
-    normalized.includes('family')
-  );
+  if (isEssentialOrFixedCategory(catId, catName, nameKey)) return true;
+  if (nameKey === 'cat_food' || nameKey === 'cat_transport' || nameKey === 'cat_family') return true;
+  const text = `${catId} ${catName} ${nameKey || ''}`.toLowerCase();
+  return /\b(food|grocery|groceries|bazaar|market|transport|commute|bus|train|fuel|petrol|diesel|cng|family|parent|parents|baby|child|children)\b/i.test(text);
 }
 
 /**
@@ -208,6 +181,7 @@ export function analyzeUserExpenses(
   selectedPeriod: 'all' | '30days' | '90days' | '180days' | '365days' = 'all'
 ): ExpenseAnalysisResult {
   const now = new Date();
+  const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
   const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const previousMonthKey = `${prevMonthDate.getFullYear()}-${String(prevMonthDate.getMonth() + 1).padStart(2, '0')}`;
@@ -215,10 +189,12 @@ export function analyzeUserExpenses(
   // Period filtering
   const filteredTxs = transactions.filter((tx) => {
     if (!tx.date) return false;
-    if (selectedPeriod === 'all') return true;
     const txDate = new Date(tx.date);
     if (isNaN(txDate.getTime())) return false;
-    const diffDays = (now.getTime() - txDate.getTime()) / (1000 * 3600 * 24);
+    // Exclude future-dated transactions from historical period analysis
+    if (txDate > endOfToday) return false;
+    if (selectedPeriod === 'all') return true;
+    const diffDays = (endOfToday.getTime() - txDate.getTime()) / (1000 * 3600 * 24);
     if (selectedPeriod === '30days') return diffDays <= 30;
     if (selectedPeriod === '90days') return diffDays <= 90;
     if (selectedPeriod === '180days') return diffDays <= 180;
@@ -370,17 +346,29 @@ export function analyzeUserExpenses(
     else if (momGrowthPercent < 0) momDirection = 'decreased';
     else momDirection = 'unchanged';
   } else if (currentMonthExpense > 0) {
-    momGrowthPercent = 100;
+    momGrowthPercent = 0;
     momDirection = 'no_prior_data';
   } else {
     momDirection = 'no_prior_data';
   }
 
-  // Monthly average expense calculation
-  const monthsWithExpenses = monthlyTrends.filter((m) => m.expense > 0);
-  const monthlyAverageExpense = monthsWithExpenses.length > 0
-    ? Math.round(monthsWithExpenses.reduce((s, m) => s + m.expense, 0) / monthsWithExpenses.length)
-    : Math.round(totalExpense / (selectedPeriod === '30days' ? 1 : selectedPeriod === '90days' ? 3 : 6));
+  // Monthly average expense calculation aligned with period
+  let monthlyAverageExpense = 0;
+  if (selectedPeriod === '30days') {
+    monthlyAverageExpense = totalExpense;
+  } else if (selectedPeriod === '90days') {
+    monthlyAverageExpense = Math.round(totalExpense / 3);
+  } else if (selectedPeriod === '180days') {
+    monthlyAverageExpense = Math.round(totalExpense / 6);
+  } else if (selectedPeriod === '365days') {
+    monthlyAverageExpense = Math.round(totalExpense / 12);
+  } else {
+    // 'all'
+    const monthsWithExpenses = monthlyTrends.filter((m) => m.expense > 0);
+    monthlyAverageExpense = monthsWithExpenses.length > 0
+      ? Math.round(monthsWithExpenses.reduce((s, m) => s + m.expense, 0) / monthsWithExpenses.length)
+      : totalExpense;
+  }
 
   const averagePerTransaction = filteredExpenseTxs.length > 0
     ? Math.round(totalExpense / filteredExpenseTxs.length)

@@ -38,6 +38,8 @@ export interface IncomeAnalysisResult {
   monthlyAverageIncome: number;
   averagePerTransaction: number;
   momGrowthPercent: number; // Month-over-month growth
+  momDirection: 'increased' | 'decreased' | 'unchanged' | 'no_prior_data';
+  momDelta: number;
   incomeBySource: IncomeBySource[];
   monthlyTrends: MonthlyIncomeMetric[];
   recurringIncomeStreams: RecurringIncomeStream[];
@@ -60,12 +62,16 @@ export function analyzeUserIncome(
   selectedPeriod: 'all' | '30days' | '90days' | '180days' | '365days' = 'all'
 ): IncomeAnalysisResult {
   const now = new Date();
+  const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
 
   // Filter transactions by period
   const filteredTxs = transactions.filter((tx) => {
-    if (selectedPeriod === 'all') return true;
+    if (!tx.date) return false;
     const txDate = new Date(tx.date);
-    const diffDays = (now.getTime() - txDate.getTime()) / (1000 * 3600 * 24);
+    if (isNaN(txDate.getTime())) return false;
+    if (txDate > endOfToday) return false;
+    if (selectedPeriod === 'all') return true;
+    const diffDays = (endOfToday.getTime() - txDate.getTime()) / (1000 * 3600 * 24);
     if (selectedPeriod === '30days') return diffDays <= 30;
     if (selectedPeriod === '90days') return diffDays <= 90;
     if (selectedPeriod === '180days') return diffDays <= 180;
@@ -182,17 +188,38 @@ export function analyzeUserIncome(
   const prevMonthInc = monthMap.get(prevMonthKey)?.income || 0;
 
   let momGrowthPercent = 0;
+  let momDirection: IncomeAnalysisResult['momDirection'] = 'no_prior_data';
+  const momDelta = currentMonthInc - prevMonthInc;
+
   if (prevMonthInc > 0) {
     momGrowthPercent = Math.round(((currentMonthInc - prevMonthInc) / prevMonthInc) * 100);
+    if (momGrowthPercent > 0) momDirection = 'increased';
+    else if (momGrowthPercent < 0) momDirection = 'decreased';
+    else momDirection = 'unchanged';
   } else if (currentMonthInc > 0) {
-    momGrowthPercent = 100;
+    momGrowthPercent = 0;
+    momDirection = 'no_prior_data';
+  } else {
+    momDirection = 'no_prior_data';
   }
 
-  // 4. Monthly Average Income & Average per transaction
-  const monthsWithIncome = monthlyTrends.filter((m) => m.income > 0);
-  const monthlyAverageIncome = monthsWithIncome.length > 0
-    ? Math.round(monthsWithIncome.reduce((s, m) => s + m.income, 0) / monthsWithIncome.length)
-    : Math.round(totalIncome / (selectedPeriod === '30days' ? 1 : selectedPeriod === '90days' ? 3 : 6));
+  // 4. Monthly Average Income & Average per transaction aligned with selected period
+  let monthlyAverageIncome = 0;
+  if (selectedPeriod === '30days') {
+    monthlyAverageIncome = totalIncome;
+  } else if (selectedPeriod === '90days') {
+    monthlyAverageIncome = Math.round(totalIncome / 3);
+  } else if (selectedPeriod === '180days') {
+    monthlyAverageIncome = Math.round(totalIncome / 6);
+  } else if (selectedPeriod === '365days') {
+    monthlyAverageIncome = Math.round(totalIncome / 12);
+  } else {
+    // 'all'
+    const monthsWithIncome = monthlyTrends.filter((m) => m.income > 0);
+    monthlyAverageIncome = monthsWithIncome.length > 0
+      ? Math.round(monthsWithIncome.reduce((s, m) => s + m.income, 0) / monthsWithIncome.length)
+      : totalIncome;
+  }
 
   const averagePerTransaction = incomeTxs.length > 0
     ? Math.round(totalIncome / incomeTxs.length)
@@ -430,6 +457,8 @@ export function analyzeUserIncome(
     monthlyAverageIncome,
     averagePerTransaction,
     momGrowthPercent,
+    momDirection,
+    momDelta,
     incomeBySource,
     monthlyTrends,
     recurringIncomeStreams: recurringStreams,

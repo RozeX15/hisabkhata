@@ -799,27 +799,30 @@ router.get('/dashboard/summary', authMiddleware, (req: AuthRequest, res) => {
   const userBudgets = db.budgets.filter(b => b.userId === userId);
   const userGoals = db.savingsGoals.filter(g => g.userId === userId);
   const userLoans = db.loans.filter(l => l.userId === userId);
-  const allCategories = [...db.categories, ...db.categories.filter(c => c.userId === userId)];
+  const allCategories = [
+    ...db.categories.filter(c => c.isSystem || !c.userId),
+    ...db.categories.filter(c => c.userId === userId)
+  ];
 
   // Total balance in all user wallets
   const totalBalance = userWallets.reduce((sum, w) => sum + (Number(w.balance) || 0), 0);
 
   // Income & Expenses this month
   const thisMonthIncome = userTransactions
-    .filter(t => t.type === 'income' && t.date.startsWith(currentMonthStr))
-    .reduce((sum, t) => sum + t.amount, 0);
+    .filter(t => t.type === 'income' && t.date && t.date.startsWith(currentMonthStr))
+    .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
 
   const thisMonthExpenses = userTransactions
-    .filter(t => t.type === 'expense' && t.date.startsWith(currentMonthStr))
-    .reduce((sum, t) => sum + t.amount, 0);
+    .filter(t => t.type === 'expense' && t.date && t.date.startsWith(currentMonthStr))
+    .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
 
   const prevMonthIncome = userTransactions
-    .filter(t => t.type === 'income' && t.date.startsWith(prevMonthStr))
-    .reduce((sum, t) => sum + t.amount, 0);
+    .filter(t => t.type === 'income' && t.date && t.date.startsWith(prevMonthStr))
+    .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
 
   const prevMonthExpenses = userTransactions
-    .filter(t => t.type === 'expense' && t.date.startsWith(prevMonthStr))
-    .reduce((sum, t) => sum + t.amount, 0);
+    .filter(t => t.type === 'expense' && t.date && t.date.startsWith(prevMonthStr))
+    .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
 
   const incomeChangePercent = prevMonthIncome > 0
     ? Math.round(((thisMonthIncome - prevMonthIncome) / prevMonthIncome) * 100)
@@ -835,9 +838,9 @@ router.get('/dashboard/summary', authMiddleware, (req: AuthRequest, res) => {
   // Top expense categories this month
   const categorySpendingMap: Record<string, number> = {};
   userTransactions
-    .filter(t => t.type === 'expense' && t.date.startsWith(currentMonthStr))
+    .filter(t => t.type === 'expense' && t.date && t.date.startsWith(currentMonthStr))
     .forEach(t => {
-      categorySpendingMap[t.categoryId] = (categorySpendingMap[t.categoryId] || 0) + t.amount;
+      categorySpendingMap[t.categoryId] = (categorySpendingMap[t.categoryId] || 0) + (Number(t.amount) || 0);
     });
 
   const topExpenseCategories = Object.entries(categorySpendingMap).map(([catId, amount]) => {
@@ -853,18 +856,20 @@ router.get('/dashboard/summary', authMiddleware, (req: AuthRequest, res) => {
 
   // Budget summaries with progress calculation
   const budgetSummaries: BudgetProgress[] = userBudgets.map(b => {
+    const bAmt = Number(b.amount) || 0;
     const spent = userTransactions
-      .filter(t => t.type === 'expense' && (!b.categoryId || t.categoryId === b.categoryId) && t.date.startsWith(currentMonthStr))
-      .reduce((sum, t) => sum + t.amount, 0);
+      .filter(t => t.type === 'expense' && (!b.categoryId || t.categoryId === b.categoryId) && t.date && t.date.startsWith(currentMonthStr))
+      .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
 
-    const remaining = Math.max(0, b.amount - spent);
-    const percentage = b.amount > 0 ? Math.round((spent / b.amount) * 100) : 0;
+    const remaining = Math.max(0, bAmt - spent);
+    const percentage = bAmt > 0 ? Math.round((spent / bAmt) * 100) : 0;
     const status = percentage >= 100 ? 'over_budget' : percentage >= 80 ? 'warning' : 'normal';
 
     const cat = allCategories.find(c => c.id === b.categoryId);
 
     return {
       ...b,
+      amount: bAmt,
       spent,
       remaining,
       percentage,
@@ -961,23 +966,23 @@ router.get('/app/bootstrap', authMiddleware, (req: AuthRequest, res) => {
   const userGoals = db.savingsGoals.filter(g => g.userId === userId);
   const userLoans = db.loans.filter(l => l.userId === userId);
   const allCategories = [
-    ...db.categories.filter(c => c.isSystem),
+    ...db.categories.filter(c => c.isSystem || !c.userId),
     ...db.categories.filter(c => c.userId === userId)
   ];
 
   const totalBalance = userWallets.reduce((sum, w) => sum + (Number(w.balance) || 0), 0);
   const thisMonthIncome = userTransactions
-    .filter(t => t.type === 'income' && t.date.startsWith(currentMonthStr))
-    .reduce((sum, t) => sum + t.amount, 0);
+    .filter(t => t.type === 'income' && t.date && t.date.startsWith(currentMonthStr))
+    .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
   const thisMonthExpenses = userTransactions
-    .filter(t => t.type === 'expense' && t.date.startsWith(currentMonthStr))
-    .reduce((sum, t) => sum + t.amount, 0);
+    .filter(t => t.type === 'expense' && t.date && t.date.startsWith(currentMonthStr))
+    .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
   const prevMonthIncome = userTransactions
-    .filter(t => t.type === 'income' && t.date.startsWith(prevMonthStr))
-    .reduce((sum, t) => sum + t.amount, 0);
+    .filter(t => t.type === 'income' && t.date && t.date.startsWith(prevMonthStr))
+    .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
   const prevMonthExpenses = userTransactions
-    .filter(t => t.type === 'expense' && t.date.startsWith(prevMonthStr))
-    .reduce((sum, t) => sum + t.amount, 0);
+    .filter(t => t.type === 'expense' && t.date && t.date.startsWith(prevMonthStr))
+    .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
 
   const incomeChangePercent = prevMonthIncome > 0 ? Math.round(((thisMonthIncome - prevMonthIncome) / prevMonthIncome) * 100) : 0;
   const expenseChangePercent = prevMonthExpenses > 0 ? Math.round(((thisMonthExpenses - prevMonthExpenses) / prevMonthExpenses) * 100) : 0;
@@ -986,9 +991,9 @@ router.get('/app/bootstrap', authMiddleware, (req: AuthRequest, res) => {
 
   const categorySpendingMap: Record<string, number> = {};
   userTransactions
-    .filter(t => t.type === 'expense' && t.date.startsWith(currentMonthStr))
+    .filter(t => t.type === 'expense' && t.date && t.date.startsWith(currentMonthStr))
     .forEach(t => {
-      categorySpendingMap[t.categoryId] = (categorySpendingMap[t.categoryId] || 0) + t.amount;
+      categorySpendingMap[t.categoryId] = (categorySpendingMap[t.categoryId] || 0) + (Number(t.amount) || 0);
     });
 
   const topExpenseCategories = Object.entries(categorySpendingMap).map(([catId, amount]) => {
@@ -1003,15 +1008,17 @@ router.get('/app/bootstrap', authMiddleware, (req: AuthRequest, res) => {
   }).sort((a, b) => b.amount - a.amount);
 
   const budgetSummaries: BudgetProgress[] = userBudgets.map(b => {
+    const bAmt = Number(b.amount) || 0;
     const spent = userTransactions
-      .filter(t => t.type === 'expense' && (!b.categoryId || t.categoryId === b.categoryId) && t.date.startsWith(currentMonthStr))
-      .reduce((sum, t) => sum + t.amount, 0);
-    const remaining = Math.max(0, b.amount - spent);
-    const percentage = b.amount > 0 ? Math.round((spent / b.amount) * 100) : 0;
+      .filter(t => t.type === 'expense' && (!b.categoryId || t.categoryId === b.categoryId) && t.date && t.date.startsWith(currentMonthStr))
+      .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+    const remaining = Math.max(0, bAmt - spent);
+    const percentage = bAmt > 0 ? Math.round((spent / bAmt) * 100) : 0;
     const status = percentage >= 100 ? 'over_budget' : percentage >= 80 ? 'warning' : 'normal';
     const cat = allCategories.find(c => c.id === b.categoryId);
     return {
       ...b,
+      amount: bAmt,
       spent,
       remaining,
       percentage,
@@ -1030,8 +1037,8 @@ router.get('/app/bootstrap', authMiddleware, (req: AuthRequest, res) => {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const mStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
     const mName = d.toLocaleString('en-US', { month: 'short' });
-    const inc = userTransactions.filter(t => t.type === 'income' && t.date.startsWith(mStr)).reduce((s, t) => s + t.amount, 0);
-    const exp = userTransactions.filter(t => t.type === 'expense' && t.date.startsWith(mStr)).reduce((s, t) => s + t.amount, 0);
+    const inc = userTransactions.filter(t => t.type === 'income' && t.date && t.date.startsWith(mStr)).reduce((s, t) => s + (Number(t.amount) || 0), 0);
+    const exp = userTransactions.filter(t => t.type === 'expense' && t.date && t.date.startsWith(mStr)).reduce((s, t) => s + (Number(t.amount) || 0), 0);
     monthlySpendingTrend.push({
       month: mName,
       income: inc,
@@ -1558,21 +1565,23 @@ router.get('/budgets', authMiddleware, (req: AuthRequest, res) => {
   const month = (req.query.month as string) || currentMonthStr;
 
   const userBudgets = db.budgets.filter(b => b.userId === req.user!.id && b.month === month);
-  const userTx = db.transactions.filter(t => t.userId === req.user!.id && t.date.startsWith(month));
+  const userTx = db.transactions.filter(t => t.userId === req.user!.id && t.date && t.date.startsWith(month));
   const allCategories = db.categories;
 
   const budgetsWithProgress: BudgetProgress[] = userBudgets.map(b => {
+    const bAmt = Number(b.amount) || 0;
     const spent = userTx
       .filter(t => t.type === 'expense' && (!b.categoryId || t.categoryId === b.categoryId))
-      .reduce((sum, t) => sum + t.amount, 0);
+      .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
 
-    const remaining = Math.max(0, b.amount - spent);
-    const percentage = b.amount > 0 ? Math.round((spent / b.amount) * 100) : 0;
+    const remaining = Math.max(0, bAmt - spent);
+    const percentage = bAmt > 0 ? Math.round((spent / bAmt) * 100) : 0;
     const status = percentage >= 100 ? 'over_budget' : percentage >= 80 ? 'warning' : 'normal';
     const cat = allCategories.find(c => c.id === b.categoryId);
 
     return {
       ...b,
+      amount: bAmt,
       spent,
       remaining,
       percentage,
@@ -2001,7 +2010,7 @@ USER REAL FINANCIAL DATA:
 - Income Breakdown:
   * Top Sources: ${incomeAnalysis.incomeBySource.slice(0, 4).map(s => `${s.categoryName}: ${preferredCurrency} ${s.totalAmount.toLocaleString()} (${s.percentage}%)`).join(', ') || 'None'}
   * Recurring Monthly Inflow (Verified): ${preferredCurrency} ${incomeAnalysis.recurringTotalMonthly.toLocaleString()} (${incomeAnalysis.recurringPercentage}% of total)
-  * Month-over-Month Growth: ${incomeAnalysis.momGrowthPercent}%
+  * Month-over-Month Growth: ${incomeAnalysis.momDirection === 'no_prior_data' ? 'Base Month' : `${incomeAnalysis.momGrowthPercent > 0 ? '+' : ''}${incomeAnalysis.momGrowthPercent}% (${preferredCurrency} ${incomeAnalysis.momDelta >= 0 ? '+' : ''}${incomeAnalysis.momDelta.toLocaleString()})`}
   * Next Month Inflow Forecast (Estimate): ${preferredCurrency} ${incomeAnalysis.simpleForecastNextMonth.projectedAmount.toLocaleString()}
 - Advanced Expense Analysis & Spending Behavior:
   * Top Spending Channels: ${expenseAnalysis.topCategories.slice(0, 4).map(c => `${c.categoryName}: ${preferredCurrency} ${c.totalAmount.toLocaleString()} (${c.percentage}%)`).join(', ') || 'None'}

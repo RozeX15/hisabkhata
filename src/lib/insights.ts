@@ -14,18 +14,26 @@ export function generateSmartInsights(
   const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const prevMonthStr = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
 
+  // Only consider valid historical transactions up to today
+  const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).getTime();
+  const historicalTx = transactions.filter(t => {
+    if (!t.date) return false;
+    const time = new Date(t.date).getTime();
+    return !isNaN(time) && time <= endOfToday;
+  });
+
   // 1. Current month vs Prev month spending by category
-  const currExpenses = transactions.filter(t => t.type === 'expense' && t.date && t.date.startsWith(currentMonthStr));
-  const prevExpenses = transactions.filter(t => t.type === 'expense' && t.date && t.date.startsWith(prevMonthStr));
+  const currExpenses = historicalTx.filter(t => t.type === 'expense' && t.date.startsWith(currentMonthStr));
+  const prevExpenses = historicalTx.filter(t => t.type === 'expense' && t.date.startsWith(prevMonthStr));
 
   const currTotalExp = currExpenses.reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
   const prevTotalExp = prevExpenses.reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
 
-  const currIncome = transactions
-    .filter(t => t.type === 'income' && t.date && t.date.startsWith(currentMonthStr))
+  const currIncome = historicalTx
+    .filter(t => t.type === 'income' && t.date.startsWith(currentMonthStr))
     .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
-  const prevIncome = transactions
-    .filter(t => t.type === 'income' && t.date && t.date.startsWith(prevMonthStr))
+  const prevIncome = historicalTx
+    .filter(t => t.type === 'income' && t.date.startsWith(prevMonthStr))
     .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
 
   // Group by category

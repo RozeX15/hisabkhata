@@ -67,10 +67,14 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
   }, [initialTab]);
 
   const now = new Date();
+  const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
   const filteredTxs = transactions.filter((tx) => {
-    if (reportPeriod === 'all') return true;
+    if (!tx.date) return false;
     const txDate = new Date(tx.date);
-    const diffDays = (now.getTime() - txDate.getTime()) / (1000 * 3600 * 24);
+    if (isNaN(txDate.getTime())) return false;
+    if (reportPeriod === 'all') return true;
+    if (txDate > endOfToday) return false;
+    const diffDays = (endOfToday.getTime() - txDate.getTime()) / (1000 * 3600 * 24);
     if (reportPeriod === '30days') return diffDays <= 30;
     if (reportPeriod === '90days') return diffDays <= 90;
     return true;

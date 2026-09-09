@@ -169,11 +169,15 @@ export const AdvancedIncomeAnalysis: React.FC<AdvancedIncomeAnalysisProps> = ({
               MoM Growth Trend
             </span>
             <div className={`w-7 h-7 rounded-xl flex items-center justify-center ${
-              analysis.momGrowthPercent >= 0
+              analysis.momDirection === 'no_prior_data'
+                ? 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
+                : analysis.momGrowthPercent >= 0
                 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400'
                 : 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400'
             }`}>
-              {analysis.momGrowthPercent >= 0 ? (
+              {analysis.momDirection === 'no_prior_data' ? (
+                <Calendar className="w-4 h-4" />
+              ) : analysis.momGrowthPercent >= 0 ? (
                 <ArrowUpRight className="w-4 h-4" />
               ) : (
                 <ArrowDownRight className="w-4 h-4" />
@@ -181,12 +185,22 @@ export const AdvancedIncomeAnalysis: React.FC<AdvancedIncomeAnalysisProps> = ({
             </div>
           </div>
           <p className={`text-2xl font-black ${
-            analysis.momGrowthPercent >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'
+            analysis.momDirection === 'no_prior_data'
+              ? 'text-slate-900 dark:text-white'
+              : analysis.momGrowthPercent >= 0
+              ? 'text-emerald-600 dark:text-emerald-400'
+              : 'text-rose-500'
           }`}>
-            {analysis.momGrowthPercent >= 0 ? `+${analysis.momGrowthPercent}%` : `${analysis.momGrowthPercent}%`}
+            {analysis.momDirection === 'no_prior_data'
+              ? 'Base Month'
+              : analysis.momGrowthPercent >= 0
+              ? `+${analysis.momGrowthPercent}%`
+              : `${analysis.momGrowthPercent}%`}
           </p>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
-            Compared to previous calendar month
+            {analysis.momDirection === 'no_prior_data'
+              ? 'No prior month data recorded'
+              : `Compared to previous calendar month (${analysis.momDelta >= 0 ? '+' : ''}${formatCurrency(analysis.momDelta, currency)})`}
           </p>
         </div>
 
