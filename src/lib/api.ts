@@ -293,10 +293,17 @@ export const api = {
   }>('/admin/bootstrap'),
   getAdminStats: () => request<AdminStats>('/admin/stats'),
   getAdminUsers: () => request<any[]>('/admin/users'),
+  createAdminUser: (data: any) => request<{ success: boolean; user: any }>('/admin/users/create', { method: 'POST', body: JSON.stringify(data) }),
+  updateAdminUserProfile: (id: string, data: any) => request<{ success: boolean; user: any }>(`/admin/users/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  resetUserPassword: (id: string, password: string) => request<{ success: boolean; message: string }>(`/admin/users/${id}/reset-password`, { method: 'POST', body: JSON.stringify({ password }) }),
+  messageAdminUser: (id: string, title: string, message: string, type?: string) => request<{ success: boolean; notification: any }>(`/admin/users/${id}/message`, { method: 'POST', body: JSON.stringify({ title, message, type }) }),
   updateUserStatus: (id: string, status: string) => request<any>(`/admin/users/${id}/status`, { method: 'PUT', body: JSON.stringify({ status }) }),
   updateUserPlan: (id: string, plan: string) => request<any>(`/admin/users/${id}/plan`, { method: 'PUT', body: JSON.stringify({ plan }) }),
   updateUserRole: (id: string, role: string) => request<any>(`/admin/users/${id}/role`, { method: 'PUT', body: JSON.stringify({ role }) }),
   updateAdminUser: (id: string, data: any) => {
+    if (data.name !== undefined || data.email !== undefined || data.phone !== undefined) {
+      return request<any>(`/admin/users/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+    }
     if (data.status) return request<any>(`/admin/users/${id}/status`, { method: 'PUT', body: JSON.stringify({ status: data.status }) });
     if (data.plan) return request<any>(`/admin/users/${id}/plan`, { method: 'PUT', body: JSON.stringify({ plan: data.plan }) });
     if (data.role) return request<any>(`/admin/users/${id}/role`, { method: 'PUT', body: JSON.stringify({ role: data.role }) });

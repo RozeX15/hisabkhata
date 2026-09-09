@@ -2440,15 +2440,157 @@ router.get('/admin/users', adminOnly, (req: AuthRequest, res) => {
     id: u.id,
     name: u.name,
     email: u.email,
+    phone: u.phone,
     role: u.role,
     plan: u.plan,
     status: u.status,
     preferredLanguage: u.preferredLanguage,
     preferredCurrency: u.preferredCurrency,
     createdAt: u.createdAt,
+    updatedAt: u.updatedAt,
     transactionCount: db.transactions.filter(t => t.userId === u.id).length,
     walletCount: db.wallets.filter(w => w.userId === u.id).length,
   })));
+});
+
+router.post('/admin/users/create', adminOnly, (req: AuthRequest, res) => {
+  try {
+    const { name, email, phone, password, role = 'user', plan = 'free', preferredLanguage = 'en', preferredCurrency = 'BDT' } = req.body;
+    if (!name || (!email && !phone) || !password) {
+      res.status(400).json({ error: 'Name, email or phone, and password are required' });
+      return;
+    }
+
+    const cleanEmail = email ? String(email).trim().toLowerCase() : (phone ? `${phone.replace(/\D/g, '')}@mobile.hishabkhata.com` : '');
+    const cleanPhone = phone ? String(phone).trim() : undefined;
+
+    const db = getDb();
+    const existing = db.users.find(u => (cleanEmail && u.email?.toLowerCase() === cleanEmail) || (cleanPhone && u.phone === cleanPhone));
+    if (existing) {
+      res.status(400).json({ error: 'User with this email or mobile number already exists' });
+      return;
+    }
+
+    const userId = `usr-${Date.now()}`;
+    const passwordHash = bcrypt.hashSync(String(password), 10);
+    const now = new Date().toISOString();
+
+    const newUser: User = {
+      id: userId,
+      name: String(name).trim(),
+      email: cleanEmail,
+      phone: cleanPhone,
+      role: role === 'admin' ? 'admin' : 'user',
+      plan: plan === 'pro' ? 'pro' : 'free',
+      status: 'active',
+      preferredLanguage,
+      preferredCurrency,
+      emailVerified: true,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    registerOrSyncUser(newUser, passwordHash);
+
+    // Create starter cash wallet
+    db.wallets.push({
+      id: `w-cash-${Date.now()}`,
+      userId,
+      name: 'Cash Wallet',
+      type: 'cash',
+      balance: 0,
+      currency: preferredCurrency,
+      color: '#10B981',
+      isDefault: true,
+      createdAt: now,
+      updatedAt: now,
+    });
+    saveDb();
+
+    logAdmin(req, 'USER_CREATE', 'USER', userId, `Admin created user account: ${newUser.name} (${newUser.email || newUser.phone})`);
+    res.json({ success: true, user: newUser });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to create user' });
+  }
+});
+
+router.put('/admin/users/:id', adminOnly, (req: AuthRequest, res) => {
+  const db = getDb();
+  const user = db.users.find(u => u.id === req.params.id);
+  if (!user) {
+    res.status(404).json({ error: 'User not found' });
+    return;
+  }
+
+  const { name, email, phone, role, plan, status, preferredCurrency, preferredLanguage } = req.body;
+  if (name !== undefined) user.name = String(name).trim();
+  if (email !== undefined) user.email = String(email).trim().toLowerCase();
+  if (phone !== undefined) user.phone = String(phone).trim();
+  if (role !== undefined && (role === 'admin' || role === 'user')) user.role = role;
+  if (plan !== undefined && (plan === 'free' || plan === 'pro')) user.plan = plan;
+  if (status !== undefined && (status === 'active' || status === 'suspended')) user.status = status;
+  if (preferredCurrency !== undefined) user.preferredCurrency = preferredCurrency;
+  if (preferredLanguage !== undefined) user.preferredLanguage = preferredLanguage;
+
+  user.updatedAt = new Date().toISOString();
+  saveDb();
+  logAdmin(req, 'USER_UPDATE', 'USER', user.id, `Admin updated user profile: ${user.name}`);
+  res.json({ success: true, user });
+});
+
+router.post('/admin/users/:id/reset-password', adminOnly, (req: AuthRequest, res) => {
+  const { password } = req.body;
+  if (!password || String(password).length < 4) {
+    res.status(400).json({ error: 'Password must be at least 4 characters' });
+    return;
+  }
+
+  const db = getDb();
+  const user = db.users.find(u => u.id === req.params.id);
+  if (!user) {
+    res.status(404).json({ error: 'User not found' });
+    return;
+  }
+
+  const hash = bcrypt.hashSync(String(password), 10);
+  db.passwordHashes[user.id] = hash;
+  user.updatedAt = new Date().toISOString();
+  saveDb();
+
+  logAdmin(req, 'PASSWORD_RESET', 'USER', user.id, `Admin reset password for user ${user.email || user.name}`);
+  res.json({ success: true, message: `Password reset successfully for ${user.name}.` });
+});
+
+router.post('/admin/users/:id/message', adminOnly, (req: AuthRequest, res) => {
+  const { title, message, type = 'info' } = req.body;
+  if (!title || !message) {
+    res.status(400).json({ error: 'Title and message are required' });
+    return;
+  }
+
+  const db = getDb();
+  const targetId = req.params.id;
+  const user = db.users.find(u => u.id === targetId);
+  if (!user) {
+    res.status(404).json({ error: 'User not found' });
+    return;
+  }
+
+  const newNotif: AppNotification = {
+    id: `notif-${Date.now()}`,
+    userId: targetId,
+    titleKey: String(title).trim(),
+    messageKey: String(message).trim(),
+    type: 'announcement',
+    params: { customTitle: String(title).trim(), customMessage: String(message).trim() },
+    isRead: false,
+    createdAt: new Date().toISOString(),
+  };
+
+  db.notifications.unshift(newNotif);
+  saveDb();
+  logAdmin(req, 'USER_MESSAGE', 'USER', targetId, `Sent direct message to user ${user.name}: "${title}"`);
+  res.json({ success: true, notification: newNotif });
 });
 
 router.put('/admin/users/:id/status', adminOnly, (req: AuthRequest, res) => {

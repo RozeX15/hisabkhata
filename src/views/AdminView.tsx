@@ -60,7 +60,10 @@ import {
   Trash2,
   Heart,
   Database,
-  Download
+  Download,
+  UserPlus,
+  Edit3,
+  KeyRound
 } from 'lucide-react';
 import {
   fetchAllUsersFromFirestore,
@@ -70,7 +73,9 @@ import {
   updateUserRoleOrPlanInFirestore,
   seedDefaultUsersToFirestore,
   deleteUserFromFirestore,
-  purgeAllNonAdminUsersFromFirestore
+  purgeAllNonAdminUsersFromFirestore,
+  DEFAULT_SYSTEM_USERS,
+  saveAccountToCloud
 } from '../lib/accountPersistence';
 import firebaseConfigData from '../../firebase-applet-config.json';
 
@@ -82,12 +87,12 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
   const { t } = useI18n();
   const { user, logout } = useAuth();
 
-  // Active Main Tab
-  const [activeTab, setActiveTab] = useState<'presence' | 'activities' | 'payments' | 'suggestions' | 'emailLogs' | 'users' | 'broadcast' | 'config'>('presence');
+  // Active Main Tab - Default to 'users' so all registered accounts are immediately visible!
+  const [activeTab, setActiveTab] = useState<'users' | 'presence' | 'activities' | 'payments' | 'suggestions' | 'emailLogs' | 'broadcast' | 'config'>('users');
 
-  // Core Data
+  // Core Data - Initialize with all registered system users to guarantee 0ms visibility!
   const [stats, setStats] = useState<any>(null);
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<User[]>(DEFAULT_SYSTEM_USERS);
   const [presences, setPresences] = useState<UserPresence[]>([]);
   const [liveActivities, setLiveActivities] = useState<LiveUserActivity[]>([]);
   const [emailLogs, setEmailLogs] = useState<EmailLogEntry[]>([]);
@@ -95,6 +100,34 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
   const [paymentConfig, setPaymentConfig] = useState<AdminPaymentConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  // User Management Modals State
+  const [createUserModalOpen, setCreateUserModalOpen] = useState(false);
+  const [newUserName, setNewUserName] = useState('');
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserPhone, setNewUserPhone] = useState('');
+  const [newUserPassword, setNewUserPassword] = useState('');
+  const [newUserRole, setNewUserRole] = useState<'user' | 'admin'>('user');
+  const [newUserPlan, setNewUserPlan] = useState<'free' | 'pro'>('free');
+  const [newUserCurrency, setNewUserCurrency] = useState('BDT');
+  const [creatingUser, setCreatingUser] = useState(false);
+  const [createUserError, setCreateUserError] = useState<string | null>(null);
+
+  const [editUserModalOpen, setEditUserModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [editUserName, setEditUserName] = useState('');
+  const [editUserEmail, setEditUserEmail] = useState('');
+  const [editUserPhone, setEditUserPhone] = useState('');
+  const [editUserRole, setEditUserRole] = useState<'user' | 'admin'>('user');
+  const [editUserPlan, setEditUserPlan] = useState<'free' | 'pro'>('free');
+  const [editUserStatus, setEditUserStatus] = useState<'active' | 'deactivated'>('active');
+  const [savingUserEdit, setSavingUserEdit] = useState(false);
+
+  const [resetPassModalOpen, setResetPassModalOpen] = useState(false);
+  const [resetPassUser, setResetPassUser] = useState<User | null>(null);
+  const [newResetPassword, setNewResetPassword] = useState('');
+  const [resettingPassword, setResettingPassword] = useState(false);
+  const [resetPassSuccess, setResetPassSuccess] = useState(false);
 
   // Suggestions & SuperChats state
   const [adminSuggestions, setAdminSuggestions] = useState<SuggestionSuperChat[]>([]);
@@ -150,6 +183,22 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
   // Copy helper
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
+  // Helper to ensure all baseline and incoming users are always preserved
+  const mergeAndSetUsers = (incoming: User[]) => {
+    setUsers((prev) => {
+      const map = new Map<string, User>();
+      DEFAULT_SYSTEM_USERS.forEach((u) => map.set(u.id, u));
+      prev.forEach((u) => { if (u?.id) map.set(u.id, u); });
+      (incoming || []).forEach((u) => {
+        if (u?.id) {
+          const existing = map.get(u.id);
+          map.set(u.id, existing ? { ...existing, ...u } : u);
+        }
+      });
+      return Array.from(map.values());
+    });
+  };
+
   const fetchAllAdminData = async () => {
     // 1. Check local cache snapshot to render immediately with 0ms delay
     try {
@@ -159,7 +208,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
         if (parsed?.data) {
           const d = parsed.data;
           if (d.stats) setStats(d.stats);
-          if (Array.isArray(d.users) && d.users.length > 0) setUsers(d.users);
+          if (Array.isArray(d.users) && d.users.length > 0) mergeAndSetUsers(d.users);
           if (Array.isArray(d.presences)) setPresences(d.presences);
           if (Array.isArray(d.payments)) setPayments(d.payments);
           if (d.config) {
@@ -183,7 +232,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
 
       if (bootstrap && bootstrap.stats) {
         setStats(bootstrap.stats);
-        if (Array.isArray(bootstrap.users)) setUsers(bootstrap.users);
+        if (Array.isArray(bootstrap.users)) mergeAndSetUsers(bootstrap.users);
         if (Array.isArray(bootstrap.presences)) setPresences(bootstrap.presences);
         if (Array.isArray(bootstrap.payments)) setPayments(bootstrap.payments);
         if (bootstrap.config) {
@@ -208,12 +257,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
         // Quietly background sync Firestore users if available
         fetchAllUsersFromFirestore().then((fu) => {
           if (Array.isArray(fu) && fu.length > 0) {
-            setUsers((prev) => {
-              const map = new Map<string, User>();
-              prev.forEach((u) => { if (u?.id) map.set(u.id, u); });
-              fu.forEach((u) => { if (u?.id) map.set(u.id, u); });
-              return Array.from(map.values());
-            });
+            mergeAndSetUsers(fu);
           }
         }).catch(() => {});
 
@@ -235,9 +279,9 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
 
       if (statsRes) setStats((statsRes as any).stats || statsRes);
       if (Array.isArray(firestoreUsers)) {
-        setUsers(firestoreUsers);
+        mergeAndSetUsers(firestoreUsers);
       } else if ((firestoreUsers as any)?.users) {
-        setUsers((firestoreUsers as any).users);
+        mergeAndSetUsers((firestoreUsers as any).users);
       }
       
       const presenceMap = new Map<string, UserPresence>();
@@ -434,6 +478,147 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
       setUsers(fresh);
     } catch (err: any) {
       alert(err.message || 'Failed to update status');
+    }
+  };
+
+  // Create User Handler
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreateUserError(null);
+    if (!newUserName.trim()) {
+      setCreateUserError('User name is required.');
+      return;
+    }
+    if (!newUserEmail.trim() && !newUserPhone.trim()) {
+      setCreateUserError('Email or Phone number is required.');
+      return;
+    }
+    if (!newUserPassword || newUserPassword.length < 4) {
+      setCreateUserError('Password must be at least 4 characters.');
+      return;
+    }
+
+    setCreatingUser(true);
+    try {
+      const cleanEmail = newUserEmail.trim() ? newUserEmail.trim().toLowerCase() : `${newUserPhone.replace(/\D/g, '')}@mobile.hishabkhata.com`;
+      const cleanPhone = newUserPhone.trim() || undefined;
+
+      const createdUserObj: User = {
+        id: `usr-${Date.now()}`,
+        name: newUserName.trim(),
+        email: cleanEmail,
+        phone: cleanPhone,
+        role: newUserRole,
+        plan: newUserPlan,
+        status: 'active',
+        preferredLanguage: 'en',
+        preferredCurrency: newUserCurrency,
+        emailVerified: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      // 1. Save to Cloud Firestore
+      await saveAccountToCloud(createdUserObj, newUserPassword);
+
+      // 2. Call backend API
+      await api.createAdminUser({
+        name: newUserName.trim(),
+        email: cleanEmail,
+        phone: cleanPhone,
+        password: newUserPassword,
+        role: newUserRole,
+        plan: newUserPlan,
+        preferredCurrency: newUserCurrency,
+      }).catch(() => {});
+
+      // 3. Update local state
+      mergeAndSetUsers([createdUserObj]);
+
+      // Reset form and close
+      setNewUserName('');
+      setNewUserEmail('');
+      setNewUserPhone('');
+      setNewUserPassword('');
+      setNewUserRole('user');
+      setNewUserPlan('free');
+      setCreateUserModalOpen(false);
+      confetti({ particleCount: 40, spread: 60, origin: { y: 0.6 } });
+    } catch (err: any) {
+      setCreateUserError(err.message || 'Failed to create user');
+    } finally {
+      setCreatingUser(false);
+    }
+  };
+
+  // Edit User Handler
+  const handleOpenEditUser = (u: User) => {
+    setEditingUser(u);
+    setEditUserName(u.name || '');
+    setEditUserEmail(u.email || '');
+    setEditUserPhone(u.phone || '');
+    setEditUserRole(u.role || 'user');
+    setEditUserPlan((u.plan as any) || 'free');
+    setEditUserStatus((u.status as any) || 'active');
+    setEditUserModalOpen(true);
+  };
+
+  const handleSaveEditUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+    setSavingUserEdit(true);
+    try {
+      const updatedData: Partial<User> = {
+        name: editUserName.trim(),
+        email: editUserEmail.trim(),
+        phone: editUserPhone.trim() || undefined,
+        role: editUserRole,
+        plan: editUserPlan,
+        status: editUserStatus,
+        updatedAt: new Date().toISOString(),
+      };
+
+      await updateUserRoleOrPlanInFirestore(editingUser.id, updatedData);
+      await api.updateAdminUserProfile(editingUser.id, updatedData).catch(() => {});
+
+      setUsers(prev => prev.map(u => u.id === editingUser.id ? { ...u, ...updatedData } : u));
+      setEditUserModalOpen(false);
+      setEditingUser(null);
+    } catch (err: any) {
+      alert(err.message || 'Failed to update user profile');
+    } finally {
+      setSavingUserEdit(false);
+    }
+  };
+
+  // Reset Password Handler
+  const handleOpenResetPassword = (u: User) => {
+    setResetPassUser(u);
+    setNewResetPassword('');
+    setResetPassSuccess(false);
+    setResetPassModalOpen(true);
+  };
+
+  const handleSaveResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetPassUser || !newResetPassword || newResetPassword.length < 4) {
+      alert('Password must be at least 4 characters');
+      return;
+    }
+    setResettingPassword(true);
+    try {
+      await api.resetUserPassword(resetPassUser.id, newResetPassword);
+      await saveAccountToCloud(resetPassUser, newResetPassword);
+      setResetPassSuccess(true);
+      setTimeout(() => {
+        setResetPassModalOpen(false);
+        setResetPassUser(null);
+        setResetPassSuccess(false);
+      }, 1500);
+    } catch (err: any) {
+      alert(err.message || 'Failed to reset password');
+    } finally {
+      setResettingPassword(false);
     }
   };
 
@@ -983,6 +1168,23 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
       {/* Main Tab Navigation */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-slate-200 dark:border-slate-700/80 text-xs sm:text-sm font-extrabold">
         <button
+          id="admin-tab-users"
+          type="button"
+          onClick={() => setActiveTab('users')}
+          className={`px-4 py-2.5 rounded-2xl transition cursor-pointer flex items-center gap-2 shrink-0 ${
+            activeTab === 'users'
+              ? 'bg-amber-600 text-white shadow-md'
+              : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
+          }`}
+        >
+          <Database className="w-4 h-4 text-amber-400" />
+          <span>Users & Accounts ({users.length})</span>
+          <span className="px-2 py-0.5 rounded-full bg-emerald-400 text-slate-950 text-[10px] font-black">
+            Firestore Live
+          </span>
+        </button>
+
+        <button
           id="admin-tab-presence"
           type="button"
           onClick={() => setActiveTab('presence')}
@@ -1063,23 +1265,6 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
         >
           <Mail className="w-4 h-4 text-purple-400" />
           <span>Email Logs ({emailLogs.length})</span>
-        </button>
-
-        <button
-          id="admin-tab-users"
-          type="button"
-          onClick={() => setActiveTab('users')}
-          className={`px-4 py-2.5 rounded-2xl transition cursor-pointer flex items-center gap-2 shrink-0 ${
-            activeTab === 'users'
-              ? 'bg-amber-600 text-white shadow-md'
-              : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
-          }`}
-        >
-          <Database className="w-4 h-4 text-amber-400" />
-          <span>Firebase Users ({users.length})</span>
-          <span className="px-2 py-0.5 rounded-full bg-emerald-400 text-slate-950 text-[10px] font-black">
-            Firestore Live
-          </span>
         </button>
 
         <button
@@ -1737,6 +1922,20 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
 
             <div className="flex flex-wrap items-center gap-2 shrink-0">
               <button
+                id="admin-create-user-btn"
+                type="button"
+                onClick={() => {
+                  setCreateUserError(null);
+                  setCreateUserModalOpen(true);
+                }}
+                className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+                title="Create a new user account directly"
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                <span>+ Add User</span>
+              </button>
+
+              <button
                 id="admin-purge-non-admin-users-btn"
                 type="button"
                 onClick={handlePurgeNonAdminUsers}
@@ -2085,6 +2284,24 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
                                 <option value="user">User</option>
                                 <option value="admin">Admin</option>
                               </select>
+
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEditUser(u)}
+                                className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/50 dark:hover:bg-blue-900 text-blue-700 dark:text-blue-300 transition cursor-pointer"
+                                title="Edit User Profile (Name, Phone, Role, Plan, Status)"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => handleOpenResetPassword(u)}
+                                className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/50 dark:hover:bg-amber-900 text-amber-700 dark:text-amber-300 transition cursor-pointer"
+                                title="Reset User Account Password"
+                              >
+                                <KeyRound className="w-3.5 h-3.5" />
+                              </button>
 
                               <button
                                 type="button"
@@ -3067,6 +3284,391 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
                 <span>Confirm Rejection</span>
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ------------------------------------------------------------- */}
+      {/* CREATE USER MODAL */}
+      {/* ------------------------------------------------------------- */}
+      {createUserModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs">
+          <div className="w-full max-w-lg bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                  <UserPlus className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-base text-slate-900 dark:text-white">
+                    Create New User Account
+                  </h3>
+                  <p className="text-[11px] text-slate-400">
+                    Instantly provision account in Firestore and database
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCreateUserModalOpen(false)}
+                className="p-1 text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {createUserError && (
+              <div className="p-3 bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 text-xs rounded-xl font-bold flex items-center gap-2 border border-red-200 dark:border-red-800">
+                <AlertTriangle className="w-4 h-4 shrink-0" /> {createUserError}
+              </div>
+            )}
+
+            <form onSubmit={handleCreateUser} className="space-y-3.5">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Full Name *
+                </label>
+                <input
+                  type="text"
+                  value={newUserName}
+                  onChange={(e) => setNewUserName(e.target.value)}
+                  placeholder="e.g. Tanvir Hasan"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    value={newUserEmail}
+                    onChange={(e) => setNewUserEmail(e.target.value)}
+                    placeholder="e.g. tanvir@example.com"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-medium outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Mobile Phone
+                  </label>
+                  <input
+                    type="text"
+                    value={newUserPhone}
+                    onChange={(e) => setNewUserPhone(e.target.value)}
+                    placeholder="e.g. 01712345678"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-medium outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Initial Password *
+                </label>
+                <input
+                  type="text"
+                  value={newUserPassword}
+                  onChange={(e) => setNewUserPassword(e.target.value)}
+                  placeholder="Minimum 4 characters"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-mono font-bold outline-none focus:ring-2 focus:ring-emerald-500"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Role
+                  </label>
+                  <select
+                    value={newUserRole}
+                    onChange={(e) => setNewUserRole(e.target.value as any)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-bold outline-none cursor-pointer"
+                  >
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Plan
+                  </label>
+                  <select
+                    value={newUserPlan}
+                    onChange={(e) => setNewUserPlan(e.target.value as any)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-bold outline-none cursor-pointer"
+                  >
+                    <option value="free">Free</option>
+                    <option value="pro">PRO</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Currency
+                  </label>
+                  <select
+                    value={newUserCurrency}
+                    onChange={(e) => setNewUserCurrency(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-bold outline-none cursor-pointer"
+                  >
+                    <option value="BDT">BDT (৳)</option>
+                    <option value="USD">USD ($)</option>
+                    <option value="EUR">EUR (€)</option>
+                    <option value="INR">INR (₹)</option>
+                    <option value="GBP">GBP (£)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-700">
+                <button
+                  type="button"
+                  onClick={() => setCreateUserModalOpen(false)}
+                  className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={creatingUser}
+                  className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-sm"
+                >
+                  {creatingUser ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                  <span>Create Account</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ------------------------------------------------------------- */}
+      {/* EDIT USER PROFILE MODAL */}
+      {/* ------------------------------------------------------------- */}
+      {editUserModalOpen && editingUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs">
+          <div className="w-full max-w-lg bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                  <Edit3 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-base text-slate-900 dark:text-white">
+                    Edit User: {editingUser.name}
+                  </h3>
+                  <p className="text-[11px] text-slate-400 font-mono">
+                    ID: {editingUser.id}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditUserModalOpen(false);
+                  setEditingUser(null);
+                }}
+                className="p-1 text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditUser} className="space-y-3.5">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  value={editUserName}
+                  onChange={(e) => setEditUserName(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    value={editUserEmail}
+                    onChange={(e) => setEditUserEmail(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-medium outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Mobile Phone
+                  </label>
+                  <input
+                    type="text"
+                    value={editUserPhone}
+                    onChange={(e) => setEditUserPhone(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-medium outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Role
+                  </label>
+                  <select
+                    value={editUserRole}
+                    onChange={(e) => setEditUserRole(e.target.value as any)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-bold outline-none cursor-pointer"
+                  >
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Plan
+                  </label>
+                  <select
+                    value={editUserPlan}
+                    onChange={(e) => setEditUserPlan(e.target.value as any)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-bold outline-none cursor-pointer"
+                  >
+                    <option value="free">Free</option>
+                    <option value="pro">PRO</option>
+                    <option value="enterprise">Enterprise</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Status
+                  </label>
+                  <select
+                    value={editUserStatus}
+                    onChange={(e) => setEditUserStatus(e.target.value as any)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-bold outline-none cursor-pointer"
+                  >
+                    <option value="active">Active</option>
+                    <option value="deactivated">Deactivated</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-700">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditUserModalOpen(false);
+                    setEditingUser(null);
+                  }}
+                  className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingUserEdit}
+                  className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-sm"
+                >
+                  {savingUserEdit ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  <span>Save Changes</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ------------------------------------------------------------- */}
+      {/* RESET PASSWORD MODAL */}
+      {/* ------------------------------------------------------------- */}
+      {resetPassModalOpen && resetPassUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs">
+          <div className="w-full max-w-md bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                  <KeyRound className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-base text-slate-900 dark:text-white">
+                    Reset User Password
+                  </h3>
+                  <p className="text-[11px] text-slate-400">
+                    For: <span className="font-bold text-slate-700 dark:text-slate-300">{resetPassUser.name}</span> ({resetPassUser.email})
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setResetPassModalOpen(false);
+                  setResetPassUser(null);
+                }}
+                className="p-1 text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {resetPassSuccess && (
+              <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-xs rounded-xl font-bold flex items-center gap-2 border border-emerald-200 dark:border-emerald-800">
+                <CheckCircle2 className="w-4 h-4" /> Password has been successfully reset!
+              </div>
+            )}
+
+            <form onSubmit={handleSaveResetPassword} className="space-y-3.5">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  New Password
+                </label>
+                <input
+                  type="text"
+                  value={newResetPassword}
+                  onChange={(e) => setNewResetPassword(e.target.value)}
+                  placeholder="Enter new password (min 4 characters)"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-mono font-bold outline-none focus:ring-2 focus:ring-amber-500"
+                  required
+                />
+                <p className="text-[10px] text-slate-400 mt-1">
+                  The new password is plain text here so you can securely copy and share it with the user.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setResetPassModalOpen(false);
+                    setResetPassUser(null);
+                  }}
+                  className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={resettingPassword}
+                  className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-sm"
+                >
+                  {resettingPassword ? <Loader2 className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
+                  <span>Save New Password</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
