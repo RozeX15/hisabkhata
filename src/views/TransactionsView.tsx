@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useI18n } from '../lib/i18n';
 import { Transaction, Wallet, Category } from '../types';
-import { formatCurrency } from '../lib/currencies';
+import { formatCurrency, convertCurrency } from '../lib/currencies';
 import { exportToCSV, exportToExcel, exportToPDF } from '../lib/exportUtils';
 import {
   Search,
@@ -66,8 +66,8 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
   const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
   const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  const totalIncome = filtered.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-  const totalExpense = filtered.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+  const totalIncome = filtered.filter(t => t.type === 'income').reduce((s, t) => s + convertCurrency(t.amount, t.currency || 'BDT', currency), 0);
+  const totalExpense = filtered.filter(t => t.type === 'expense').reduce((s, t) => s + convertCurrency(t.amount, t.currency || 'BDT', currency), 0);
 
   const handleExportPDF = () => {
     exportToPDF(filtered, {
@@ -281,13 +281,25 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                         )}
                       </td>
                       <td className="py-3.5 px-4 text-right whitespace-nowrap font-extrabold">
-                        <span className={
-                          isIncome ? 'text-emerald-600 dark:text-emerald-400' :
-                          isTransfer ? 'text-blue-600 dark:text-blue-400' :
-                          'text-red-600 dark:text-red-400'
-                        }>
-                          {isIncome ? '+' : isTransfer ? '' : '-'}{formatCurrency(tx.amount, currency)}
-                        </span>
+                        {(() => {
+                          const convertedAmt = convertCurrency(tx.amount, tx.currency || 'BDT', currency);
+                          return (
+                            <>
+                              <span className={
+                                isIncome ? 'text-emerald-600 dark:text-emerald-400' :
+                                isTransfer ? 'text-blue-600 dark:text-blue-400' :
+                                'text-red-600 dark:text-red-400'
+                              }>
+                                {isIncome ? '+' : isTransfer ? '' : '-'}{formatCurrency(convertedAmt, currency)}
+                              </span>
+                              {tx.currency && tx.currency !== currency && (
+                                <span className="block text-[10px] font-normal text-slate-400 font-mono">
+                                  ({formatCurrency(tx.amount, tx.currency)})
+                                </span>
+                              )}
+                            </>
+                          );
+                        })()}
                       </td>
                       <td className="py-3.5 px-4 text-center whitespace-nowrap">
                         <div className="flex items-center justify-center gap-1">

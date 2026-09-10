@@ -64,6 +64,12 @@ const ViewLoadingFallback: React.FC<{ label?: string }> = ({ label = 'Loading...
   </div>
 );
 
+const VALID_VIEWS = new Set([
+  'dashboard', 'transactions', 'wallets', 'budgets', 'savings', 'savings_goals',
+  'loans', 'insights', 'reports', 'reports_income', 'reports_expense',
+  'notifications', 'settings', 'suggestions', 'admin', 'legal'
+]);
+
 const MainAppContent: React.FC = () => {
   const { user, token, logout, loginWithGoogle, loginSultanAdmin } = useAuth();
   const { isRTL, currency, setCurrency } = useI18n();
@@ -131,6 +137,14 @@ const MainAppContent: React.FC = () => {
   const [reportsInitialTab, setReportsInitialTab] = useState<'statement' | 'income_analysis' | 'expense_analysis'>('statement');
 
   const handleNavigate = (view: string) => {
+    try {
+      if (typeof window !== 'undefined' && window.location.hash.replace('#', '') !== view) {
+        window.history.pushState({ view }, '', '#' + view);
+      }
+    } catch {
+      // Safe fallback in restricted sandboxes
+    }
+
     if (view === 'reports_expense') {
       setReportsInitialTab('expense_analysis');
       setLastNonLegalView('reports');
@@ -145,12 +159,38 @@ const MainAppContent: React.FC = () => {
       scrollToTop();
       return;
     }
+    if (view === 'reports') {
+      setReportsInitialTab('statement');
+    }
     if (view !== 'legal') {
       setLastNonLegalView(view);
     }
-    setActiveView(view);
+    setActiveView(VALID_VIEWS.has(view) ? view : 'dashboard');
     scrollToTop();
   };
+
+  useEffect(() => {
+    const handlePopState = (e: PopStateEvent) => {
+      const stateView = e.state?.view || (typeof window !== 'undefined' ? window.location.hash.replace('#', '') : '') || 'dashboard';
+      if (stateView === 'reports_expense') {
+        setReportsInitialTab('expense_analysis');
+        setActiveView('reports');
+      } else if (stateView === 'reports_income') {
+        setReportsInitialTab('income_analysis');
+        setActiveView('reports');
+      } else if (VALID_VIEWS.has(stateView)) {
+        if (stateView === 'reports') {
+          setReportsInitialTab('statement');
+        }
+        setActiveView(stateView);
+      } else {
+        setActiveView('dashboard');
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   const handleOpenLegal = (type: 'privacy' | 'terms' | 'about') => {
     setLegalType(type);
@@ -1029,7 +1069,7 @@ const MainAppContent: React.FC = () => {
 
         {/* Dynamic View Switcher */}
         <main className="flex-1 p-3 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto pb-24 lg:pb-8 transition-all">
-          {activeView === 'dashboard' && (
+          {(activeView === 'dashboard' || !VALID_VIEWS.has(activeView)) && (
             <DashboardView
               summary={summary}
               wallets={wallets}

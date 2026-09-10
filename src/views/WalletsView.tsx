@@ -1,7 +1,7 @@
 import React from 'react';
 import { useI18n } from '../lib/i18n';
 import { Wallet } from '../types';
-import { formatCurrency } from '../lib/currencies';
+import { formatCurrency, convertCurrency } from '../lib/currencies';
 import {
   Wallet as WalletIcon,
   Building2,
@@ -39,7 +39,7 @@ export const WalletsView: React.FC<WalletsViewProps> = ({
   onOpenUpgrade,
 }) => {
   const { t } = useI18n();
-  const totalBalance = wallets.reduce((s, w) => s + w.balance, 0);
+  const totalBalance = wallets.reduce((s, w) => s + convertCurrency(w.balance, w.currency || 'BDT', currency), 0);
 
   const getWalletIcon = (type: string) => {
     switch (type) {
@@ -200,9 +200,16 @@ export const WalletsView: React.FC<WalletsViewProps> = ({
                 <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
                   Available Balance
                 </span>
-                <span className="text-lg font-black text-slate-900 dark:text-white tracking-tight">
-                  {formatCurrency(wallet.balance, wallet.currency || currency)}
-                </span>
+                <div className="text-right">
+                  <span className="text-lg font-black text-slate-900 dark:text-white tracking-tight">
+                    {formatCurrency(wallet.balance, wallet.currency || 'BDT')}
+                  </span>
+                  {(wallet.currency || 'BDT') !== currency && (
+                    <span className="block text-xs font-mono font-semibold text-slate-500 dark:text-slate-400">
+                      ≈ {formatCurrency(convertCurrency(wallet.balance, wallet.currency || 'BDT', currency), currency)}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           );

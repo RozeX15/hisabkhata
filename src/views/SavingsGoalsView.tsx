@@ -1,7 +1,7 @@
 import React from 'react';
 import { useI18n } from '../lib/i18n';
 import { SavingsGoal } from '../types';
-import { formatCurrency } from '../lib/currencies';
+import { formatCurrency, convertCurrency } from '../lib/currencies';
 import {
   Target,
   Plus,
@@ -32,8 +32,8 @@ export const SavingsGoalsView: React.FC<SavingsGoalsViewProps> = ({
   onDeleteGoal,
 }) => {
   const { t } = useI18n();
-  const totalTarget = goals.reduce((s, g) => s + g.targetAmount, 0);
-  const totalSaved = goals.reduce((s, g) => s + g.currentAmount, 0);
+  const totalTarget = goals.reduce((s, g) => s + convertCurrency(g.targetAmount, g.currency || 'BDT', currency), 0);
+  const totalSaved = goals.reduce((s, g) => s + convertCurrency(g.currentAmount, g.currency || 'BDT', currency), 0);
 
   const getIcon = (iconName: string) => {
     switch (iconName) {
@@ -134,10 +134,10 @@ export const SavingsGoalsView: React.FC<SavingsGoalsViewProps> = ({
                   <div className="space-y-1.5">
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-slate-500 font-medium">
-                        {formatCurrency(g.currentAmount, currency)} saved
+                        {formatCurrency(convertCurrency(g.currentAmount, g.currency || 'BDT', currency), currency)} saved
                       </span>
                       <span className="font-bold text-slate-900 dark:text-white">
-                        {formatCurrency(g.targetAmount, currency)}
+                        {formatCurrency(convertCurrency(g.targetAmount, g.currency || 'BDT', currency), currency)}
                       </span>
                     </div>
                     <div className="w-full h-3 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">

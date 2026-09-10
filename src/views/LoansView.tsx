@@ -1,7 +1,7 @@
 import React from 'react';
 import { useI18n } from '../lib/i18n';
 import { Loan } from '../types';
-import { formatCurrency } from '../lib/currencies';
+import { formatCurrency, convertCurrency } from '../lib/currencies';
 import {
   HandCoins,
   ArrowUpRight,
@@ -31,8 +31,12 @@ export const LoansView: React.FC<LoansViewProps> = ({
 }) => {
   const { t } = useI18n();
 
-  const oweMeTotal = loans.filter(l => l.type === 'owe_me').reduce((s, l) => s + (l.amount - l.paidAmount), 0);
-  const iOweTotal = loans.filter(l => l.type === 'i_owe').reduce((s, l) => s + (l.amount - l.paidAmount), 0);
+  const oweMeTotal = loans
+    .filter(l => l.type === 'owe_me')
+    .reduce((s, l) => s + convertCurrency(l.amount - l.paidAmount, l.currency || 'BDT', currency), 0);
+  const iOweTotal = loans
+    .filter(l => l.type === 'i_owe')
+    .reduce((s, l) => s + convertCurrency(l.amount - l.paidAmount, l.currency || 'BDT', currency), 0);
 
   return (
     <div className="space-y-6 pb-12">
@@ -158,11 +162,11 @@ export const LoansView: React.FC<LoansViewProps> = ({
                   <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl space-y-1 text-xs">
                     <div className="flex justify-between">
                       <span className="text-slate-400">Total Principal:</span>
-                      <span className="font-bold text-slate-900 dark:text-white">{formatCurrency(loan.amount, currency)}</span>
+                      <span className="font-bold text-slate-900 dark:text-white">{formatCurrency(convertCurrency(loan.amount, loan.currency || 'BDT', currency), currency)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-slate-400">Paid so far:</span>
-                      <span className="font-bold text-emerald-600">{formatCurrency(loan.paidAmount, currency)}</span>
+                      <span className="font-bold text-emerald-600">{formatCurrency(convertCurrency(loan.paidAmount, loan.currency || 'BDT', currency), currency)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-slate-400">Due Date:</span>
@@ -177,7 +181,7 @@ export const LoansView: React.FC<LoansViewProps> = ({
                   <div>
                     <span className="text-[10px] text-slate-400 block uppercase font-bold">Remaining</span>
                     <span className="text-base font-black text-slate-900 dark:text-white">
-                      {formatCurrency(remaining, currency)}
+                      {formatCurrency(convertCurrency(remaining, loan.currency || 'BDT', currency), currency)}
                     </span>
                   </div>
 

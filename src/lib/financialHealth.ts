@@ -1,5 +1,5 @@
 import { Transaction, BudgetProgress, Loan, Wallet, DashboardSummary } from '../types';
-import { formatCurrency } from './currencies';
+import { formatCurrency, convertCurrency } from './currencies';
 
 export interface HealthPillar {
   name: string;
@@ -61,7 +61,7 @@ export function evaluateFinancialHealth(
   const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
   // 1. Total liquid balance across wallets (safely handle numbers/strings)
-  const totalBalance = (wallets || []).reduce((s, w) => s + (Number(w.balance) || 0), 0);
+  const totalBalance = (wallets || []).reduce((s, w) => s + convertCurrency(Number(w.balance) || 0, w.currency || 'BDT', currency), 0);
 
   // 2. Real Transaction Audit
   const incomeTxs = (transactions || []).filter((t) => t.type === 'income');
@@ -69,14 +69,14 @@ export function evaluateFinancialHealth(
 
   const currentMonthIncomes = incomeTxs
     .filter((t) => t.date && t.date.startsWith(currentMonthStr))
-    .reduce((s, t) => s + (Number(t.amount) || 0), 0);
+    .reduce((s, t) => s + convertCurrency(Number(t.amount) || 0, t.currency || 'BDT', currency), 0);
 
   const currentMonthExpenses = expenseTxs
     .filter((t) => t.date && t.date.startsWith(currentMonthStr))
-    .reduce((s, t) => s + (Number(t.amount) || 0), 0);
+    .reduce((s, t) => s + convertCurrency(Number(t.amount) || 0, t.currency || 'BDT', currency), 0);
 
-  const allIncomes = incomeTxs.reduce((s, t) => s + (Number(t.amount) || 0), 0);
-  const allExpenses = expenseTxs.reduce((s, t) => s + (Number(t.amount) || 0), 0);
+  const allIncomes = incomeTxs.reduce((s, t) => s + convertCurrency(Number(t.amount) || 0, t.currency || 'BDT', currency), 0);
+  const allExpenses = expenseTxs.reduce((s, t) => s + convertCurrency(Number(t.amount) || 0, t.currency || 'BDT', currency), 0);
 
   const hasRealIncomeHistory = allIncomes > 0;
   const hasRealExpenseHistory = allExpenses > 0;
@@ -85,7 +85,7 @@ export function evaluateFinancialHealth(
   // 3. Debt Analysis: Loans user owes to others
   const totalDebtOwed = (loans || [])
     .filter((l) => l.type === 'i_owe' && l.status !== 'paid')
-    .reduce((s, l) => s + Math.max(0, (Number(l.amount) || 0) - (Number(l.paidAmount) || 0)), 0);
+    .reduce((s, l) => s + convertCurrency(Math.max(0, (Number(l.amount) || 0) - (Number(l.paidAmount) || 0)), l.currency || 'BDT', currency), 0);
 
   const debtToAssetRatio = totalBalance > 0
     ? Math.round((totalDebtOwed / totalBalance) * 100)

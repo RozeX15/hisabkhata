@@ -119,24 +119,26 @@ export function formatMoney(amount: number, currencyCode: string = 'BDT', locale
 
 export function getExchangeRate(fromCurrency: string = 'BDT', toCurrency: string = 'USD'): number {
   if (fromCurrency === toCurrency) return 1;
-  const fromRate = supportedCurrencies[fromCurrency]?.exchangeRateToUSD || 1;
-  const toRate = supportedCurrencies[toCurrency]?.exchangeRateToUSD || 1;
-  if (toRate === 0) return 1;
-  return fromRate / toRate;
+  const fromRate = supportedCurrencies[fromCurrency]?.exchangeRateToUSD;
+  const toRate = supportedCurrencies[toCurrency]?.exchangeRateToUSD;
+  if (!fromRate || !toRate || toRate <= 0 || !isFinite(fromRate) || !isFinite(toRate)) return 1;
+  const rate = fromRate / toRate;
+  return isFinite(rate) && rate > 0 ? rate : 1;
 }
 
 export function convertCurrency(amount: number, fromCurrency: string = 'BDT', toCurrency: string = 'BDT'): number {
-  const num = Number(amount) || 0;
+  const num = Number(amount);
+  if (isNaN(num) || !isFinite(num)) return 0;
   if (!fromCurrency || !toCurrency || fromCurrency === toCurrency) return num;
   
-  const fromRate = supportedCurrencies[fromCurrency]?.exchangeRateToUSD || 1;
-  const toRate = supportedCurrencies[toCurrency]?.exchangeRateToUSD || 1;
+  const fromRate = supportedCurrencies[fromCurrency]?.exchangeRateToUSD;
+  const toRate = supportedCurrencies[toCurrency]?.exchangeRateToUSD;
   
-  if (toRate === 0) return num;
+  if (!fromRate || !toRate || toRate <= 0 || !isFinite(fromRate) || !isFinite(toRate)) return num;
   
   const inUSD = num * fromRate;
   const converted = inUSD / toRate;
-  return converted;
+  return isFinite(converted) && !isNaN(converted) ? converted : num;
 }
 
 export function formatConvertedCurrency(

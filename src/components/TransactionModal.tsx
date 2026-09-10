@@ -146,7 +146,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         description: description.trim() || (type === 'income' ? t('income') : type === 'expense' ? t('expense') : t('transfer')),
         note: note.trim(),
         isRecurring,
-        currency: defaultCurrency,
+        currency: transaction?.currency || defaultCurrency,
       });
       onClose();
     } catch (err: any) {

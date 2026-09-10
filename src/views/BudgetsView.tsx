@@ -1,7 +1,7 @@
 import React from 'react';
 import { useI18n } from '../lib/i18n';
 import { BudgetProgress } from '../types';
-import { formatCurrency } from '../lib/currencies';
+import { formatCurrency, convertCurrency } from '../lib/currencies';
 import {
   PieChart as PieChartIcon,
   Plus,
@@ -25,8 +25,8 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({
   onDeleteBudget,
 }) => {
   const { t } = useI18n();
-  const totalBudgeted = budgets.reduce((s, b) => s + b.amount, 0);
-  const totalSpent = budgets.reduce((s, b) => s + b.spent, 0);
+  const totalBudgeted = budgets.reduce((s, b) => s + convertCurrency(b.amount, 'BDT', currency), 0);
+  const totalSpent = budgets.reduce((s, b) => s + convertCurrency(b.spent, 'BDT', currency), 0);
 
   return (
     <div className="space-y-6 pb-12">
@@ -101,8 +101,8 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({
 
                   <div className="space-y-1.5 mt-3">
                     <div className="flex justify-between items-center text-xs">
-                      <span className="text-slate-500 font-medium">Spent: {formatCurrency(b.spent, currency)}</span>
-                      <span className="font-bold text-slate-900 dark:text-white">Cap: {formatCurrency(b.amount, currency)}</span>
+                      <span className="text-slate-500 font-medium">Spent: {formatCurrency(convertCurrency(b.spent, 'BDT', currency), currency)}</span>
+                      <span className="font-bold text-slate-900 dark:text-white">Cap: {formatCurrency(convertCurrency(b.amount, 'BDT', currency), currency)}</span>
                     </div>
                     <div className="w-full h-3 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
                       <div
@@ -125,7 +125,7 @@ export const BudgetsView: React.FC<BudgetsViewProps> = ({
                       <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                     )}
                     <span className={`font-bold ${isOver ? 'text-red-500' : isWarning ? 'text-amber-500' : 'text-emerald-600'}`}>
-                      {isOver ? `Exceeded by ${formatCurrency(b.spent - b.amount, currency)}` : `${formatCurrency(b.remaining, currency)} remaining`}
+                      {isOver ? `Exceeded by ${formatCurrency(convertCurrency(b.spent - b.amount, 'BDT', currency), currency)}` : `${formatCurrency(convertCurrency(b.remaining, 'BDT', currency), currency)} remaining`}
                     </span>
                   </div>
                   <span className="font-extrabold text-slate-700 dark:text-slate-300">

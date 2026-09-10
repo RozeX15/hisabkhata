@@ -132,6 +132,7 @@ export interface Loan {
   personContact?: string;
   amount: number;
   paidAmount: number;
+  currency?: string;
   dueDate: string; // YYYY-MM-DD
   description?: string;
   status: LoanStatus;
