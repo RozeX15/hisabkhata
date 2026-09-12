@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { getDb, saveDb, registerOrSyncUser, deleteUserFromDb, purgeNonAdminUsersFromDb } from './db';
 import { authMiddleware, adminOnly, generateToken, AuthRequest } from './auth';
+import { getMySqlStatus, getDatabaseSqlContent } from './mysql';
 import {
   User,
   Wallet,
@@ -3330,6 +3331,36 @@ router.put('/admin/system-limits', adminOnly, (req: AuthRequest, res) => {
   logAdmin(req, 'UPDATE_SYSTEM_LIMITS', 'SETTINGS', 'GLOBAL', 'Updated platform tiers and quotas');
   saveDb();
   res.json(db.systemLimits);
+});
+
+// MySQL & Custom phpMyAdmin Database Status & SQL Endpoints
+router.get('/admin/db-status', adminOnly, async (req: AuthRequest, res) => {
+  try {
+    const status = await getMySqlStatus();
+    res.json({
+      engine: status.connected ? 'mysql' : 'json_store',
+      mysql: status,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/admin/schema-sql', adminOnly, (req: AuthRequest, res) => {
+  const sql = getDatabaseSqlContent();
+  res.json({
+    filename: 'database.sql',
+    sql,
+    instructions: 'Import this SQL script into your phpMyAdmin or execute via MySQL CLI.',
+  });
+});
+
+router.get('/admin/download-database-sql', adminOnly, (req: AuthRequest, res) => {
+  const sql = getDatabaseSqlContent();
+  res.setHeader('Content-Type', 'application/sql');
+  res.setHeader('Content-Disposition', 'attachment; filename="hishabkhata_database.sql"');
+  res.send(sql);
 });
 
 // ==========================================

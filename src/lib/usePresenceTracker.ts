@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { api } from './api';
 import { User } from '../types';
-import { firestore, doc, setDoc } from './firebase';
 
 export function usePresenceTracker(user: User | null, token: string | null, activeView: string, lastAction?: string) {
   useEffect(() => {
@@ -24,7 +23,6 @@ export function usePresenceTracker(user: User | null, token: string | null, acti
     };
 
     const sendPing = async () => {
-      const now = new Date().toISOString();
       const payload = {
         currentView: activeView,
         deviceType: getDeviceType(),
@@ -32,38 +30,11 @@ export function usePresenceTracker(user: User | null, token: string | null, acti
         lastAction: lastAction || `Viewing ${activeView.replace('-', ' ')}`,
       };
 
-      // 1. Send to server heartbeat endpoint
+      // Real-time sync to server database (MySQL / Custom Database)
       try {
         await api.sendHeartbeat(payload);
       } catch {
         // Fallback gracefully
-      }
-
-      // 2. Realtime sync to Cloud Firestore
-      try {
-        if (firestore && user.id) {
-          await setDoc(
-            doc(firestore, 'user_presences', user.id),
-            {
-              userId: user.id,
-              userName: user.name,
-              userEmail: user.email,
-              avatarUrl: user.avatarUrl || null,
-              plan: user.plan || 'free',
-              role: user.role || 'user',
-              isOnline: true,
-              currentView: activeView,
-              lastActiveAt: now,
-              deviceType: payload.deviceType,
-              browser: payload.browser,
-              lastAction: payload.lastAction,
-              updatedAt: now,
-            },
-            { merge: true }
-          );
-        }
-      } catch {
-        // Firestore presence fallback
       }
     };
 
@@ -73,17 +44,6 @@ export function usePresenceTracker(user: User | null, token: string | null, acti
     // Heartbeat every 15 seconds
     const interval = setInterval(sendPing, 15000);
 
-    // Also send immediately when tab becomes visible again
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        sendPing();
-      }
-    };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      clearInterval(interval);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [user, token, activeView, lastAction]);
+    return () => clearInterval(interval);
+  }, [user?.id, token, activeView, lastAction]);
 }

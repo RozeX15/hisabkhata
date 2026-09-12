@@ -324,6 +324,22 @@ export const api = {
   getSystemLimits: () => request<SystemPlanLimits>('/admin/system-limits'),
   updateSystemLimits: (data: Partial<SystemPlanLimits>) => request<SystemPlanLimits>('/admin/system-limits', { method: 'PUT', body: JSON.stringify(data) }),
   resetDemoData: () => request<{ message: string }>('/admin/system-limits', { method: 'GET' }), // Safe no-op or reload
+  getDbStatus: () => request<{
+    engine: 'mysql' | 'json_store';
+    mysql: {
+      configured: boolean;
+      connected: boolean;
+      host: string;
+      port: number;
+      database: string;
+      user: string;
+      tableCount: number;
+      tables: string[];
+      error?: string | null;
+    };
+    timestamp: string;
+  }>('/admin/db-status'),
+  getSchemaSql: () => request<{ filename: string; sql: string; instructions: string }>('/admin/schema-sql'),
 
   // Suggestions & SuperChat
   getSuggestions: () => request<SuggestionSuperChat[]>('/suggestions'),

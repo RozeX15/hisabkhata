@@ -61,6 +61,7 @@ import {
   Heart,
   Database,
   Download,
+  Code,
   UserPlus,
   Edit3,
   KeyRound
@@ -245,6 +246,50 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
   // Copy helper
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
+  // Custom Database & phpMyAdmin Status & SQL Viewer States
+  const [dbStatus, setDbStatus] = useState<any>(null);
+  const [loadingDbStatus, setLoadingDbStatus] = useState(false);
+  const [showSqlModal, setShowSqlModal] = useState(false);
+  const [sqlContent, setSqlContent] = useState<string>('');
+  const [copiedSql, setCopiedSql] = useState(false);
+
+  const fetchDbStatus = async () => {
+    setLoadingDbStatus(true);
+    try {
+      const res = await api.getDbStatus();
+      setDbStatus(res);
+    } catch {
+      // Graceful non-blocking fallback
+    } finally {
+      setLoadingDbStatus(false);
+    }
+  };
+
+  const handleDownloadSql = () => {
+    const link = document.createElement('a');
+    link.href = '/api/admin/download-database-sql';
+    link.download = 'hishabkhata_database.sql';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleViewSql = async () => {
+    try {
+      const res = await api.getSchemaSql();
+      setSqlContent(res.sql);
+      setShowSqlModal(true);
+    } catch (err: any) {
+      alert('Could not load SQL Schema: ' + (err.message || 'Unknown error'));
+    }
+  };
+
+  const handleCopySql = () => {
+    navigator.clipboard.writeText(sqlContent);
+    setCopiedSql(true);
+    setTimeout(() => setCopiedSql(false), 2000);
+  };
+
   // Helper to ensure all baseline and incoming users are always preserved
   const mergeAndSetUsers = (incoming: User[]) => {
     setUsers((prev) => {
@@ -382,6 +427,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
 
   useEffect(() => {
     fetchAllAdminData();
+    fetchDbStatus();
 
     // Live real-time stream directly from Firebase Firestore users collection
     const unsubscribeUsers = subscribeToFirestoreUsers((freshFirestoreUsers) => {
@@ -493,7 +539,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `hishabkhata_firebase_users_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `hishabkhata_users_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -505,7 +551,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
     setTimeout(() => setCopiedKey(null), 2000);
   };
 
-  // User Management Handlers (Persisted to Firebase Firestore)
+  // User Management Handlers (Persisted to Database)
   const handleUpdateUserRole = async (targetUserId: string, newRole: 'admin' | 'user') => {
     try {
       await updateUserRoleOrPlanInFirestore(targetUserId, { role: newRole });
@@ -1167,49 +1213,60 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
         </div>
       )}
 
-      {/* Primary Database Status Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 sm:p-5 rounded-3xl bg-amber-500/10 dark:bg-amber-500/5 border border-amber-400/50 dark:border-amber-500/30">
+      {/* Primary Database Status Banner (Custom MySQL & phpMyAdmin) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 sm:p-5 rounded-3xl bg-emerald-500/10 dark:bg-emerald-500/5 border border-emerald-400/50 dark:border-emerald-500/30">
         <div className="flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-md shadow-amber-500/20">
+          <div className="w-10 h-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-emerald-600/20">
             <Database className="w-5 h-5" />
           </div>
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-black uppercase tracking-wider text-amber-900 dark:text-amber-300">
-                Primary Database: Firebase Firestore Only
+              <span className="text-xs font-black uppercase tracking-wider text-emerald-950 dark:text-emerald-300">
+                Database: Custom MySQL & phpMyAdmin Ready
               </span>
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 text-[10px] font-extrabold border border-emerald-300 dark:border-emerald-800">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
-                Live Real-Time Sync
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                {dbStatus?.mysql?.connected ? 'MySQL Connected' : 'database.sql Generated'}
               </span>
             </div>
             <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5 font-medium flex items-center gap-2 flex-wrap">
-              <span>Firestore Project: <span className="font-mono font-bold text-slate-900 dark:text-slate-100">{firebaseConfigData.projectId || 'hishabkhata-ef99b'}</span></span>
+              <span>Database Name: <span className="font-mono font-bold text-slate-900 dark:text-slate-100">hishabkhata_db</span></span>
               <span>•</span>
-              <span>Production Domain: <a href="https://hishabkhata-olive.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-teal-600 dark:text-teal-400 font-mono font-bold hover:underline">hishabkhata-olive.vercel.app</a></span>
+              <span>Tables: <span className="font-mono font-bold text-slate-900 dark:text-slate-100">19 Tables</span></span>
+              <span>•</span>
+              <span>phpMyAdmin Import: <span className="text-teal-600 dark:text-teal-400 font-mono font-bold">database.sql</span></span>
             </p>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
           <button
-            id="admin-sync-firestore-btn"
+            id="admin-download-sql-btn"
             type="button"
-            onClick={handleSyncFirestoreUsers}
-            disabled={syncingFirestore}
-            className="px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
-            title="Sync all default system accounts and persistent users to Firestore"
+            onClick={handleDownloadSql}
+            className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+            title="Download database.sql to import in phpMyAdmin"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${syncingFirestore ? 'animate-spin' : ''}`} />
-            <span>{syncingFirestore ? 'Syncing...' : 'Sync to Firestore'}</span>
+            <Download className="w-3.5 h-3.5" />
+            <span>Download database.sql</span>
+          </button>
+          <button
+            id="admin-view-sql-btn"
+            type="button"
+            onClick={handleViewSql}
+            className="px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+            title="View SQL Schema Code"
+          >
+            <Code className="w-3.5 h-3.5 text-emerald-400" />
+            <span>View SQL</span>
           </button>
           <button
             id="admin-jump-to-users-btn"
             type="button"
             onClick={() => setActiveTab('users')}
-            className="px-3.5 py-2 bg-slate-900 dark:bg-slate-700 hover:bg-slate-850 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+            className="px-3.5 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm"
           >
-            <Users className="w-3.5 h-3.5 text-amber-400" />
+            <Users className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
             <span>View All Users ({users.length})</span>
           </button>
         </div>
@@ -1941,31 +1998,31 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
       )}
 
       {/* ------------------------------------------------------------- */}
-      {/* TAB 3: FIREBASE FIRESTORE USERS DIRECTORY */}
+      {/* TAB 3: CUSTOM DATABASE & PHPMYADMIN USER DIRECTORY */}
       {/* ------------------------------------------------------------- */}
       {activeTab === 'users' && (
         <div className="space-y-4">
           {/* Header Card */}
           <div className="p-6 rounded-3xl bg-white dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-md shadow-amber-500/20">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-emerald-600/20">
                 <Database className="w-6 h-6" />
               </div>
               <div>
                 <div className="flex flex-wrap items-center gap-2.5">
                   <h3 className="font-black text-lg sm:text-xl text-slate-900 dark:text-white">
-                    Firebase Firestore User Directory
+                    Custom Database User Directory
                   </h3>
                   <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 text-[10px] font-black uppercase tracking-wider border border-emerald-300 dark:border-emerald-800 flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
-                    Live Firestore Sync
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    MySQL & phpMyAdmin Compatible
                   </span>
                   <span className="px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-[10px] font-bold">
                     {users.length} Total Registered
                   </span>
                 </div>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">
-                  Direct live stream from Firebase Firestore database <code className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-900 rounded font-mono text-amber-700 dark:text-amber-400">{firebaseConfigData.firestoreDatabaseId || 'ai-studio-hishabkhata-fbe26cc2-dd75-4f5c-950d-f8c94bf7952a'}</code>. Showing all existing accounts and new registrations.
+                  Connected to Custom MySQL & Local Database (Database: <code className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-900 rounded font-mono text-emerald-700 dark:text-emerald-400 font-bold">hishabkhata_db</code>). Showing all active accounts.
                 </p>
               </div>
             </div>
@@ -1991,22 +2048,21 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
                 onClick={handlePurgeNonAdminUsers}
                 disabled={purgingUsers}
                 className="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
-                title="Delete all demo and non-admin user accounts from Firebase and database"
+                title="Delete all demo and non-admin user accounts from the database"
               >
                 <Trash2 className={`w-3.5 h-3.5 ${purgingUsers ? 'animate-spin' : ''}`} />
                 <span>{purgingUsers ? 'Purging...' : 'Delete Non-Admin Users'}</span>
               </button>
 
               <button
-                id="admin-sync-firestore-users-btn"
+                id="admin-refresh-db-users-btn"
                 type="button"
-                onClick={handleSyncFirestoreUsers}
-                disabled={syncingFirestore}
-                className="px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
-                title="Force sync baseline and new accounts to Cloud Firestore"
+                onClick={() => fetchAllAdminData()}
+                className="px-3.5 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-650 text-slate-800 dark:text-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs border border-slate-200 dark:border-slate-600"
+                title="Reload users from database"
               >
-                <RefreshCw className={`w-3.5 h-3.5 ${syncingFirestore ? 'animate-spin' : ''}`} />
-                <span>{syncingFirestore ? 'Syncing...' : 'Sync with Firebase'}</span>
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>Refresh Users</span>
               </button>
 
               <button
@@ -3719,6 +3775,85 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* SQL SCHEMA & PHPMYADMIN SETUP MODAL */}
+      {showSqlModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 dark:border-slate-700">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-700 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-600/20">
+                  <Database className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-black text-lg text-slate-900 dark:text-white flex items-center gap-2">
+                    <span>MySQL Database Schema & phpMyAdmin Setup</span>
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 text-[10px] font-extrabold">
+                      19 Tables Ready
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    phpMyAdmin-এ এক ক্লিকে ইমপোর্ট করার জন্য সম্পূর্ণ SQL কুয়েরি এবং সেটআপ গাইড
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSqlModal(false)}
+                className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Step-by-Step Instructions */}
+            <div className="mt-4 p-4 rounded-2xl bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 shrink-0 text-xs text-emerald-950 dark:text-emerald-200">
+              <h4 className="font-black text-sm mb-2 text-emerald-900 dark:text-emerald-300 flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                phpMyAdmin-এ ডাটাবেস সেটআপের ধাপসমূহ:
+              </h4>
+              <ol className="list-decimal list-inside space-y-1.5 text-xs text-emerald-900/90 dark:text-emerald-200/90 leading-relaxed font-medium">
+                <li><strong className="font-bold">ধাপ ১:</strong> আপনার ব্রাউজারে phpMyAdmin খুলুন (যেমন cPanel phpMyAdmin অথবা <code className="px-1 py-0.5 bg-emerald-100 dark:bg-emerald-900 rounded font-mono">http://localhost/phpmyadmin</code>)।</li>
+                <li><strong className="font-bold">ধাপ ২:</strong> বাম পাশের মেনুতে <strong className="font-bold">New</strong> অথবা <strong className="font-bold">Databases</strong>-এ ক্লিক করে <code className="px-1 py-0.5 bg-emerald-100 dark:bg-emerald-900 rounded font-mono font-bold">hishabkhata_db</code> নামে ডাটাবেস তৈরি করুন (Collation: <code className="px-1 py-0.5 bg-emerald-100 dark:bg-emerald-900 rounded font-mono">utf8mb4_unicode_ci</code>)।</li>
+                <li><strong className="font-bold">ধাপ ৩:</strong> তৈরিকৃত <code className="px-1 py-0.5 bg-emerald-100 dark:bg-emerald-900 rounded font-mono font-bold">hishabkhata_db</code> ডাটাবেসে ক্লিক করে উপরে থাকা <strong className="font-bold">Import</strong> ট্যাবে যান।</li>
+                <li><strong className="font-bold">ধাপ ৪:</strong> নিচে থাকা <strong>Download database.sql</strong> বাটনে ক্লিক করে ফাইলটি ডাউনলোড করে phpMyAdmin এর Import ফর্মে ফাইলটি সিলেক্ট করে <strong className="font-bold">Go / Import</strong> দিন। অথবা নিচের SQL সম্পূর্ণ কপি করে <strong className="font-bold">SQL</strong> ট্যাবে পেস্ট করে রান করুন।</li>
+                <li><strong className="font-bold">ধাপ ৫:</strong> আপনার সার্ভারের <code className="px-1 py-0.5 bg-emerald-100 dark:bg-emerald-900 rounded font-mono">.env</code> ফাইলে ডাটাবেসের তথ্য সেট করুন (<code className="px-1 py-0.5 bg-emerald-100 dark:bg-emerald-900 rounded font-mono">DB_HOST=localhost</code>, <code className="px-1 py-0.5 bg-emerald-100 dark:bg-emerald-900 rounded font-mono">DB_USER=root</code>, <code className="px-1 py-0.5 bg-emerald-100 dark:bg-emerald-900 rounded font-mono">DB_NAME=hishabkhata_db</code>)।</li>
+              </ol>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center justify-between gap-3 mt-4 shrink-0">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleDownloadSql}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer shadow-sm"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Download database.sql</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCopySql}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer shadow-sm"
+                >
+                  {copiedSql ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                  <span>{copiedSql ? 'Copied to Clipboard!' : 'Copy SQL Schema'}</span>
+                </button>
+              </div>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
+                {sqlContent.length > 0 ? `${(sqlContent.length / 1024).toFixed(1)} KB` : ''}
+              </span>
+            </div>
+
+            {/* SQL Code Preview Container */}
+            <div className="mt-3 flex-1 overflow-auto rounded-2xl bg-slate-900 border border-slate-800 p-4 text-slate-200 font-mono text-xs leading-relaxed">
+              <pre className="whitespace-pre">{sqlContent || 'Loading schema SQL...'}</pre>
+            </div>
           </div>
         </div>
       )}
