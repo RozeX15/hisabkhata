@@ -2,7 +2,14 @@ import { Router, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { getDb, saveDb, registerOrSyncUser, deleteUserFromDb, purgeNonAdminUsersFromDb } from './db';
 import { authMiddleware, adminOnly, generateToken, AuthRequest } from './auth';
-import { getMySqlStatus, getDatabaseSqlContent } from './mysql';
+import {
+  getMySqlStatus,
+  getDatabaseSqlContent,
+  saveUserToMySql,
+  fetchUsersFromMySql,
+  findUserInMySql,
+  deleteUserInMySql
+} from './mysql';
 import {
   User,
   Wallet,
@@ -161,7 +168,7 @@ export function findUserByIdentifier(db: ReturnType<typeof getDb>, rawIdentifier
 }
 
 // Durable User Rehydration / Sync across serverless instances
-router.post('/auth/sync-user', (req, res) => {
+router.post('/auth/sync-user', async (req, res) => {
   const { user: userData, passwordHash, password } = req.body;
   if (!userData || !userData.name || (!userData.email && !userData.phone)) {
     res.status(400).json({ error: 'User data with name and email or phone is required' });
@@ -247,11 +254,14 @@ router.post('/auth/sync-user', (req, res) => {
   registerOrSyncUser(finalUser, finalPasswordHash);
   saveDb();
 
+  // Also sync to MySQL if configured
+  await saveUserToMySql(finalUser, finalPasswordHash).catch(() => {});
+
   const token = generateToken(finalUser);
   res.json({ user: finalUser, token });
 });
 
-router.post('/auth/register', (req, res) => {
+router.post('/auth/register', async (req, res) => {
   try {
     const { name, email, phone, password, preferredLanguage = 'en', preferredCurrency = 'BDT' } = req.body;
 
@@ -303,6 +313,11 @@ router.post('/auth/register', (req, res) => {
 
     // Persist user both in memory and to disk/registry
     registerOrSyncUser(newUser, passwordHash);
+
+    // Persist to MySQL database if configured and accessible
+    await saveUserToMySql(newUser, passwordHash).catch((e) => {
+      console.warn('[MySQL Save User Warning]:', e?.message || e);
+    });
 
     // Create default starter wallets
     const defaultCashWallet: Wallet = {
@@ -359,7 +374,7 @@ router.post('/auth/register', (req, res) => {
 // In-memory rate limiting map for login brute-force prevention
 const loginAttemptsMap = new Map<string, { attempts: number; blockedUntil?: number }>();
 
-router.post('/auth/login', (req, res) => {
+router.post('/auth/login', async (req, res) => {
   try {
     const clientIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.socket.remoteAddress || 'unknown';
     const { email, identifier, password } = req.body;
@@ -388,6 +403,19 @@ router.post('/auth/login', (req, res) => {
 
     // 1. FIRST check if an existing user matches this identifier in our database
     let user = findUserByIdentifier(db, rawIdentifier);
+
+    // If not found in memory, query connected MySQL database
+    if (!user) {
+      try {
+        const mySqlRecord = await findUserInMySql(rawIdentifier);
+        if (mySqlRecord) {
+          user = mySqlRecord.user;
+          registerOrSyncUser(user, mySqlRecord.passwordHash);
+        }
+      } catch (err) {
+        console.warn('[MySQL Login Query Warning]:', err);
+      }
+    }
 
     let cleanEmail = rawIdentifier.toLowerCase();
     // If no user matched, check shorthand handles for Nowroze owner admin
@@ -2326,8 +2354,24 @@ router.get('/translations/:lang', (req, res) => {
 // -------------------------------------------------------------
 
 // Fast unified bootstrap endpoint for entire Admin Control Center in 1 single round-trip
-router.get('/admin/bootstrap', adminOnly, (req: AuthRequest, res) => {
+router.get('/admin/bootstrap', adminOnly, async (req: AuthRequest, res) => {
   const db = getDb();
+
+  // If MySQL is active, merge users from MySQL into memory
+  try {
+    const mysqlUsers = await fetchUsersFromMySql();
+    if (Array.isArray(mysqlUsers) && mysqlUsers.length > 0) {
+      for (const mu of mysqlUsers) {
+        const exists = db.users.some(u => u.id === mu.id || (u.email && mu.email && u.email.toLowerCase() === mu.email.toLowerCase()));
+        if (!exists) {
+          db.users.push(mu);
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('[Bootstrap MySQL Query Warning]:', err);
+  }
+
   const totalUsers = db.users.length;
   const activeUsers = db.users.filter(u => u.status === 'active').length;
   const freeUsers = db.users.filter(u => u.plan === 'free').length;
@@ -2484,8 +2528,24 @@ router.get('/admin/stats', adminOnly, (req: AuthRequest, res) => {
   });
 });
 
-router.get('/admin/users', adminOnly, (req: AuthRequest, res) => {
+router.get('/admin/users', adminOnly, async (req: AuthRequest, res) => {
   const db = getDb();
+
+  // If MySQL is active, merge users from MySQL into memory
+  try {
+    const mysqlUsers = await fetchUsersFromMySql();
+    if (Array.isArray(mysqlUsers) && mysqlUsers.length > 0) {
+      for (const mu of mysqlUsers) {
+        const exists = db.users.some(u => u.id === mu.id || (u.email && mu.email && u.email.toLowerCase() === mu.email.toLowerCase()));
+        if (!exists) {
+          db.users.push(mu);
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('[Admin Users MySQL Query Warning]:', err);
+  }
+
   res.json(db.users.map(u => ({
     id: u.id,
     name: u.name,
@@ -2503,7 +2563,7 @@ router.get('/admin/users', adminOnly, (req: AuthRequest, res) => {
   })));
 });
 
-router.post('/admin/users/create', adminOnly, (req: AuthRequest, res) => {
+router.post('/admin/users/create', adminOnly, async (req: AuthRequest, res) => {
   try {
     const { name, email, phone, password, role = 'user', plan = 'free', preferredLanguage = 'en', preferredCurrency = 'BDT' } = req.body;
     if (!name || (!email && !phone) || !password) {
@@ -2541,6 +2601,11 @@ router.post('/admin/users/create', adminOnly, (req: AuthRequest, res) => {
     };
 
     registerOrSyncUser(newUser, passwordHash);
+
+    // Also persist to MySQL database if configured
+    await saveUserToMySql(newUser, passwordHash).catch((e) => {
+      console.warn('[MySQL Save Admin-Created User Warning]:', e?.message || e);
+    });
 
     // Create starter cash wallet
     db.wallets.push({
@@ -2695,7 +2760,7 @@ router.put('/admin/users/:id/role', adminOnly, (req: AuthRequest, res) => {
   res.json(user);
 });
 
-router.delete('/admin/users/:id', adminOnly, (req: AuthRequest, res) => {
+router.delete('/admin/users/:id', adminOnly, async (req: AuthRequest, res) => {
   const targetId = req.params.id;
   const db = getDb();
   const targetUser = db.users.find(u => u.id === targetId);
@@ -2707,6 +2772,11 @@ router.delete('/admin/users/:id', adminOnly, (req: AuthRequest, res) => {
     res.status(403).json({ error: 'Cannot delete the Primary Owner Admin account.' });
     return;
   }
+
+  // Delete from MySQL if active
+  await deleteUserInMySql(targetId).catch((e) => {
+    console.warn('[MySQL Delete User Warning]:', e?.message || e);
+  });
 
   const success = deleteUserFromDb(targetId);
   if (success) {
@@ -3337,13 +3407,67 @@ router.put('/admin/system-limits', adminOnly, (req: AuthRequest, res) => {
 router.get('/admin/db-status', adminOnly, async (req: AuthRequest, res) => {
   try {
     const status = await getMySqlStatus();
+    const isServerless = Boolean(process.env.NETLIFY || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.LAMBDA_TASK_ROOT);
     res.json({
-      engine: status.connected ? 'mysql' : 'json_store',
+      engine: status.connected ? 'mysql' : (isServerless ? 'serverless_ephemeral' : 'json_store'),
+      isServerless,
       mysql: status,
       timestamp: new Date().toISOString(),
     });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/admin/users/sync-batch', adminOnly, async (req: AuthRequest, res) => {
+  try {
+    const { users } = req.body;
+    if (!Array.isArray(users)) {
+      res.status(400).json({ error: 'users array is required' });
+      return;
+    }
+
+    const db = getDb();
+    let syncedCount = 0;
+
+    for (const incoming of users) {
+      if (!incoming || !incoming.name || (!incoming.email && !incoming.phone)) continue;
+      const rawId = incoming.email || incoming.phone || incoming.id;
+      const existing = findUserByIdentifier(db, rawId);
+
+      if (existing) {
+        existing.name = incoming.name || existing.name;
+        existing.phone = incoming.phone || existing.phone;
+        existing.role = incoming.role || existing.role;
+        existing.plan = incoming.plan || existing.plan;
+        existing.status = incoming.status || existing.status;
+        existing.updatedAt = new Date().toISOString();
+      } else {
+        const u: User = {
+          id: incoming.id || `usr-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+          name: incoming.name,
+          email: incoming.email || '',
+          phone: incoming.phone,
+          role: incoming.role || 'user',
+          plan: incoming.plan || 'free',
+          status: incoming.status || 'active',
+          preferredLanguage: incoming.preferredLanguage || 'en',
+          preferredCurrency: incoming.preferredCurrency || 'BDT',
+          emailVerified: true,
+          createdAt: incoming.createdAt || new Date().toISOString(),
+          updatedAt: incoming.updatedAt || new Date().toISOString(),
+        };
+        db.users.push(u);
+      }
+
+      await saveUserToMySql(incoming).catch(() => {});
+      syncedCount++;
+    }
+
+    saveDb();
+    res.json({ success: true, syncedCount, totalUsers: db.users.length });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Batch sync failed' });
   }
 });
 

@@ -338,7 +338,9 @@ export const api = {
       error?: string | null;
     };
     timestamp: string;
+    isServerless?: boolean;
   }>('/admin/db-status'),
+  syncBatchUsers: (users: User[]) => request<{ success: boolean; syncedCount: number; totalUsers: number }>('/admin/users/sync-batch', { method: 'POST', body: JSON.stringify({ users }) }),
   getSchemaSql: () => request<{ filename: string; sql: string; instructions: string }>('/admin/schema-sql'),
 
   // Suggestions & SuperChat

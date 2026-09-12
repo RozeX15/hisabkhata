@@ -382,7 +382,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setUser(res.user);
 
       // Persist across Cloud Firestore and Local Vault for permanent availability
-      saveAccountToCloud(res.user, data.password).catch((e) => console.warn('Cloud sync error:', e));
+      await saveAccountToCloud(res.user, data.password).catch((e) => console.warn('Cloud sync error:', e));
 
       return res.user;
     } catch (err: any) {

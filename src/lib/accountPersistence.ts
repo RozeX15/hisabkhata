@@ -268,7 +268,10 @@ export async function saveAccountToCloud(
       writePromises.push(setDoc(phoneRef, account, { merge: true }));
     }
 
-    Promise.allSettled(writePromises).catch(() => {});
+    // Persist to local registered users list immediately
+    saveLocalRegisteredUser(user);
+
+    await Promise.allSettled(writePromises);
   } catch (err) {
     console.warn('Could not sync account to cloud Firestore:', err);
   }

@@ -195,3 +195,149 @@ export function getDatabaseSqlContent(): string {
   }
   return '';
 }
+
+// -----------------------------------------------------------------------------
+// Real MySQL Persistence Operations for Users & Authentication
+// -----------------------------------------------------------------------------
+
+export async function saveUserToMySql(user: any, passwordHash?: string): Promise<boolean> {
+  const p = getMySqlPool();
+  if (!p) return false;
+
+  try {
+    const query = `
+      INSERT INTO \`users\` (
+        \`id\`, \`name\`, \`email\`, \`phone\`, \`role\`, \`plan\`, \`status\`,
+        \`avatar_url\`, \`preferred_currency\`, \`preferred_language\`, \`created_at\`
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON DUPLICATE KEY UPDATE
+        \`name\` = VALUES(\`name\`),
+        \`phone\` = VALUES(\`phone\`),
+        \`role\` = VALUES(\`role\`),
+        \`plan\` = VALUES(\`plan\`),
+        \`status\` = VALUES(\`status\`),
+        \`preferred_currency\` = VALUES(\`preferred_currency\`),
+        \`preferred_language\` = VALUES(\`preferred_language\`);
+    `;
+
+    const createdAt = user.createdAt ? new Date(user.createdAt) : new Date();
+
+    await p.query(query, [
+      user.id,
+      user.name || 'User',
+      user.email || null,
+      user.phone || null,
+      user.role || 'user',
+      user.plan || 'free',
+      user.status || 'active',
+      user.avatarUrl || null,
+      user.preferredCurrency || 'BDT',
+      user.preferredLanguage || 'en',
+      createdAt,
+    ]);
+
+    if (passwordHash) {
+      const pwQuery = `
+        INSERT INTO \`user_passwords\` (\`user_id\`, \`password_hash\`)
+        VALUES (?, ?)
+        ON DUPLICATE KEY UPDATE \`password_hash\` = VALUES(\`password_hash\`);
+      `;
+      await p.query(pwQuery, [user.id, passwordHash]);
+    }
+
+    return true;
+  } catch (err: any) {
+    console.warn('[MySQL] Error saving user to MySQL database:', err.message);
+    return false;
+  }
+}
+
+export async function fetchUsersFromMySql(): Promise<any[] | null> {
+  const p = getMySqlPool();
+  if (!p) return null;
+
+  try {
+    const [rows] = await p.query<RowDataPacket[]>(
+      'SELECT `id`, `name`, `email`, `phone`, `role`, `plan`, `status`, `avatar_url`, `preferred_currency`, `preferred_language`, `created_at`, `updated_at` FROM `users` ORDER BY `created_at` DESC'
+    );
+
+    if (!Array.isArray(rows)) return [];
+
+    return rows.map((r: any) => ({
+      id: r.id,
+      name: r.name,
+      email: r.email || '',
+      phone: r.phone || undefined,
+      role: r.role || 'user',
+      plan: r.plan || 'free',
+      status: r.status || 'active',
+      avatarUrl: r.avatar_url || undefined,
+      preferredCurrency: r.preferred_currency || 'BDT',
+      preferredLanguage: r.preferred_language || 'en',
+      emailVerified: true,
+      createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+      updatedAt: r.updated_at ? new Date(r.updated_at).toISOString() : new Date().toISOString(),
+    }));
+  } catch (err: any) {
+    console.warn('[MySQL] Error fetching users from MySQL:', err.message);
+    return null;
+  }
+}
+
+export async function findUserInMySql(identifier: string): Promise<{ user: any; passwordHash: string } | null> {
+  const p = getMySqlPool();
+  if (!p) return null;
+
+  try {
+    const clean = identifier.trim().toLowerCase();
+    const query = `
+      SELECT u.*, p.password_hash 
+      FROM \`users\` u
+      LEFT JOIN \`user_passwords\` p ON u.id = p.user_id
+      WHERE LOWER(u.email) = ? OR u.phone = ? OR u.id = ?
+      LIMIT 1;
+    `;
+
+    const [rows] = await p.query<RowDataPacket[]>(query, [clean, identifier.trim(), identifier.trim()]);
+    if (!Array.isArray(rows) || rows.length === 0) return null;
+
+    const r = rows[0] as any;
+    const user = {
+      id: r.id,
+      name: r.name,
+      email: r.email || '',
+      phone: r.phone || undefined,
+      role: r.role || 'user',
+      plan: r.plan || 'free',
+      status: r.status || 'active',
+      avatarUrl: r.avatar_url || undefined,
+      preferredCurrency: r.preferred_currency || 'BDT',
+      preferredLanguage: r.preferred_language || 'en',
+      emailVerified: true,
+      createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+      updatedAt: r.updated_at ? new Date(r.updated_at).toISOString() : new Date().toISOString(),
+    };
+
+    return {
+      user,
+      passwordHash: r.password_hash || '',
+    };
+  } catch (err: any) {
+    console.warn('[MySQL] Error finding user in MySQL:', err.message);
+    return null;
+  }
+}
+
+export async function deleteUserInMySql(userId: string): Promise<boolean> {
+  const p = getMySqlPool();
+  if (!p) return false;
+
+  try {
+    await p.query('DELETE FROM `users` WHERE `id` = ?', [userId]);
+    return true;
+  } catch (err: any) {
+    console.warn('[MySQL] Error deleting user in MySQL:', err.message);
+    return false;
+  }
+}
+

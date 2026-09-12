@@ -64,7 +64,8 @@ import {
   Code,
   UserPlus,
   Edit3,
-  KeyRound
+  KeyRound,
+  UploadCloud
 } from 'lucide-react';
 import {
   fetchAllUsersFromFirestore,
@@ -290,6 +291,30 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
     setTimeout(() => setCopiedSql(false), 2000);
   };
 
+  const [syncingUsers, setSyncingUsers] = useState(false);
+  const [syncSuccessMsg, setSyncSuccessMsg] = useState<string | null>(null);
+
+  const handleSyncLocalVaultUsers = async () => {
+    setSyncingUsers(true);
+    setSyncSuccessMsg(null);
+    try {
+      const allLocalUsers = await fetchAllUsersFromFirestore();
+      if (allLocalUsers && allLocalUsers.length > 0) {
+        const res = await api.syncBatchUsers(allLocalUsers);
+        setSyncSuccessMsg(`Synced ${res.syncedCount || allLocalUsers.length} accounts to server database.`);
+        await fetchAllAdminData();
+        setTimeout(() => setSyncSuccessMsg(null), 4000);
+      } else {
+        setSyncSuccessMsg('All accounts are already synchronized.');
+        setTimeout(() => setSyncSuccessMsg(null), 3000);
+      }
+    } catch (err: any) {
+      alert('Sync failed: ' + (err.message || 'Unknown error'));
+    } finally {
+      setSyncingUsers(false);
+    }
+  };
+
   // Helper to ensure all baseline and incoming users are always preserved
   const mergeAndSetUsers = (incoming: User[]) => {
     setUsers((prev) => {
@@ -302,7 +327,19 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
           map.set(u.id, existing ? { ...existing, ...u } : u);
         }
       });
-      return Array.from(map.values());
+      const combined = Array.from(map.values());
+      // Keep stats cards continuously in sync with actual loaded users count
+      setStats((prevStats) => {
+        if (!prevStats) return prevStats;
+        return {
+          ...prevStats,
+          totalUsers: Math.max(prevStats.totalUsers || 0, combined.length),
+          activeUsers: combined.filter(u => u.status === 'active').length,
+          freeUsers: combined.filter(u => u.plan === 'free').length,
+          proUsers: combined.filter(u => u.plan === 'pro').length,
+        };
+      });
+      return combined;
     });
   };
 
@@ -361,12 +398,15 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
         setRefreshing(false);
         setPresenceRefreshing(false);
 
-        // Quietly background sync Firestore users if available
-        fetchAllUsersFromFirestore().then((fu) => {
+        // Also fetch Firestore & local registered users to catch any new signups
+        try {
+          const fu = await fetchAllUsersFromFirestore();
           if (Array.isArray(fu) && fu.length > 0) {
             mergeAndSetUsers(fu);
           }
-        }).catch(() => {});
+        } catch (err) {
+          console.warn('Firestore user fetch notice:', err);
+        }
 
         return;
       }
@@ -2043,6 +2083,18 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
               </button>
 
               <button
+                id="admin-sync-local-users-btn"
+                type="button"
+                onClick={handleSyncLocalVaultUsers}
+                disabled={syncingUsers}
+                className="px-3.5 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
+                title="Synchronize all user registrations from local storage & cloud to the central database"
+              >
+                <UploadCloud className={`w-3.5 h-3.5 ${syncingUsers ? 'animate-spin' : ''}`} />
+                <span>{syncingUsers ? 'Syncing...' : 'Sync Local to Server'}</span>
+              </button>
+
+              <button
                 id="admin-purge-non-admin-users-btn"
                 type="button"
                 onClick={handlePurgeNonAdminUsers}
@@ -2077,6 +2129,41 @@ export const AdminView: React.FC<AdminViewProps> = ({ onNavigate }) => {
               </button>
             </div>
           </div>
+
+          {/* Sync Success Message */}
+          {syncSuccessMsg && (
+            <div className="p-3 rounded-2xl bg-teal-50 dark:bg-teal-950/80 border border-teal-200 dark:border-teal-800 text-teal-800 dark:text-teal-200 text-xs font-bold flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+              <span>{syncSuccessMsg}</span>
+            </div>
+          )}
+
+          {/* Netlify Serverless Deployment & Remote MySQL Notice */}
+          {!dbStatus?.mysql?.connected && (
+            <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <div className="space-y-1.5 text-xs">
+                  <p className="font-extrabold text-sm text-amber-800 dark:text-amber-300">
+                    Netlify Serverless Deployment & User Persistence Info
+                  </p>
+                  <p className="leading-relaxed text-slate-700 dark:text-slate-300">
+                    Netlify একটি <strong>serverless / stateless</strong> প্ল্যাটফর্ম। সেন্ট্রাল ডাটাবেস ছাড়া Netlify Functions রিস্টার্ট হলে লোকাল মেমোরি খালি হয়ে যায়।
+                  </p>
+                  <p className="leading-relaxed text-slate-700 dark:text-slate-300">
+                    নতুন ইউজার সাইন-আপ করলে যেন তা অ্যাডমিন প্যানেলে সবসময় স্থায়ীভাবে থাকে, তার জন্য Netlify ড্যাশবোর্ডে <strong>Site configuration &gt; Environment variables</strong>-এ আপনার রিমোট MySQL / phpMyAdmin ডাটাবেসের তথ্য সেট করুন:
+                    <span className="block font-mono bg-amber-100/70 dark:bg-amber-950/80 p-2 rounded-xl mt-1.5 text-[11px] text-amber-950 dark:text-amber-200 border border-amber-200/70 dark:border-amber-900/60">
+                      DB_HOST=your-mysql-host.com<br />
+                      DB_USER=your_db_username<br />
+                      DB_PASSWORD=your_db_password<br />
+                      DB_NAME=hishabkhata_db<br />
+                      DB_PORT=3306
+                    </span>
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Quick Metrics Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
